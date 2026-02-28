@@ -1,39 +1,44 @@
-import type { Components, Theme } from '@mui/material/styles';
-import { colorTokens, shadowTokens, borderRadiusTokens, transitionTokens } from './tokens';
+import type { Components, Theme } from "@mui/material/styles";
+import {
+  colorTokens,
+  shadowTokens,
+  borderRadiusTokens,
+  transitionTokens,
+} from "./tokens";
 
 export const components: Components<Theme> = {
   MuiCssBaseline: {
     styleOverrides: {
-      '*': {
-        boxSizing: 'border-box',
+      "*": {
+        boxSizing: "border-box",
         margin: 0,
         padding: 0,
       },
       html: {
-        scrollBehavior: 'smooth',
-        WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
+        scrollBehavior: "smooth",
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
       },
       body: {
         backgroundColor: colorTokens.white,
         color: colorTokens.slate[900],
       },
-      '::selection': {
+      "::selection": {
         backgroundColor: colorTokens.financeBlue[100],
         color: colorTokens.financeBlue[900],
       },
-      '::-webkit-scrollbar': {
-        width: '6px',
-        height: '6px',
+      "::-webkit-scrollbar": {
+        width: "6px",
+        height: "6px",
       },
-      '::-webkit-scrollbar-track': {
+      "::-webkit-scrollbar-track": {
         background: colorTokens.slate[100],
       },
-      '::-webkit-scrollbar-thumb': {
+      "::-webkit-scrollbar-thumb": {
         background: colorTokens.slate[300],
-        borderRadius: '3px',
+        borderRadius: "3px",
       },
-      '::-webkit-scrollbar-thumb:hover': {
+      "::-webkit-scrollbar-thumb:hover": {
         background: colorTokens.slate[400],
       },
     },
@@ -43,54 +48,54 @@ export const components: Components<Theme> = {
     styleOverrides: {
       root: {
         borderRadius: borderRadiusTokens.md,
-        padding: '12px 28px',
-        fontSize: '0.9375rem',
+        padding: "12px 28px",
+        fontSize: "0.9375rem",
         fontWeight: 600,
         transition: `all ${transitionTokens.base}`,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::after': {
+        position: "relative",
+        overflow: "hidden",
+        "&::after": {
           content: '""',
-          position: 'absolute',
+          position: "absolute",
           inset: 0,
           opacity: 0,
           transition: `opacity ${transitionTokens.fast}`,
-          background: 'rgba(255,255,255,0.1)',
+          background: "rgba(255,255,255,0.1)",
         },
-        '&:hover::after': {
+        "&:hover::after": {
           opacity: 1,
         },
       },
       containedPrimary: {
-        background: colorTokens.gradients?.primaryBlue ?? colorTokens.financeBlue[500],
+        background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
         boxShadow: shadowTokens.blue,
         color: colorTokens.white,
-        '&:hover': {
+        "&:hover": {
           boxShadow: shadowTokens.blueHover,
-          transform: 'translateY(-1px)',
+          transform: "translateY(-1px)",
         },
-        '&:active': {
-          transform: 'translateY(0)',
+        "&:active": {
+          transform: "translateY(0)",
           boxShadow: shadowTokens.blue,
         },
       },
       outlinedPrimary: {
         borderColor: colorTokens.financeBlue[500],
         color: colorTokens.financeBlue[500],
-        borderWidth: '1.5px',
-        '&:hover': {
-          borderWidth: '1.5px',
+        borderWidth: "1.5px",
+        "&:hover": {
+          borderWidth: "1.5px",
           backgroundColor: colorTokens.financeBlue[50],
           borderColor: colorTokens.financeBlue[600],
         },
       },
       sizeLarge: {
-        padding: '14px 36px',
-        fontSize: '1.0625rem',
+        padding: "14px 36px",
+        fontSize: "1.0625rem",
       },
       sizeSmall: {
-        padding: '8px 20px',
-        fontSize: '0.875rem',
+        padding: "8px 20px",
+        fontSize: "0.875rem",
       },
     },
   },
@@ -102,9 +107,9 @@ export const components: Components<Theme> = {
         boxShadow: shadowTokens.md,
         border: `1px solid ${colorTokens.slate[100]}`,
         transition: `all ${transitionTokens.base}`,
-        '&:hover': {
+        "&:hover": {
           boxShadow: shadowTokens.xl,
-          transform: 'translateY(-4px)',
+          transform: "translateY(-4px)",
         },
       },
     },
@@ -113,9 +118,9 @@ export const components: Components<Theme> = {
   MuiCardContent: {
     styleOverrides: {
       root: {
-        padding: '24px',
-        '&:last-child': {
-          paddingBottom: '24px',
+        padding: "24px",
+        "&:last-child": {
+          paddingBottom: "24px",
         },
       },
     },
@@ -126,12 +131,12 @@ export const components: Components<Theme> = {
       root: {
         borderRadius: borderRadiusTokens.sm,
         fontWeight: 500,
-        fontSize: '0.8125rem',
+        fontSize: "0.8125rem",
       },
       colorPrimary: {
         backgroundColor: colorTokens.financeBlue[50],
         color: colorTokens.financeBlue[700],
-        '&:hover': {
+        "&:hover": {
           backgroundColor: colorTokens.financeBlue[100],
         },
       },
@@ -141,29 +146,29 @@ export const components: Components<Theme> = {
   MuiTextField: {
     styleOverrides: {
       root: {
-        '& .MuiOutlinedInput-root': {
+        "& .MuiOutlinedInput-root": {
           borderRadius: borderRadiusTokens.md,
           backgroundColor: colorTokens.white,
           transition: `all ${transitionTokens.base}`,
-          '& fieldset': {
+          "& fieldset": {
             borderColor: colorTokens.slate[200],
-            borderWidth: '1.5px',
+            borderWidth: "1.5px",
             transition: `border-color ${transitionTokens.base}`,
           },
-          '&:hover fieldset': {
+          "&:hover fieldset": {
             borderColor: colorTokens.financeBlue[300],
           },
-          '&.Mui-focused fieldset': {
+          "&.Mui-focused fieldset": {
             borderColor: colorTokens.financeBlue[500],
-            borderWidth: '1.5px',
+            borderWidth: "1.5px",
           },
-          '&.Mui-focused': {
+          "&.Mui-focused": {
             boxShadow: `0 0 0 3px rgba(26, 86, 219, 0.1)`,
           },
         },
-        '& .MuiInputLabel-root': {
+        "& .MuiInputLabel-root": {
           color: colorTokens.slate[500],
-          '&.Mui-focused': {
+          "&.Mui-focused": {
             color: colorTokens.financeBlue[600],
           },
         },
@@ -174,9 +179,9 @@ export const components: Components<Theme> = {
   MuiAppBar: {
     styleOverrides: {
       root: {
-        backgroundColor: 'transparent',
-        backgroundImage: 'none',
-        boxShadow: 'none',
+        backgroundColor: "transparent",
+        backgroundImage: "none",
+        boxShadow: "none",
       },
     },
   },
@@ -185,7 +190,7 @@ export const components: Components<Theme> = {
     styleOverrides: {
       paper: {
         borderRadius: `${borderRadiusTokens.xl} 0 0 ${borderRadiusTokens.xl}`,
-        boxShadow: shadowTokens['2xl'],
+        boxShadow: shadowTokens["2xl"],
       },
     },
   },
@@ -194,7 +199,7 @@ export const components: Components<Theme> = {
     styleOverrides: {
       paper: {
         borderRadius: borderRadiusTokens.xl,
-        boxShadow: shadowTokens['2xl'],
+        boxShadow: shadowTokens["2xl"],
       },
     },
   },
@@ -204,9 +209,9 @@ export const components: Components<Theme> = {
       tooltip: {
         backgroundColor: colorTokens.darkNavy[800],
         borderRadius: borderRadiusTokens.sm,
-        fontSize: '0.8125rem',
+        fontSize: "0.8125rem",
         fontWeight: 500,
-        padding: '8px 12px',
+        padding: "8px 12px",
       },
       arrow: {
         color: colorTokens.darkNavy[800],
@@ -249,7 +254,7 @@ export const components: Components<Theme> = {
     styleOverrides: {
       root: {
         borderRadius: borderRadiusTokens.md,
-        border: '1px solid',
+        border: "1px solid",
       },
       standardSuccess: {
         backgroundColor: colorTokens.success.light,
@@ -277,13 +282,13 @@ export const components: Components<Theme> = {
   MuiTableHead: {
     styleOverrides: {
       root: {
-        '& .MuiTableCell-head': {
+        "& .MuiTableCell-head": {
           backgroundColor: colorTokens.slate[50],
           fontWeight: 600,
-          fontSize: '0.8125rem',
+          fontSize: "0.8125rem",
           color: colorTokens.slate[600],
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
           borderBottom: `2px solid ${colorTokens.slate[200]}`,
         },
       },
@@ -293,10 +298,10 @@ export const components: Components<Theme> = {
   MuiTableRow: {
     styleOverrides: {
       root: {
-        '&:hover': {
+        "&:hover": {
           backgroundColor: colorTokens.slate[50],
         },
-        '& .MuiTableCell-root': {
+        "& .MuiTableCell-root": {
           borderBottom: `1px solid ${colorTokens.slate[100]}`,
         },
       },
@@ -307,10 +312,10 @@ export const components: Components<Theme> = {
     styleOverrides: {
       badge: {
         fontWeight: 700,
-        fontSize: '0.6875rem',
-        minWidth: '18px',
-        height: '18px',
-        padding: '0 4px',
+        fontSize: "0.6875rem",
+        minWidth: "18px",
+        height: "18px",
+        padding: "0 4px",
       },
     },
   },
@@ -318,12 +323,12 @@ export const components: Components<Theme> = {
   MuiTab: {
     styleOverrides: {
       root: {
-        textTransform: 'none',
+        textTransform: "none",
         fontWeight: 500,
-        fontSize: '0.9375rem',
+        fontSize: "0.9375rem",
         minHeight: 48,
         transition: `all ${transitionTokens.base}`,
-        '&.Mui-selected': {
+        "&.Mui-selected": {
           fontWeight: 600,
         },
       },
@@ -344,11 +349,11 @@ export const components: Components<Theme> = {
     styleOverrides: {
       label: {
         fontWeight: 500,
-        '&.Mui-active': {
+        "&.Mui-active": {
           fontWeight: 700,
           color: colorTokens.financeBlue[600],
         },
-        '&.Mui-completed': {
+        "&.Mui-completed": {
           color: colorTokens.success.main,
         },
       },
@@ -359,10 +364,10 @@ export const components: Components<Theme> = {
     styleOverrides: {
       root: {
         color: colorTokens.slate[200],
-        '&.Mui-active': {
+        "&.Mui-active": {
           color: colorTokens.financeBlue[500],
         },
-        '&.Mui-completed': {
+        "&.Mui-completed": {
           color: colorTokens.success.main,
         },
       },
