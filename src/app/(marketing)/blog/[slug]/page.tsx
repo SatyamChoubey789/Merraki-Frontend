@@ -2,17 +2,21 @@ import type { Metadata } from 'next';
 import { BlogPostClient } from '@/components/sections/blog/BlogPostClient';
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
   return {
-    title: `${params.slug.replace(/-/g, ' ')} | Merraki Blog`,
+    title: `${title} | Merraki Blog`,
     description: 'Finance insights and strategies from Merraki Solutions.',
     openGraph: { type: 'article' },
   };
 }
 
-export default function BlogPostPage({ params }: Props) {
-  return <BlogPostClient slug={params.slug} />;
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  return <BlogPostClient slug={slug} />;
 }

@@ -20,11 +20,9 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   ShoppingCart as CartIcon,
-  KeyboardArrowDown as ChevronIcon,
 } from "@mui/icons-material";
 import {
   motion,
-  AnimatePresence,
   useMotionValueEvent,
   useScroll,
 } from "framer-motion";
@@ -34,32 +32,42 @@ import { colorTokens, shadowTokens } from "@/theme";
 import { NAV_LINKS } from "./navLinks";
 import { useCartStore } from "@/lib/stores/cartStore";
 import { CurrencySelector } from "../CurrencySelector/CurrencySelector";
+import { MerrakiLogo } from "@/components/ui/MerrakiLogo/MerrakiLogo";
 
-const MotionAppBar = motion(AppBar);
+const MotionAppBar = motion.create(AppBar);
 
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [headerBg, setHeaderBg] = useState<"transparent" | "frosted">(
-    "transparent",
-  );
   const itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openDrawer);
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 60) {
-      setScrolled(true);
-      setHeaderBg("frosted");
-    } else {
-      setScrolled(false);
-      setHeaderBg("transparent");
-    }
+    setScrolled(latest > 60);
   });
 
   const isHomePage = pathname === "/";
   const isDarkBg = isHomePage && !scrolled;
+
+  const bgColor = scrolled
+    ? "rgba(255,255,255,0.92)"
+    : isHomePage
+      ? "rgba(10,15,30,0.35)"
+      : "rgba(255,255,255,0.92)";
+
+  const backdropFilter = scrolled
+    ? "blur(20px) saturate(180%)"
+    : isHomePage
+      ? "blur(8px)"
+      : "blur(20px) saturate(180%)";
+
+  const borderBottom = scrolled
+    ? `1px solid ${colorTokens.slate[100]}`
+    : isHomePage
+      ? "1px solid rgba(255,255,255,0.08)"
+      : `1px solid ${colorTokens.slate[100]}`;
 
   return (
     <>
@@ -67,11 +75,9 @@ export function Header() {
         position="fixed"
         elevation={0}
         animate={{
-          backgroundColor: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
-          backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
-          borderBottom: scrolled
-            ? `1px solid ${colorTokens.slate[100]}`
-            : "1px solid transparent",
+          backgroundColor: bgColor,
+          backdropFilter,
+          borderBottom,
           boxShadow: scrolled ? shadowTokens.md : "none",
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -87,72 +93,27 @@ export function Header() {
               gap: 2,
             }}
           >
-            {/* Logo */}
+            {/* ── Logo ─────────────────────────────────────────────── */}
             <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
               <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{
+                  scale: 1.04,
+                  filter: isDarkBg
+                    ? "drop-shadow(0 0 12px rgba(255,255,255,0.4))"
+                    : "drop-shadow(0 0 12px rgba(26,86,219,0.45))",
+                }}
+                whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.2 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: "10px",
-                      background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: `0 4px 12px rgba(26,86,219,0.3)`,
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: "#fff",
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 800,
-                        fontSize: "1.125rem",
-                        lineHeight: 1,
-                      }}
-                    >
-                      M
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 800,
-                        fontSize: "1.0625rem",
-                        lineHeight: 1.1,
-                        color: isDarkBg ? "#fff" : colorTokens.darkNavy[900],
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      Merraki
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: "var(--font-body)",
-                        fontWeight: 500,
-                        fontSize: "0.625rem",
-                        lineHeight: 1,
-                        color: isDarkBg
-                          ? "rgba(255,255,255,0.6)"
-                          : colorTokens.slate[500],
-                        letterSpacing: "0.12em",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Solutions
-                    </Typography>
-                  </Box>
-                </Box>
+                <MerrakiLogo
+                  variant={isDarkBg ? "white" : "color"}
+                  width={100}
+                  animate={false}
+                />
               </motion.div>
             </Link>
 
-            {/* Desktop Nav */}
+            {/* ── Desktop Nav ───────────────────────────────────────── */}
             <Box
               component="nav"
               sx={{
@@ -171,30 +132,18 @@ export function Header() {
               ))}
             </Box>
 
-            {/* Right Actions */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                flexShrink: 0,
-              }}
-            >
+            {/* ── Right Actions ─────────────────────────────────────── */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
               <Box sx={{ display: { xs: "none", md: "block" } }}>
                 <CurrencySelector isDark={isDarkBg} />
               </Box>
 
-              {/* Cart */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <IconButton
                   onClick={openCart}
                   sx={{
-                    color: isDarkBg
-                      ? "rgba(255,255,255,0.9)"
-                      : colorTokens.slate[700],
+                    color: isDarkBg ? "rgba(255,255,255,0.9)" : colorTokens.slate[700],
+                    transition: "color 0.3s ease",
                     "&:hover": {
                       backgroundColor: isDarkBg
                         ? "rgba(255,255,255,0.1)"
@@ -223,12 +172,8 @@ export function Header() {
                 </IconButton>
               </motion.div>
 
-              {/* CTA */}
               <Box sx={{ display: { xs: "none", md: "block" } }}>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button
                     component={Link}
                     href="/book-consultation"
@@ -252,14 +197,12 @@ export function Header() {
                 </motion.div>
               </Box>
 
-              {/* Mobile Menu Toggle */}
               <IconButton
                 onClick={() => setMobileOpen(true)}
                 sx={{
                   display: { xs: "flex", lg: "none" },
-                  color: isDarkBg
-                    ? "rgba(255,255,255,0.9)"
-                    : colorTokens.slate[700],
+                  color: isDarkBg ? "rgba(255,255,255,0.9)" : colorTokens.slate[700],
+                  transition: "color 0.3s ease",
                 }}
               >
                 <MenuIcon />
@@ -269,7 +212,6 @@ export function Header() {
         </Container>
       </MotionAppBar>
 
-      {/* Mobile Drawer */}
       <MobileNavDrawer
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
@@ -279,7 +221,7 @@ export function Header() {
   );
 }
 
-// ─── Nav Item ───────────────────────────────────────────────────────────────
+// ─── Nav Item ────────────────────────────────────────────────────────────────
 
 interface NavItemProps {
   link: { label: string; href: string; badge?: string };
@@ -289,10 +231,7 @@ interface NavItemProps {
 
 function NavItem({ link, isActive, isDark }: NavItemProps) {
   return (
-    <Link
-      href={link.href}
-      style={{ textDecoration: "none", position: "relative" }}
-    >
+    <Link href={link.href} style={{ textDecoration: "none", position: "relative" }}>
       <motion.div whileHover="hover" initial="rest" animate="rest">
         <Box
           sx={{
@@ -306,9 +245,7 @@ function NavItem({ link, isActive, isDark }: NavItemProps) {
             cursor: "pointer",
             transition: "all 0.2s ease",
             "&:hover": {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.08)"
-                : colorTokens.slate[50],
+              backgroundColor: isDark ? "rgba(255,255,255,0.08)" : colorTokens.slate[50],
             },
           }}
         >
@@ -319,13 +256,9 @@ function NavItem({ link, isActive, isDark }: NavItemProps) {
               fontWeight: isActive ? 600 : 500,
               fontSize: "0.9375rem",
               color: isDark
-                ? isActive
-                  ? "#fff"
-                  : "rgba(255,255,255,0.8)"
-                : isActive
-                  ? colorTokens.financeBlue[600]
-                  : colorTokens.slate[700],
-              transition: "color 0.2s ease",
+                ? isActive ? "#fff" : "rgba(255,255,255,0.8)"
+                : isActive ? colorTokens.financeBlue[600] : colorTokens.slate[700],
+              transition: "color 0.3s ease",
             }}
           >
             {link.label}
@@ -348,8 +281,6 @@ function NavItem({ link, isActive, isDark }: NavItemProps) {
             </Box>
           )}
         </Box>
-
-        {/* Active underline */}
         {isActive && (
           <motion.div
             layoutId="nav-active"
@@ -399,32 +330,12 @@ function MobileNavDrawer({
       }}
     >
       <Box sx={{ p: 3 }}>
-        {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 3,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: "var(--font-display)",
-              fontWeight: 800,
-              fontSize: "1.125rem",
-              color: colorTokens.darkNavy[900],
-            }}
-          >
-            Merraki Solutions
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+          <MerrakiLogo variant="color" width={88} animate={false} />
           <IconButton
             onClick={onClose}
             size="small"
-            sx={{
-              backgroundColor: colorTokens.slate[100],
-              "&:hover": { backgroundColor: colorTokens.slate[200] },
-            }}
+            sx={{ backgroundColor: colorTokens.slate[100], "&:hover": { backgroundColor: colorTokens.slate[200] } }}
           >
             <CloseIcon fontSize="small" />
           </IconButton>
@@ -432,7 +343,6 @@ function MobileNavDrawer({
 
         <Divider sx={{ mb: 2 }} />
 
-        {/* Links */}
         <List disablePadding>
           {NAV_LINKS.map((link, i) => (
             <motion.div
@@ -453,15 +363,9 @@ function MobileNavDrawer({
                     px: 2,
                     "&.Mui-selected": {
                       backgroundColor: colorTokens.financeBlue[50],
-                      color: colorTokens.financeBlue[700],
-                      "& .MuiListItemText-primary": {
-                        fontWeight: 600,
-                        color: colorTokens.financeBlue[700],
-                      },
+                      "& .MuiListItemText-primary": { fontWeight: 600, color: colorTokens.financeBlue[700] },
                     },
-                    "&:hover": {
-                      backgroundColor: colorTokens.slate[50],
-                    },
+                    "&:hover": { backgroundColor: colorTokens.slate[50] },
                   }}
                 >
                   <ListItemText
@@ -496,29 +400,22 @@ function MobileNavDrawer({
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Bottom */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <CurrencySelector isDark={false} fullWidth />
-
           <Button
             variant="outlined"
             color="primary"
             startIcon={<CartIcon />}
-            onClick={() => {
-              openCart();
-              onClose();
-            }}
+            onClick={() => { openCart(); onClose(); }}
             fullWidth
             sx={{ borderRadius: "10px", py: 1.25 }}
           >
             Cart {itemCount > 0 && `(${itemCount})`}
           </Button>
-
           <Button
             component={Link}
             href="/book-consultation"
             variant="contained"
-            color="primary"
             fullWidth
             onClick={onClose}
             sx={{

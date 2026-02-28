@@ -1,21 +1,47 @@
+// components/sections/blog/BlogCard.tsx
 "use client";
 
-import { Box, Typography, Chip } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { AccessTime as TimeIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { colorTokens, shadowTokens } from "@/theme";
-import { formatDate, formatReadingTime } from "@/lib/utils/formatters";
+import { formatDate } from "@/lib/utils/formatters";
 import type { BlogPost } from "@/types/blog.types";
 
 interface BlogCardProps {
   post: BlogPost;
   index?: number;
-  featured?: boolean;
 }
 
-export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
+// Unsplash page URLs are not direct image URLs — detect and skip them.
+// A direct image URL contains "images.unsplash.com" or ends in an image ext.
+function isDirectImageUrl(url: string | null): boolean {
+  if (!url) return false;
+  return (
+    url.includes("images.unsplash.com") ||
+    url.includes("cdn.") ||
+    /\.(jpg|jpeg|png|webp|avif|gif)(\?.*)?$/i.test(url)
+  );
+}
+
+// Pick an emoji cover based on tags / title keywords
+function getCoverEmoji(post: BlogPost): string {
+  const text = (post.title + " " + post.tags.join(" ")).toLowerCase();
+  if (text.includes("valuation") || text.includes("dcf")) return "📈";
+  if (text.includes("cash") || text.includes("runway")) return "💰";
+  if (text.includes("excel") || text.includes("dashboard")) return "📊";
+  if (text.includes("tax") || text.includes("gst")) return "🧾";
+  if (text.includes("startup") || text.includes("founder")) return "🚀";
+  if (text.includes("invest")) return "💎";
+  if (text.includes("profit") || text.includes("margin")) return "📉";
+  return "📝";
+}
+
+export function BlogCard({ post, index = 0 }: BlogCardProps) {
+  const hasDirectImage = isDirectImageUrl(post.coverImage);
+  const emoji = getCoverEmoji(post);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -41,27 +67,36 @@ export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
             "&:hover": {
               boxShadow: shadowTokens.xl,
               borderColor: colorTokens.financeBlue[100],
+              "& .blog-card-image": { transform: "scale(1.04)" },
             },
           }}
         >
-          {/* Cover */}
+          {/* ── Cover ────────────────────────────────────────────────── */}
           <Box
             sx={{
               position: "relative",
-              height: featured ? 280 : 220,
+              height: 220,
               overflow: "hidden",
               backgroundColor: colorTokens.financeBlue[50],
               flexShrink: 0,
             }}
           >
-            {post.coverImage ? (
-              <Image
-                src={post.coverImage}
+            {hasDirectImage ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <Box
+                component="img"
+                className="blog-card-image"
+                src={post.coverImage!}
                 alt={post.title}
-                fill
-                style={{
+                sx={{
+                  width: "100%",
+                  height: "100%",
                   objectFit: "cover",
                   transition: "transform 0.4s ease",
+                }}
+                onError={(e) => {
+                  // If image fails to load, hide it — emoji fallback shows
+                  (e.target as HTMLElement).style.display = "none";
                 }}
               />
             ) : (
@@ -72,11 +107,11 @@ export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "3rem",
-                  background: `linear-gradient(135deg, ${colorTokens.financeBlue[100]}, ${colorTokens.financeBlue[50]})`,
+                  fontSize: "3.5rem",
+                  background: `linear-gradient(135deg, ${colorTokens.financeBlue[100]} 0%, ${colorTokens.financeBlue[50]} 100%)`,
                 }}
               >
-                📝
+                {emoji}
               </Box>
             )}
 
@@ -87,7 +122,7 @@ export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
                   px: 1.5,
                   py: 0.625,
                   borderRadius: "8px",
-                  background: "rgba(10,20,48,0.75)",
+                  background: "rgba(10,20,48,0.72)",
                   backdropFilter: "blur(8px)",
                   border: "1px solid rgba(255,255,255,0.12)",
                 }}
@@ -127,17 +162,10 @@ export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
             )}
           </Box>
 
-          {/* Content */}
+          {/* ── Content ──────────────────────────────────────────────── */}
           <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-            {/* Meta */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-                mb: 1.5,
-              }}
-            >
+            {/* Meta row */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
               <Typography
                 variant="caption"
                 sx={{ color: colorTokens.slate[400], fontWeight: 500 }}
@@ -153,14 +181,12 @@ export function BlogCard({ post, index = 0, featured = false }: BlogCardProps) {
                 }}
               />
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <TimeIcon
-                  sx={{ fontSize: "0.75rem", color: colorTokens.slate[400] }}
-                />
+                <TimeIcon sx={{ fontSize: "0.75rem", color: colorTokens.slate[400] }} />
                 <Typography
                   variant="caption"
                   sx={{ color: colorTokens.slate[400], fontWeight: 500 }}
                 >
-                  {formatReadingTime(post.readingTime)}
+                  {post.readingTime} min read
                 </Typography>
               </Box>
             </Box>
