@@ -1,6 +1,5 @@
-import { createTheme, alpha } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
 import { colorTokens, shadowTokens, borderRadiusTokens } from "./tokens";
-import { typography } from "./typography";
 import { components } from "./components";
 
 export const theme = createTheme({
@@ -64,8 +63,106 @@ export const theme = createTheme({
     },
     divider: colorTokens.slate[100],
   },
-  typography,
+
+  typography: {
+    fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+    h1: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 800,
+      fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+      lineHeight: 1.1,
+      letterSpacing: "-0.03em",
+    },
+    h2: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 700,
+      fontSize: "clamp(2rem, 4vw, 3rem)",
+      lineHeight: 1.15,
+      letterSpacing: "-0.025em",
+    },
+    h3: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 700,
+      fontSize: "clamp(1.5rem, 3vw, 2rem)",
+      lineHeight: 1.2,
+      letterSpacing: "-0.02em",
+    },
+    h4: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 600,
+      fontSize: "clamp(1.25rem, 2.5vw, 1.5rem)",
+      lineHeight: 1.3,
+      letterSpacing: "-0.015em",
+    },
+    h5: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 600,
+      fontSize: "1.25rem",
+      lineHeight: 1.4,
+      letterSpacing: "-0.01em",
+    },
+    h6: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 600,
+      fontSize: "1.125rem",
+      lineHeight: 1.4,
+      letterSpacing: "-0.01em",
+    },
+    subtitle1: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 500,
+      fontSize: "1.125rem",
+      lineHeight: 1.6,
+      letterSpacing: "-0.005em",
+    },
+    subtitle2: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 500,
+      fontSize: "0.9375rem",
+      lineHeight: 1.6,
+      letterSpacing: "0em",
+    },
+    body1: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 400,
+      fontSize: "1rem",
+      lineHeight: 1.7,
+      letterSpacing: "0em",
+    },
+    body2: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 400,
+      fontSize: "0.875rem",
+      lineHeight: 1.6,
+      letterSpacing: "0.01em",
+    },
+    button: {
+      fontFamily: 'var(--font-display), "DM Sans", system-ui, sans-serif',
+      fontWeight: 600,
+      fontSize: "0.9375rem",
+      lineHeight: 1,
+      letterSpacing: "-0.01em",
+      textTransform: "none",
+    },
+    caption: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 400,
+      fontSize: "0.75rem",
+      lineHeight: 1.5,
+      letterSpacing: "0.02em",
+    },
+    overline: {
+      fontFamily: 'var(--font-body), "IBM Plex Sans", system-ui, sans-serif',
+      fontWeight: 600,
+      fontSize: "0.6875rem",
+      lineHeight: 1.5,
+      letterSpacing: "0.1em",
+      textTransform: "uppercase",
+    },
+  },
+
   components,
+
   shape: {
     borderRadius: 12,
   },
@@ -98,13 +195,7 @@ export const theme = createTheme({
   ],
   spacing: 8,
   breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 900,
-      lg: 1200,
-      xl: 1536,
-    },
+    values: { xs: 0, sm: 600, md: 900, lg: 1200, xl: 1536 },
   },
   zIndex: {
     mobileStepper: 1000,
@@ -118,7 +209,6 @@ export const theme = createTheme({
   },
 });
 
-// Augment the palette to include custom props
 declare module "@mui/material/styles" {
   interface PaletteColor {
     lightest?: string;
