@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "api.merrakisolutions.com" },
       { protocol: "https", hostname: "cdn.merrakisolutions.com" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
@@ -43,7 +44,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com https://assets.calendly.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://api.merrakisolutions.com https://cdn.merrakisolutions.com",
+              "img-src 'self' data: blob: https://api.merrakisolutions.com https://cdn.merrakisolutions.com https://res.cloudinary.com",
               "connect-src 'self' https://api.merrakisolutions.com https://checkout.razorpay.com",
               "frame-src https://calendly.com https://api.razorpay.com",
             ].join("; "),
