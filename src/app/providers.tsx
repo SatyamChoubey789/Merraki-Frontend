@@ -4,9 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v14-appRouter";
 import { useState } from "react";
 import { theme } from "@/theme";
+import { PageTransition } from "@/components/ui/PageTransition/PageTransition";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -16,21 +17,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 1000 * 60 * 5,
             gcTime: 1000 * 60 * 10,
-            retry: (failureCount, error) => {
-              const apiError = error as { statusCode?: number };
-              if (
-                apiError?.statusCode &&
-                apiError.statusCode >= 400 &&
-                apiError.statusCode < 500
-              ) {
-                return false;
-              }
+            retry: (failureCount, error: any) => {
+              if (error?.status >= 400 && error?.status < 500) return false;
               return failureCount < 2;
             },
             refetchOnWindowFocus: false,
-          },
-          mutations: {
-            retry: false,
           },
         },
       }),
@@ -41,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          {children}
+          <PageTransition>{children}</PageTransition>
         </ThemeProvider>
         {process.env.NODE_ENV === "development" && (
           <ReactQueryDevtools initialIsOpen={false} />

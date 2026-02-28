@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, Variants} from 'framer-motion';
 import { Box } from '@mui/material';
 import { useFounderTestEngine } from '@/lib/hooks/useFounderTestEngine';
 import { TestIntroScreen } from './TestIntroScreen';
@@ -8,7 +8,7 @@ import { TestQuestionScreen } from './TestQuestionScreen';
 import { TestContactScreen } from './TestContactScreen';
 import { TestSubmittingScreen } from './TestSubmittingScreen';
 
-const pageVariants = {
+const pageVariants: Variants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 60 : -60,
     opacity: 0,
