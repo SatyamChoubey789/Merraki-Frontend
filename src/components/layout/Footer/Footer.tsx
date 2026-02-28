@@ -8,7 +8,6 @@ import {
   IconButton,
   TextField,
   Button,
-  Divider,
   InputAdornment,
 } from "@mui/material";
 import {
@@ -18,46 +17,88 @@ import {
   ArrowForward as ArrowIcon,
   Email as EmailIcon,
 } from "@mui/icons-material";
-import { motion } from "framer-motion";
+import { motion , Variants} from "framer-motion";
 import Link from "next/link";
-import { colorTokens } from "@/theme";
 import { useInView } from "@/lib/hooks/useInView";
 import { MerrakiLogo } from "@/components/ui/MerrakiLogo/MerrakiLogo";
 import { useNewsletterSubscribe } from "@/lib/hooks/useNewsletter";
 import { useState } from "react";
 
+/* ── design tokens ─────────────────────────────────────────────────── */
+const T = {
+  bg:         "#FFFFFF",
+  bgOff:      "#F7F8FA",
+  border:     "#E8EAED",
+  borderMid:  "#D1D5DB",
+  ink:        "#0F1117",
+  inkMid:     "#374151",
+  inkMuted:   "#6B7280",
+  inkFaint:   "#9CA3AF",
+  accent:     "#0057FF",
+  accentHov:  "#0041CC",
+  success:    "#059669",
+};
+
+const FONT_DISPLAY = `"Instrument Serif", "Playfair Display", Georgia, serif`;
+const FONT_MONO    = `"DM Mono", "JetBrains Mono", monospace`;
+const FONT_BODY    = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
+
+/* ── footer nav ────────────────────────────────────────────────────── */
 const FOOTER_LINKS = {
   Services: [
-    { label: "Financial Modelling", href: "/book-consultation" },
-    { label: "Excel Dashboards", href: "/book-consultation" },
-    { label: "Bookkeeping", href: "/book-consultation" },
-    { label: "Data Analysis", href: "/book-consultation" },
-    { label: "Founder Consulting", href: "/book-consultation" },
+    { label: "Financial Modelling",  href: "/book-consultation" },
+    { label: "Excel Dashboards",     href: "/book-consultation" },
+    { label: "Bookkeeping",          href: "/book-consultation" },
+    { label: "Data Analysis",        href: "/book-consultation" },
+    { label: "Founder Consulting",   href: "/book-consultation" },
   ],
   Resources: [
-    { label: "Templates", href: "/templates" },
-    { label: "Calculators", href: "/calculators" },
-    { label: "Founder Test", href: "/founder-test" },
-    { label: "Blog", href: "/blog" },
+    { label: "Templates",      href: "/templates"      },
+    { label: "Calculators",    href: "/calculators"    },
+    { label: "Founder Test",   href: "/founder-test"   },
+    { label: "Blog",           href: "/blog"           },
     { label: "Order Tracking", href: "/order-tracking" },
   ],
   Company: [
-    { label: "About Us", href: "/about" },
+    { label: "About Us",          href: "/about"             },
     { label: "Book Consultation", href: "/book-consultation" },
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
-    { label: "Refund Policy", href: "/refunds" },
+    { label: "Privacy Policy",    href: "/privacy"           },
+    { label: "Terms of Service",  href: "/terms"             },
+    { label: "Refund Policy",     href: "/refunds"           },
   ],
 };
 
 const SOCIALS = [
-  { icon: LinkedInIcon, href: "https://linkedin.com/company/merrakisolutions", label: "LinkedIn" },
-  { icon: TwitterIcon, href: "https://twitter.com/merrakisolutions", label: "Twitter" },
-  { icon: InstagramIcon, href: "https://instagram.com/merrakisolutions", label: "Instagram" },
+  { icon: LinkedInIcon,  href: "https://linkedin.com/company/merrakisolutions",  label: "LinkedIn"  },
+  { icon: TwitterIcon,   href: "https://twitter.com/merrakisolutions",           label: "Twitter"   },
+  { icon: InstagramIcon, href: "https://instagram.com/merrakisolutions",         label: "Instagram" },
 ];
 
+/* ── link component ─────────────────────────────────────────────────── */
+const FooterLink = ({ label, href }: { label: string; href: string }) => (
+  <Link href={href} style={{ textDecoration: "none" }}>
+    <Typography
+      sx={{
+        fontFamily: FONT_BODY,
+        fontSize: "0.875rem",
+        color: T.inkMuted,
+        fontWeight: 400,
+        lineHeight: 1,
+        display: "inline-block",
+        transition: "color 0.18s ease",
+        "&:hover": { color: T.ink },
+      }}
+    >
+      {label}
+    </Typography>
+  </Link>
+);
+
+/* ══════════════════════════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════════════════════════ */
 export function Footer() {
-  const { ref, inView } = useInView({ threshold: 0.1 });
+  const { ref, inView } = useInView({ threshold: 0.05 });
   const newsletterMutation = useNewsletterSubscribe();
   const [email, setEmail] = useState("");
 
@@ -70,168 +111,180 @@ export function Footer() {
     <Box
       component="footer"
       sx={{
-        background: `linear-gradient(180deg, ${colorTokens.darkNavy[900]} 0%, #050A14 100%)`,
-        position: "relative",
-        overflow: "hidden",
+        background: T.bg,
+        borderTop: `1px solid ${T.border}`,
+        fontFamily: FONT_BODY,
       }}
     >
-      {/* Background mesh */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background: `
-            radial-gradient(ellipse at 10% 20%, rgba(26,86,219,0.08) 0%, transparent 50%),
-            radial-gradient(ellipse at 90% 80%, rgba(139,92,246,0.06) 0%, transparent 50%)
-          `,
-          pointerEvents: "none",
-        }}
-      />
+      <Container maxWidth="xl">
 
-      {/* Grid overlay */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-          pointerEvents: "none",
-        }}
-      />
-
-      <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
-
-        {/* ── Newsletter Banner ───────────────────────────────────────────── */}
+        {/* ── Newsletter strip ───────────────────────────────────────── */}
         <Box
           sx={{
             py: { xs: 5, md: 6 },
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            borderBottom: `1px solid ${T.border}`,
+            display: "flex",
+            alignItems: { md: "center" },
+            justifyContent: "space-between",
+            flexDirection: { xs: "column", md: "row" },
+            gap: { xs: 3, md: 0 },
           }}
         >
-          <Grid container spacing={4} alignItems="center">
-            <Grid size={{ xs: 12, md: 6 }}>
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+          {/* left */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45 }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 0.75 }}>
+              <Box
+                sx={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: T.accent,
+                  flexShrink: 0,
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: FONT_MONO,
+                  fontSize: "0.6rem",
+                  letterSpacing: "0.15em",
+                  color: T.accent,
+                  textTransform: "uppercase",
+                }}
               >
-                <Typography
-                  variant="h4"
+                Newsletter
+              </Typography>
+            </Box>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 400,
+                fontStyle: "italic",
+                fontSize: { xs: "1.5rem", md: "1.75rem" },
+                color: T.ink,
+                letterSpacing: "-0.02em",
+                lineHeight: 1.15,
+                mb: 0.5,
+              }}
+            >
+              Finance insights, straight to your inbox
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                fontSize: "0.875rem",
+                color: T.inkMuted,
+                lineHeight: 1.65,
+              }}
+            >
+              Practical guides, model breakdowns, and founder strategies — no fluff, no spam.
+            </Typography>
+          </motion.div>
+
+          {/* right – input */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                width: { xs: "100%", md: 420 },
+                border: `1px solid ${T.borderMid}`,
+                borderRadius: "10px",
+                p: "5px 5px 5px 12px",
+                background: T.bg,
+                boxShadow: "0 1px 4px rgba(15,17,23,0.06)",
+                transition: "box-shadow 0.2s ease, border-color 0.2s ease",
+                "&:focus-within": {
+                  borderColor: T.accent,
+                  boxShadow: `0 0 0 3px rgba(0,87,255,0.1)`,
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", flex: 1, gap: 1 }}>
+                <EmailIcon sx={{ color: T.inkFaint, fontSize: "0.9rem", flexShrink: 0 }} />
+                <TextField
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
+                  placeholder="your@email.com"
+                  size="small"
+                  fullWidth
+                  disabled={newsletterMutation.isPending || newsletterMutation.isSuccess}
+                  variant="standard"
+                  InputProps={{ disableUnderline: true }}
                   sx={{
-                    color: "#fff",
-                    fontWeight: 800,
-                    letterSpacing: "-0.02em",
-                    mb: 1,
+                    "& input": {
+                      fontFamily: FONT_BODY,
+                      fontSize: "0.875rem",
+                      color: T.ink,
+                      "&::placeholder": { color: T.inkFaint, opacity: 1 },
+                    },
                   }}
-                >
-                  Finance insights, straight to your inbox
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "rgba(255,255,255,0.45)", lineHeight: 1.7 }}
-                >
-                  Practical guides, model breakdowns, and founder strategies — no fluff, no spam.
-                </Typography>
-              </motion.div>
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                />
+              </Box>
+              <Button
+                onClick={handleSubscribe}
+                variant="contained"
+                disabled={newsletterMutation.isPending || newsletterMutation.isSuccess}
+                endIcon={newsletterMutation.isSuccess ? undefined : <ArrowIcon sx={{ fontSize: "0.9rem !important" }} />}
+                disableElevation
+                sx={{
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: "7px",
+                  fontFamily: FONT_BODY,
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  whiteSpace: "nowrap",
+                  textTransform: "none",
+                  background: newsletterMutation.isSuccess ? T.success : T.accent,
+                  minWidth: 110,
+                  letterSpacing: "-0.01em",
+                  "&:hover": { background: newsletterMutation.isSuccess ? T.success : T.accentHov },
+                }}
               >
-                <Box sx={{ display: "flex", gap: 1.5 }}>
-                  <TextField
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
-                    placeholder="your@email.com"
-                    size="small"
-                    fullWidth
-                    disabled={newsletterMutation.isPending || newsletterMutation.isSuccess}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <EmailIcon sx={{ color: "rgba(255,255,255,0.3)", fontSize: "1rem" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        backgroundColor: "rgba(255,255,255,0.07)",
-                        borderRadius: "12px",
-                        color: "#fff",
-                        "& fieldset": { borderColor: "rgba(255,255,255,0.12)" },
-                        "&:hover fieldset": { borderColor: "rgba(255,255,255,0.25)" },
-                        "&.Mui-focused fieldset": { borderColor: colorTokens.financeBlue[400] },
-                        "& input::placeholder": { color: "rgba(255,255,255,0.3)", opacity: 1 },
-                      },
-                    }}
-                  />
-                  <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                    <Button
-                      onClick={handleSubscribe}
-                      variant="contained"
-                      disabled={newsletterMutation.isPending || newsletterMutation.isSuccess}
-                      endIcon={newsletterMutation.isSuccess ? "✓" : <ArrowIcon />}
-                      sx={{
-                        px: 3,
-                        borderRadius: "12px",
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                        background: newsletterMutation.isSuccess
-                          ? colorTokens.success.main
-                          : `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-                        boxShadow: "0 4px 14px rgba(26,86,219,0.35)",
-                        minWidth: 120,
-                      }}
-                    >
-                      {newsletterMutation.isSuccess ? "Subscribed!" : "Subscribe"}
-                    </Button>
-                  </motion.div>
-                </Box>
-              </motion.div>
-            </Grid>
-          </Grid>
+                {newsletterMutation.isSuccess ? "✓ Done" : "Subscribe"}
+              </Button>
+            </Box>
+          </motion.div>
         </Box>
 
-        {/* ── Main Footer Grid ─────────────────────────────────────────────── */}
+        {/* ── Main grid ──────────────────────────────────────────────── */}
         <Box
           ref={ref as React.RefObject<HTMLDivElement>}
           sx={{ py: { xs: 6, md: 8 } }}
         >
-          <Grid container spacing={{ xs: 4, md: 6 }}>
+          <Grid container spacing={{ xs: 5, md: 4 }}>
 
-            {/* Brand Column */}
-            <Grid size={{ xs: 12, md: 4 }}>
+            {/* Brand column */}
+            <Grid size={{ xs: 12, md: 3.5 }}>
               <motion.div
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.5 }}
               >
-                {/* Logo with draw-on animation triggered by scroll */}
+                {/* Logo */}
                 <Box sx={{ mb: 3 }}>
                   {inView && (
-                    <MerrakiLogo
-                      variant="white"
-                      width={130}
-                      animate={true}   // ← draws on when footer scrolls into view
-                    />
+                    <MerrakiLogo variant="color" width={120} animate />
                   )}
                 </Box>
 
                 <Typography
-                  variant="body2"
                   sx={{
-                    color: "rgba(255,255,255,0.45)",
-                    lineHeight: 1.8,
-                    mb: 3,
-                    maxWidth: 320,
+                    fontFamily: FONT_BODY,
+                    fontSize: "0.875rem",
+                    color: T.inkMuted,
+                    lineHeight: 1.75,
+                    mb: 3.5,
+                    maxWidth: 280,
                   }}
                 >
                   We simplify finance so businesses amplify growth. Financial
@@ -240,39 +293,39 @@ export function Footer() {
                 </Typography>
 
                 {/* Socials */}
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  {SOCIALS.map((social, i) => (
+                <Box sx={{ display: "flex", gap: 0.75 }}>
+                  {SOCIALS.map((s, i) => (
                     <motion.div
-                      key={social.label}
-                      initial={{ opacity: 0, scale: 0.8 }}
+                      key={s.label}
+                      initial={{ opacity: 0, scale: 0.85 }}
                       animate={inView ? { opacity: 1, scale: 1 } : {}}
-                      transition={{ delay: 0.3 + i * 0.08, duration: 0.35 }}
-                      whileHover={{ scale: 1.12, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
+                      transition={{ delay: 0.25 + i * 0.07 }}
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.93 }}
                     >
                       <IconButton
                         component="a"
-                        href={social.href}
+                        href={s.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label={social.label}
+                        aria-label={s.label}
                         size="small"
                         sx={{
-                          color: "rgba(255,255,255,0.5)",
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          borderRadius: "10px",
-                          width: 38,
-                          height: 38,
-                          transition: "all 0.25s ease",
+                          color: T.inkFaint,
+                          background: T.bgOff,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: "8px",
+                          width: 34,
+                          height: 34,
+                          transition: "all 0.2s ease",
                           "&:hover": {
-                            color: "#fff",
-                            backgroundColor: "rgba(26,86,219,0.4)",
-                            borderColor: "rgba(26,86,219,0.5)",
+                            color: T.accent,
+                            background: "rgba(0,87,255,0.06)",
+                            borderColor: "rgba(0,87,255,0.2)",
                           },
                         }}
                       >
-                        <social.icon sx={{ fontSize: "1rem" }} />
+                        <s.icon sx={{ fontSize: "0.9rem" }} />
                       </IconButton>
                     </motion.div>
                   ))}
@@ -280,55 +333,42 @@ export function Footer() {
               </motion.div>
             </Grid>
 
-            {/* Link Columns */}
+            {/* Spacer */}
+            <Grid size={{ xs: 0, md: 0.5 }} sx={{ display: { xs: "none", md: "block" } }} />
+
+            {/* Link columns */}
             {Object.entries(FOOTER_LINKS).map(([heading, links], colIdx) => (
               <Grid size={{ xs: 6, sm: 4, md: 8 / 3 }} key={heading}>
                 <motion.div
-                  initial={{ opacity: 0, y: 24 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: 0.12 + colIdx * 0.08, duration: 0.5 }}
+                  transition={{ delay: 0.1 + colIdx * 0.07, duration: 0.45 }}
                 >
+                  {/* column heading */}
                   <Typography
-                    variant="overline"
                     sx={{
-                      color: "rgba(255,255,255,0.35)",
-                      letterSpacing: "0.12em",
-                      fontSize: "0.6875rem",
-                      fontWeight: 600,
+                      fontFamily: FONT_MONO,
+                      fontSize: "0.6rem",
+                      letterSpacing: "0.14em",
+                      color: T.inkFaint,
+                      textTransform: "uppercase",
                       mb: 2.5,
                       display: "block",
                     }}
                   >
                     {heading}
                   </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
-                    {links.map((link, linkIdx) => (
+
+                  {/* links */}
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+                    {links.map((link, li) => (
                       <motion.div
-                        key={link.href + link.label}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={inView ? { opacity: 1, x: 0 } : {}}
-                        transition={{
-                          delay: 0.2 + colIdx * 0.08 + linkIdx * 0.04,
-                          duration: 0.35,
-                        }}
+                        key={link.label}
+                        initial={{ opacity: 0 }}
+                        animate={inView ? { opacity: 1 } : {}}
+                        transition={{ delay: 0.18 + colIdx * 0.07 + li * 0.03 }}
                       >
-                        <Link href={link.href} style={{ textDecoration: "none" }}>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "rgba(255,255,255,0.45)",
-                              fontWeight: 400,
-                              transition: "color 0.2s ease, transform 0.2s ease",
-                              display: "inline-block",
-                              "&:hover": {
-                                color: "#fff",
-                                transform: "translateX(3px)",
-                              },
-                            }}
-                          >
-                            {link.label}
-                          </Typography>
-                        </Link>
+                        <FooterLink {...link} />
                       </motion.div>
                     ))}
                   </Box>
@@ -338,46 +378,54 @@ export function Footer() {
           </Grid>
         </Box>
 
-        {/* ── Bottom Bar ────────────────────────────────────────────────────── */}
-        <Divider sx={{ borderColor: "rgba(255,255,255,0.07)" }} />
+        {/* ── Bottom bar ──────────────────────────────────────────────── */}
         <Box
           sx={{
+            borderTop: `1px solid ${T.border}`,
             py: 3,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            flexDirection: { xs: "column", sm: "row" },
+            flexWrap: "wrap",
             gap: 2,
           }}
         >
+          {/* copyright */}
           <Typography
-            variant="caption"
-            sx={{ color: "rgba(255,255,255,0.25)", letterSpacing: "0.02em" }}
+            sx={{
+              fontFamily: FONT_MONO,
+              fontSize: "0.6rem",
+              letterSpacing: "0.1em",
+              color: T.inkFaint,
+            }}
           >
             © {new Date().getFullYear()} Merraki Solutions. All rights reserved.
           </Typography>
 
-          <Box sx={{ display: "flex", gap: 3 }}>
-            {["Privacy Policy", "Terms", "Refund Policy"].map((item) => (
-              <Link
-                key={item}
-                href={`/${item.toLowerCase().replace(/ /g, "-")}`}
-                style={{ textDecoration: "none" }}
-              >
+          {/* legal links */}
+          <Box sx={{ display: "flex", gap: 3, alignItems: "center" }}>
+            {[
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms",          href: "/terms"   },
+              { label: "Refund Policy",  href: "/refunds" },
+            ].map((item) => (
+              <Link key={item.label} href={item.href} style={{ textDecoration: "none" }}>
                 <Typography
-                  variant="caption"
                   sx={{
-                    color: "rgba(255,255,255,0.25)",
-                    transition: "color 0.2s ease",
-                    "&:hover": { color: "rgba(255,255,255,0.6)" },
+                    fontFamily: FONT_BODY,
+                    fontSize: "0.75rem",
+                    color: T.inkFaint,
+                    transition: "color 0.18s ease",
+                    "&:hover": { color: T.inkMid },
                   }}
                 >
-                  {item}
+                  {item.label}
                 </Typography>
               </Link>
             ))}
           </Box>
         </Box>
+
       </Container>
     </Box>
   );

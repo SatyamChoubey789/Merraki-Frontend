@@ -6,12 +6,10 @@ export interface NavLink {
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { label: "Home", href: "/" },
   {
     label: "Templates",
     href: "/templates",
     description: "Excel & financial templates",
-    badge: "New",
   },
   {
     label: "Calculators",
@@ -22,9 +20,7 @@ export const NAV_LINKS: NavLink[] = [
     label: "Founder Test",
     href: "/founder-test",
     description: "Discover your financial personality",
-    badge: "Free",
   },
   { label: "Blog", href: "/blog", description: "Finance insights & guides" },
   { label: "About", href: "/about" },
-  { label: "Contact", href: "/book-consultation" },
 ];
