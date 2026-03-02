@@ -2,18 +2,48 @@
 
 import { Box, Typography } from '@mui/material';
 import { ArrowBack as BackIcon, ArrowForward as ArrowIcon, LockOutlined as LockIcon, CheckCircleOutline as CheckIcon } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { founderTestContactSchema, type FounderTestContactValues } from '@/lib/schemas/founderTest.schema';
 
 const T = {
-  ink:'#0C0E12', inkMid:'#1C2333', inkMuted:'#3D4860', inkFaint:'#64748B', inkGhost:'#94A3B8',
-  white:'#FFFFFF', offwhite:'#F9F8F5', cream:'#F0EDE6', parchment:'#E8E4DA',
-  border:'#E2DED5', borderMd:'#C8C3B8',
-  gold:'#B8922A', goldMid:'#C9A84C', goldLight:'#DDB96A',
-  sage:'#5C7A5C', error:'#DC2626',
+  /* surfaces */
+  white:     "#FFFFFF",
+  offwhite:  "#F9F8F5",
+  cream:     "#F0EDE6",
+  parchment: "#E8E4DA",
+
+  /* text */
+  ink:       "#0C0E12",
+  inkMid:    "#2E3440",
+  inkMuted:  "#64748B",
+  inkFaint:  "#94A3B8",
+  inkGhost:  "#CBD5E1",
+
+  /* borders */
+  border:    "#E2DED5",
+  borderMd:  "#C8C3B8",
+
+  /* blue / cool shades */
+  blue:      "#3B82F6",
+  blueMid:   "#60A5FA",
+  blueLight: "#93C5FD",
+  blueGlow:  "rgba(59,130,246,0.07)",
+  blueBdr:   "rgba(59,130,246,0.18)",
+
+   /* states */
+  error:     "#DC2626",
+
+  /* cool accents for charts/footer */
+  accents: [
+    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // primary blue
+    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
+    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // gray
+    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
+  ],
 };
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
@@ -86,8 +116,8 @@ export function TestContactScreen({ onSubmit, onBack, isSubmitting }:Props) {
             {/* Eyebrow */}
             <motion.div initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.5, ease:EASE }}>
               <Box sx={{ display:'flex', alignItems:'center', gap:1.5, mb:3.5 }}>
-                <Box sx={{ width:24, height:'1px', background:`linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
-                <Typography sx={{ fontFamily:MONO, fontSize:'0.52rem', letterSpacing:'0.2em', color:T.goldMid||T.goldLight, textTransform:'uppercase' }}>
+                <Box sx={{ width:24, height:'1px', background:`linear-gradient(90deg,${T.blue},${T.blueLight})` }} />
+                <Typography sx={{ fontFamily:MONO, fontSize:'0.52rem', letterSpacing:'0.2em', color:T.blueMid||T.blueLight, textTransform:'uppercase' }}>
                   Almost There
                 </Typography>
               </Box>
@@ -101,7 +131,7 @@ export function TestContactScreen({ onSubmit, onBack, isSubmitting }:Props) {
               </Typography>
               <Typography sx={{ fontFamily:SERIF, fontStyle:'italic', fontWeight:400,
                 fontSize:{ xs:'1.875rem', md:'2.625rem' }, letterSpacing:'-0.025em', lineHeight:1.1, mb:3,
-                background:`linear-gradient(115deg,${T.goldLight},${T.gold})`,
+                background:`linear-gradient(115deg,${T.blueLight},${T.blue})`,
                 WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>
                 report awaits.
               </Typography>
@@ -113,7 +143,7 @@ export function TestContactScreen({ onSubmit, onBack, isSubmitting }:Props) {
                 <motion.div key={item.text} initial={{ opacity:0, x:-14 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.22+i*0.08, duration:0.4, ease:EASE }}>
                   <Box sx={{ display:'flex', alignItems:'center', gap:2 }}>
                     <Box sx={{ width:28, height:28, borderRadius:'8px', background:T.parchment, border:`1px solid ${T.border}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <Typography sx={{ fontFamily:MONO, fontSize:'0.6rem', color:T.gold }}>{item.icon}</Typography>
+                      <Typography sx={{ fontFamily:MONO, fontSize:'0.6rem', color:T.blue }}>{item.icon}</Typography>
                     </Box>
                     <Typography sx={{ fontFamily:SANS, fontSize:'0.9rem', color:T.inkMuted, lineHeight:1.5 }}>{item.text}</Typography>
                   </Box>
@@ -189,15 +219,15 @@ export function TestContactScreen({ onSubmit, onBack, isSubmitting }:Props) {
                     whileHover={isSubmitting?{}:{ scale:1.02 }} whileTap={isSubmitting?{}:{ scale:0.98 }}
                     style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:10,
                       padding:'14px 24px', borderRadius:'10px', border:'none',
-                      background:isSubmitting?T.parchment:`linear-gradient(115deg,${T.goldLight},${T.gold})`,
+                      background:isSubmitting?T.parchment:`linear-gradient(115deg,${T.blueLight},${T.blue})`,
                       cursor:isSubmitting?'not-allowed':'pointer', outline:'none',
-                      boxShadow:isSubmitting?'none':'0 5px 20px rgba(184,146,42,0.26)',
+                      boxShadow:isSubmitting?'none':'0 5px 20px rgba(59,130,246,0.26)',
                       transition:'box-shadow 0.18s',
                     }}>
                     {isSubmitting ? (
                       <>
                         <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}
-                          style={{ width:16, height:16, borderRadius:'50%', border:`2px solid ${T.border}`, borderTopColor:T.gold }} />
+                          style={{ width:16, height:16, borderRadius:'50%', border:`2px solid ${T.border}`, borderTopColor:T.blue }} />
                         <Typography sx={{ fontFamily:SANS, fontWeight:600, fontSize:'0.9375rem', color:T.inkFaint }}>
                           Generating…
                         </Typography>
