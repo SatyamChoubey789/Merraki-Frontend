@@ -1,7 +1,7 @@
 'use client';
 
-import { TextField, InputAdornment, Typography, Box } from '@mui/material';
-import { colorTokens } from '@/theme';
+import { Box, Typography } from '@mui/material';
+import { T, FONT_MONO, FONT_SANS } from './CalcLayout';
 
 interface CalcInputProps {
   label: string;
@@ -28,48 +28,95 @@ export function CalcInput({
   disabled,
 }: CalcInputProps) {
   return (
-    <Box sx={{ mb: 2.5 }}>
-      <Typography
-        variant="body2"
-        sx={{
-          fontWeight: 600,
-          color: colorTokens.darkNavy[800],
-          mb: 0.75,
-          fontFamily: 'var(--font-display)',
-        }}
-      >
+    <Box sx={{ mb: 2.75 }}>
+      <Typography sx={{
+        fontFamily: FONT_SANS, fontWeight: 500, fontSize: '0.8125rem',
+        color: T.inkMid, mb: 0.75, letterSpacing: '-0.01em',
+      }}>
         {label}
       </Typography>
-      <TextField
-        type="number"
-        value={value}
-        onChange={(e) => {
-          const v = parseFloat(e.target.value);
-          if (!isNaN(v)) onChange(v);
-        }}
-        size="small"
-        fullWidth
-        disabled={disabled}
-        inputProps={{ min, step }}
-        InputProps={{
-          startAdornment: prefix ? (
-            <InputAdornment position="start">
-              <Typography variant="body2" sx={{ color: colorTokens.slate[500], fontWeight: 600 }}>
-                {prefix}
-              </Typography>
-            </InputAdornment>
-          ) : undefined,
-          endAdornment: suffix ? (
-            <InputAdornment position="end">
-              <Typography variant="body2" sx={{ color: colorTokens.slate[500], fontWeight: 600 }}>
-                {suffix}
-              </Typography>
-            </InputAdornment>
-          ) : undefined,
-        }}
-      />
+
+      <Box sx={{
+        display: 'flex', alignItems: 'center',
+        background: disabled ? T.offwhite : T.white,
+        border: `1px solid ${T.border}`,
+        borderRadius: '9px',
+        overflow: 'hidden',
+        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+        '&:focus-within': {
+          borderColor: T.borderMd,
+          boxShadow: `0 0 0 3px rgba(12,14,18,0.05)`,
+        },
+      }}>
+        {/* Prefix */}
+        {prefix && (
+          <Box sx={{
+            px: 1.5, height: '100%',
+            borderRight: `1px solid ${T.border}`,
+            background: T.offwhite,
+            display: 'flex', alignItems: 'center',
+            flexShrink: 0,
+          }}>
+            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', color: T.inkMuted, fontWeight: 500 }}>
+              {prefix}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Input */}
+        <Box
+          component="input"
+          type="number"
+          value={value}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const v = parseFloat(e.target.value);
+            if (!isNaN(v)) onChange(v);
+          }}
+          disabled={disabled}
+          // @ts-ignore
+          min={min}
+          step={step}
+          sx={{
+            flex: 1,
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            px: 1.75, py: 1.25,
+            fontFamily: FONT_MONO,
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            color: T.ink,
+            letterSpacing: '-0.01em',
+            '&::-webkit-inner-spin-button, &::-webkit-outer-spin-button': {
+              opacity: 0.4,
+              height: 20,
+            },
+            '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+          }}
+        />
+
+        {/* Suffix */}
+        {suffix && (
+          <Box sx={{
+            px: 1.5,
+            borderLeft: `1px solid ${T.border}`,
+            background: T.offwhite,
+            display: 'flex', alignItems: 'center',
+            flexShrink: 0,
+            height: '100%',
+          }}>
+            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', color: T.inkMuted, fontWeight: 500 }}>
+              {suffix}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
       {helperText && (
-        <Typography variant="caption" sx={{ color: colorTokens.slate[400], mt: 0.5, display: 'block' }}>
+        <Typography sx={{
+          fontFamily: FONT_SANS, fontSize: '0.7rem', color: T.inkFaint,
+          mt: 0.5, letterSpacing: '0.01em', lineHeight: 1.4,
+        }}>
           {helperText}
         </Typography>
       )}

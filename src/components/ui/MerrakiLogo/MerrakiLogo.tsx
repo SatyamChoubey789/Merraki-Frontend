@@ -1,268 +1,86 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
-interface MerrakiLogoProps {
-  variant?: "white" | "color" | "dark";
-  width?: number;
+interface LogoProps {
+  size?: number;
+  variant?: "color" | "white" | "gold";
   animate?: boolean;
   className?: string;
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   Cursive / calligraphic M for Merraki Solutions.
-
-   The letterform (all within viewBox "0 0 360 300"):
-   ① Entry swash  — rises from lower-left into the first upstroke
-   ② First arch   — tall ascender, curves down to baseline
-   ③ Valley up    — lifts from baseline to second arch peak
-   ④ Second arch  — mirrors first, curves back to baseline
-   ⑤ Exit tail    — elegant rightward flourish that loops back
-
-   Key design choices:
-   - Thick-thin variation via strokeWidth changes per segment
-   - Entry and exit swashes give it true calligraphic character
-   - "SOLUTIONS" in DM Mono with wide tracking fades in last
-───────────────────────────────────────────────────────────────────── */
-
-const SEGMENTS = [
-  {
-    // ① Entry swash — gentle upward lead-in from bottom left
-    id: "entry",
-    d: `M 22 218
-        C 14 200, 12 176, 18 156
-        C 24 136, 40 120, 58 114
-        C 72 110, 86 114, 94 126
-        C 98 133, 100 141, 98 148`,
-    len: 195,
-    delay: 0,
-    sw: 5,
-  },
-  {
-    // ② First arch — the tall first hump of the M
-    id: "arch1",
-    d: `M 98 148
-        C 94 160, 88 174, 82 186
-        C 76 198, 68 210, 62 222
-        C 56 234, 53 244, 57 252`,
-    len: 155,
-    delay: 0.3,
-    sw: 6.5,
-  },
-  {
-    // ③ First arch base → up to second arch
-    id: "valley",
-    d: `M 57 252
-        C 67 258, 82 256, 96 246
-        C 112 234, 124 215, 130 196
-        C 136 176, 134 155, 128 138
-        C 122 122, 112 112, 102 110`,
-    len: 200,
-    delay: 0.56,
-    sw: 7,
-  },
-  {
-    // ④ Second arch rise  
-    id: "arch2up",
-    d: `M 102 110
-        C 116 108, 132 112, 146 122
-        C 160 133, 168 150, 170 167`,
-    len: 115,
-    delay: 0.82,
-    sw: 6.5,
-  },
-  {
-    // ⑤ Second arch fall to baseline
-    id: "arch2down",
-    d: `M 170 167
-        C 172 184, 168 202, 160 216
-        C 152 230, 141 240, 132 246
-        C 124 252, 116 254, 112 250`,
-    len: 140,
-    delay: 1.0,
-    sw: 7,
-  },
-  {
-    // ⑥ Exit tail — sweeps right, arcs up then curls back elegantly
-    id: "tail1",
-    d: `M 112 250
-        C 124 256, 142 256, 160 248
-        C 180 240, 200 224, 218 208
-        C 238 190, 258 172, 280 162
-        C 298 154, 316 152, 330 160
-        C 340 166, 346 178, 342 192`,
-    len: 340,
-    delay: 1.18,
-    sw: 6,
-  },
-  {
-    // ⑦ Tail curl — graceful return loop
-    id: "tail2",
-    d: `M 342 192
-        C 336 206, 322 213, 308 209
-        C 294 205, 282 193, 276 179`,
-    len: 115,
-    delay: 1.5,
-    sw: 5,
-  },
-];
-
-const DUR = 0.58;
 const EASE: [number, number, number, number] = [0.22, 0.61, 0.36, 1];
 
-function strokeFor(variant: MerrakiLogoProps["variant"]) {
+function getFill(variant: LogoProps["variant"]) {
   if (variant === "white") return "#ffffff";
-  if (variant === "dark")  return "#0F1117";
-  return "url(#mGrad)";
-}
-
-function dotFill(variant: MerrakiLogoProps["variant"]) {
-  if (variant === "white") return "#ffffff";
-  if (variant === "dark")  return "#0F1117";
+  if (variant === "gold") return "#F5C23";
   return "#1A56DB";
 }
 
-function wordmarkFill(variant: MerrakiLogoProps["variant"]) {
-  if (variant === "white") return "rgba(255,255,255,0.5)";
-  if (variant === "dark")  return "rgba(15,17,23,0.38)";
-  return "rgba(26,86,219,0.55)";
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   MERRAKI LOGO
-══════════════════════════════════════════════════════════════════════ */
 export function MerrakiLogo({
+  size = 140,
   variant = "color",
-  width = 140,
-  animate: shouldAnimate = true,
+  animate = true,
   className,
-}: MerrakiLogoProps) {
-  const height = Math.round(width * 0.83);
-  const stroke = strokeFor(variant);
+}: LogoProps) {
+  const fill = getFill(variant);
+  const reduceMotion = useReducedMotion();
+  const shouldAnimate = animate && !reduceMotion;
+
+  const LogoPaths = (
+    <>
+      <path
+        d="M186 106.5c-22.1 3.6-46.7 14-63.9 27-14.6 11.1-29.6 27.5-37.4 41.3-1.6 2.9-4.5 6.5-6.5 8-36.8 28.2-60.7 56.5-68.1 80.6-2.3 7.4-2.8 20.4-1.1 26.6 1.1 3.9 6.8 10.3 11.3 12.7 10.1 5.2 27.3 7.9 45 7 12.3-.5 14.8-1.8 14.9-7.6.2-5.9-1.6-6.6-17.5-6.7-27.9-.3-40.7-5.5-40.7-16.6 0-23.5 30.1-60.5 72-88.5 28.5-19 52.4-26.8 56.6-18.5 2.3 4.7.3 11.2-21.7 70.7-24.4 66.2-36 103.3-36.3 116.7-.1 5.7.2 7 2.3 9.2 1.9 2 3.4 2.6 6.5 2.6 5.7 0 10-3.8 18-15.8 6-9.1 16.6-26.9 16.6-28 0-.2 1.5-3 3.4-6.1 1.8-3.1 8.8-16.4 15.6-29.6 15.3-29.9 28.5-54.8 36.3-68.5 9.6-17 20.7-34.7 22.4-36.2 1.5-1.2 1.5-1.1.1 1.2-1.7 2.6-20.7 55.1-26.5 73-5.5 17-9.3 32.9-9.9 41.5-.6 7.2-.4 8.3 1.6 10.7 1.7 2.2 3 2.8 6.1 2.8 7.4 0 11.9-5.7 40-50 14.3-22.6 28.4-42.9 30-43 .4 0 .2 2.4-.3 5.2-1.6 8.3-.4 24.3 2.3 31.2 2.9 7.3 10.5 15.9 16.7 18.7 6.6 2.9 16.5 4.9 24.9 4.9 8.1 0 31-2.8 33.4-4.1.9-.4 1.8-.6 2.1-.4.3.3-1.1 5.3-3.1 11.2l-3.6 10.6-13 3.7c-15.5 4.4-41 13.7-51.4 18.6-4 2-10.3 5-14 6.7-3.6 1.7-6.9 3.3-7.2 3.4-.9.5-9.4-13.6-10.8-17.9-1-2.9-.9-4.3.2-7 2.2-4.9 7.6-9.6 14-11.8 7-2.5 7.7-2.5 7.7-.2 0 3.8 6.2 6.7 9.6 4.4 3.7-2.5 4.5-10.6 1.4-14-1.8-1.9-3.1-2.2-10.1-2.2s-9 .4-14.5 3c-11.2 5.4-18.4 15-18.4 24.6 0 5.6 3.7 14.1 9.3 21.3l3.5 4.5-5.7 3.6c-8.4 5.4-17.9 13.7-19.6 17-2.2 4.2-1.9 9.3.6 11.6 1.7 1.5 3.6 1.9 9.8 1.8 12.2-.2 21.1-5.1 25.2-13.9 2-4.2 2.5-13 1-15.5-1.3-1.9 1.8-3.7 19.4-11.5 13.2-5.9 43.7-17.4 52.2-19.7 2.1-.5 4.6-1.7 5.6-2.6 1.6-1.5 1.7-1.4 1 .4-3.1 7.2-14.1 21.9-23.4 31.3-23 23.1-51.7 35.8-87.2 38.7-5.8.4-8.4 1.1-9.8 2.5-2.6 2.6-2.4 6.5.6 9.5 2.4 2.4 2.8 2.5 12.3 2 23.6-1.3 38.2-5.2 58.7-15.4 15.7-7.8 35.6-24.2 47.2-38.7 5.6-7.2 15-22.3 18-29.4l2.6-6 7.1-1.5c21.4-4.6 45.6-8.9 57.1-10.2 6.8-.8 32.5-1.3 34.2-.7.7.3 1.3 1.6 1.3 2.8 0 5.3 7.1 7.5 11 3.3 2.7-2.9 2.6-7.9-.1-10.4-2-1.8-3.9-1.9-25.8-1.8-20.4 0-26.1.4-41.5 2.8-16.4 2.5-34.4 6.2-39 8.2-1.6.6-1.8.4-1.1-1.2.4-1 1.7-5.6 2.9-10.1 1.6-6.4 2.5-8.3 4.1-8.7 5.5-1.4 40.6-4.7 60.5-5.7 23.1-1.2 44.6-.7 55.6 1.2 6.2 1.1 6.3 1.1 5.7 3.9-.4 2.3.1 3.4 2.2 5.4 3.2 3 4.5 3.2 8.5 1.1s7-6.7 7-10.9c0-7.5-8-12.6-23-14.6-9.9-1.3-63.1-1.3-74.3 0-4.9.6-11.2 1.3-14 1.5-2.9.3-7.4.9-10.2 1.4-2.7.5-5.9.9-7 .9-1.1.1-4 .5-6.5 1l-4.5.8-.2-15c-.3-31.6-9.7-59.1-29-84.7-20.6-27.4-52.2-47.4-86.3-54.6-9.7-2-40.6-2.5-51-.8m51.5 3.9c28.2 6.8 51.3 19.5 70.3 38.4 10.7 10.6 18.4 20.5 23.4 29.7 13 24 18.2 44.7 18.2 72.3v13.4l4-.7c25.5-4 70-7 93.1-6.1 20.5.8 29 1.9 35.6 4.8 6.5 2.8 8.6 6.3 6.5 11.2-1.6 3.8-5.6 6.9-8.2 6.4-2.8-.5-4.1-3.5-2.6-5.8.6-1.1 1.2-2.4 1.2-2.9s-4.2-1.7-9.2-2.7c-7.5-1.5-14.1-1.8-34.3-1.8-13.7.1-31.1.6-38.5 1.2-13.3 1.2-48.2 5.2-48.8 5.7-.2.1-1.1 3.8-2.2 8.1-1 4.4-2.6 9.9-3.5 12.3-.8 2.4-1.4 4.6-1.2 4.8s6.4-1 13.7-2.7c28-6.4 48.1-9.2 69-9.7 23.3-.6 27.3.2 27.8 5.4.3 2.8-.1 3.3-2.3 3.9-1.5.4-3.1.1-4-.6-1.4-1.1-1.4-1.5 0-3 2.6-2.9.3-3.5-15.8-3.8-20.5-.5-48.8 3.3-80.9 11l-8.7 2.1-2.7 6.1c-9.1 20.3-31.5 47.4-46.6 56.4-1.6.9-2.8 2-2.8 2.4s-.4.8-1 .8c-.5 0-3.4 1.5-6.3 3.4-10.5 6.7-31.5 15-44.9 17.6-3.2.6-10.8 1.5-17 1.9-9.4.6-11.6.5-13-.7-1-.8-1.8-2.3-1.8-3.2 0-3.5 3.2-4.7 13.7-5.4 17.4-1 33.3-5.6 50.4-14.2 23.8-12.1 44.7-32.2 56.2-54.2l3.8-7.3-2.8.7c-4.9 1.1-34.6 11.1-43.9 14.8-12.1 4.7-31 13.2-36 16.1l-4.2 2.5 1.5 4.9c3.7 12.8-6.6 23.8-23.3 24.9-6.8.4-7.3.3-8.9-2.1-1.5-2.4-1.5-2.8.1-6.2 2-4.4 8.4-10.1 18.7-16.8 4.2-2.8 7.7-5.3 7.7-5.7s-2.3-3.9-5.1-7.9c-8.1-11.5-9.8-19.4-6-26.9 4.2-8.2 13-14.5 23.6-16.7 5.9-1.2 7.3-1.2 10.2 0 3 1.3 3.3 1.8 3.3 5.4 0 3.3-1.9 7.1-3.5 7.1-2.2 0-3.5-1.7-3.5-4.7v-3.5l-4.7.7c-9.4 1.3-17 6-21.4 13.2-3.9 6.2-2.5 12.2 5.8 24.9l4.7 7.1 14-6.7c21.7-10.4 35-15.3 69-25.7 5.7-1.8 5.9-2 8-7.3 2.6-6.5 7-21 6.5-21.4-.2-.2-5.1.5-10.9 1.7-7.3 1.4-15 2-25.5 2.1-13.4.1-15.7-.2-22-2.3-5.6-1.9-8.1-3.6-12.6-8-8.3-8.4-9.4-12.3-9.3-33.9 0-9.4-.3-17.2-.6-17.2-.4 0-1.3.6-1.9 1.4-.9 1.1-.9 1.5.1 2 .7.3.4.4-.6.3-3.5-.4-14 14.3-45.1 63C197.2 304 189 314 185.3 314c-1.1 0-2.8-.9-3.8-2-1.5-1.7-1.7-3.2-1.2-9.7.9-13.4 6.9-33.7 22.7-77.4 9-24.9 14-40.6 14-44 0-3.7-10.4 9.9-20.6 27.1-8.3 13.8-15 26.2-36.9 68.5-41.8 80.5-50.8 94.2-60.1 91.9-5.3-1.3-5.6-7.1-1.4-24.4 4.1-16.6 30.3-94.2 37.9-112 .6-1.4 2.6-7 4.6-12.5s4-10.9 4.5-12c1.2-2.5 5.7-15.4 7.6-21.7 1.6-5.1 2-12.2 1-15.4-2.3-7.2-17.7-5.9-36.6 3.2-37.1 17.7-77.2 54.1-91.4 82.9-7.1 14.5-8.5 26.8-3.4 32.2 5.6 6.2 20.2 9.6 39.5 9.2 9.7-.2 13.5.1 14.7 1 2.2 1.8 2 3.7-.5 6.2-2 2-2.8 2.1-18.8 1.7-27.1-.8-38.9-5-44.7-15.9-2.6-5-2.3-19.3.6-27.9 4.7-14.2 17.1-32.1 33.5-48.6 9.6-9.6 25-23 33.3-29 2.1-1.5 4.9-4.6 6.1-6.8 14.9-26.7 39.7-48.1 70.6-61.1 7.6-3.2 20.3-6.7 32.5-8.9 1.4-.2 11.3-.3 22-.2 14.2.2 21.4.7 26.5 2"
+        fill={fill}
+      />
+      <path
+        d="M192 117.6c-23.3 4-41.1 10.9-58.2 22.6-11.2 7.6-26.4 22-25.3 23.8.5.8.4 1.1-.2.7-1.1-.7-6.8 5.1-5.9 6 .2.3 1.7-.4 3.3-1.5 6.6-4.6 23.3-10.8 33.4-12.3 16.2-2.4 24.4 3.9 24.1 18.7-.2 8.3-2.6 15.8-21.5 66.4-20.5 54.9-36.7 104.6-36.7 112.4 0 1.7.5 1.4 2.3-1.6 1.2-2.1 4.9-8.2 8.1-13.5 3.3-5.4 7.1-11.8 8.6-14.3 2.9-4.8 8.8-15.9 21.7-41 23.2-45 28.5-54.9 37.1-70 16.1-28.1 26.2-41.4 33.9-44.6 4.6-2 7.9-.5 9.3 4.3 1.6 5.4-.9 15.4-11 43.9-17.7 49.7-25.1 73.4-24.9 79.6 0 1.5.3 1.8.6.8.4-.8 3.2-5.3 6.3-10s9.7-14.8 14.5-22.5c21.7-34.5 32.5-49.3 39.7-54.6 6.6-4.7 12.4-3.6 14.9 2.8.4 1.2.6 8.6.2 16.2-1 22.3 2.1 31.2 12.7 36.7 10.9 5.7 25.1 5.8 54.3.3l6.7-1.2.2-7.1c.8-25.9-3.8-49-13.8-68.8-17.4-34.5-48.6-59.4-87-69.4-8.3-2.1-12.7-2.6-27.4-2.9-9.6-.2-18.6-.2-20 .1m30.3 2.9c9.5.7 25.5 4.7 34.6 8.5 8.5 3.6 22.8 11.8 30.1 17.3 19 14.1 36.6 39.1 44.3 63.2 4.7 14.5 7.5 35.9 6.2 47.9l-.7 6.4-11.2 1.8c-7 1.2-16.1 1.9-24.6 1.9-12.5 0-13.9-.2-19.2-2.7-10.6-4.9-13.4-12.3-12.4-33.3.7-16.2-.1-20.2-4.6-24-6.1-5.2-14.5-1.7-24.4 10.2-5.6 6.8-23.8 33.8-32.9 48.8-2.6 4.4-5.4 8.7-6 9.5-.7.8-2.5 3.9-4 6.8s-3.2 5.5-3.9 5.9c-.8.5-.8.3 0-.8.6-.8 2.6-6.1 4.3-11.9 3.3-10.9 8.3-25.2 17.1-50 12.5-34.7 15.4-46.2 13.6-53.4-1.8-7-9.2-8.6-16.9-3.5-8.6 5.7-23.4 27.4-39.4 57.9-3.6 6.9-8 15.2-9.8 18.5s-6.9 13.2-11.5 22c-12.1 23.4-26.3 50.2-29.9 56.5-1.7 3-4.7 8.6-6.7 12.4-1.9 3.7-3.8 6.6-4 6.3-1.2-1.1 19.9-62 43.9-126.7 10.2-27.7 11.7-33 11.7-42.1 0-7.3-2.5-12.6-7.7-16.6-3.1-2.4-4.7-2.8-11.5-3.2-9.9-.4-20.2 1.8-29.3 6.4-3.8 1.9-7 3.5-7.1 3.5s3-3 6.9-6.8c4-3.7 7.4-7 7.7-7.3s4.1-3.1 8.5-6.2c15.2-10.5 29-16.8 45.4-20.6 9.6-2.3 25.9-4 32.1-3.5 1.9.2 7 .6 11.3.9"
+        fill={fill}
+      />
+    </>
+  );
 
   return (
     <svg
-      width={width}
-      height={height}
-      viewBox="0 0 360 300"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-label="Merraki Solutions"
+      width={size}
+      height={size}
+      viewBox="0 0 500 500"
       role="img"
-      style={{ display: "block", overflow: "visible" }}
+      aria-label="Merraki Logo"
+      className={className}
+      style={{ display: "block" }}
     >
-      <defs>
-        {/* Blue-indigo gradient */}
-        <linearGradient id="mGrad" x1="5%" y1="5%" x2="95%" y2="95%">
-          <stop offset="0%"   stopColor="#5B9BF8" />
-          <stop offset="45%"  stopColor="#1A56DB" />
-          <stop offset="100%" stopColor="#5B4CF5" />
-        </linearGradient>
-
-        {/* Glow filter */}
-        <filter id="mGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="6" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {/* ── Cursive M segments ──────────────────────────── */}
-      {SEGMENTS.map(({ id, d, len, delay, sw }) =>
-        shouldAnimate ? (
-          <motion.path
-            key={id}
-            d={d}
-            stroke={stroke}
-            strokeWidth={sw}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-            strokeDasharray={len}
-            initial={{ strokeDashoffset: len }}
-            animate={{ strokeDashoffset: 0 }}
-            transition={{
-              strokeDashoffset: { duration: DUR, delay, ease: EASE },
-            }}
-          />
-        ) : (
-          <path
-            key={id}
-            d={d}
-            stroke={stroke}
-            strokeWidth={sw}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        )
-      )}
-
-      {/* ── Accent dot at entry base ─────────────────────── */}
       {shouldAnimate ? (
-        <motion.circle
-          cx="22" cy="226" r="4.5"
-          fill={dotFill(variant)}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.25, delay: 0.08, ease: "backOut" }}
-        />
-      ) : (
-        <circle cx="22" cy="226" r="4.5" fill={dotFill(variant)} />
-      )}
-
-      {/* ── "SOLUTIONS" wordmark ─────────────────────────── */}
-      {shouldAnimate ? (
-        <motion.text
-          x="22"
-          y="291"
-          fontFamily='"DM Mono", "JetBrains Mono", ui-monospace, monospace'
-          fontSize="12.5"
-          fontWeight="400"
-          letterSpacing="6"
-          fill={wordmarkFill(variant)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: 1.82 }}
+        <motion.g
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: EASE }}
+          style={{ originX: 0.5, originY: 0.5 }}
         >
-          SOLUTIONS
-        </motion.text>
+          {LogoPaths}
+        </motion.g>
       ) : (
-        <text
-          x="22"
-          y="291"
-          fontFamily='"DM Mono", "JetBrains Mono", ui-monospace, monospace'
-          fontSize="12.5"
-          fontWeight="400"
-          letterSpacing="6"
-          fill={wordmarkFill(variant)}
-        >
-          SOLUTIONS
-        </text>
+        LogoPaths
       )}
     </svg>
   );
 }
 
-/* ─── Hover wrapper ─────────────────────────────────────────────────── */
-export function MerrakiLogoAnimated(props: MerrakiLogoProps) {
+export function MerrakiLogoAnimated(props: LogoProps) {
   return (
     <motion.div
       whileHover={{
-        scale: 1.06,
+        scale: 1.05,
         filter:
           props.variant === "white"
-            ? "drop-shadow(0 0 12px rgba(255,255,255,0.5))"
-            : props.variant === "dark"
-            ? "drop-shadow(0 0 8px rgba(15,17,23,0.25))"
-            : "drop-shadow(0 0 14px rgba(26,86,219,0.5))",
+            ? "drop-shadow(0 0 12px rgba(255,255,255,0.4))"
+            : props.variant === "gold"
+              ? "drop-shadow(0 0 10px rgba(15,17,23,0.25))"
+              : "drop-shadow(0 0 14px rgba(26,86,219,0.4))",
       }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 280, damping: 20 }}
-      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+      style={{ display: "inline-flex", cursor: "pointer" }}
     >
       <MerrakiLogo {...props} />
     </motion.div>

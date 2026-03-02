@@ -1,6 +1,7 @@
 'use client';
 
-import { AnimatePresence, motion, Variants} from 'framer-motion';
+import { useRef } from 'react';
+import { AnimatePresence, motion, Variants } from 'framer-motion';
 import { Box } from '@mui/material';
 import { useFounderTestEngine } from '@/lib/hooks/useFounderTestEngine';
 import { TestIntroScreen } from './TestIntroScreen';
@@ -8,70 +9,86 @@ import { TestQuestionScreen } from './TestQuestionScreen';
 import { TestContactScreen } from './TestContactScreen';
 import { TestSubmittingScreen } from './TestSubmittingScreen';
 
+/* ── Page transition — cinematic slide with depth ────────── */
+const EASE = [0.16, 1, 0.3, 1] as const;
+
 const pageVariants: Variants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 60 : -60,
+  enter: (dir: number) => ({
+    x: dir > 0 ? '6%' : '-6%',
     opacity: 0,
+    filter: 'blur(4px)',
+    scale: 0.985,
   }),
   center: {
-    x: 0,
+    x: '0%',
     opacity: 1,
-    transition: { duration: 0.4, ease: [0.32, 0.72, 0, 1] },
+    filter: 'blur(0px)',
+    scale: 1,
+    transition: { duration: 0.55, ease: EASE },
   },
-  exit: (direction: number) => ({
-    x: direction > 0 ? -60 : 60,
+  exit: (dir: number) => ({
+    x: dir > 0 ? '-5%' : '5%',
     opacity: 0,
-    transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+    filter: 'blur(3px)',
+    scale: 0.988,
+    transition: { duration: 0.38, ease: EASE },
   }),
 };
 
 export function FounderTestClient() {
   const engine = useFounderTestEngine();
+  const dirRef  = useRef(1);
+
+  /* Track direction for prev/next */
+  const prevIdx = useRef(0);
+  const curIdx  = engine.currentStep === 'questions' ? engine.currentQuestionIndex : -1;
+  if (curIdx !== -1 && curIdx !== prevIdx.current) {
+    dirRef.current  = curIdx > prevIdx.current ? 1 : -1;
+    prevIdx.current = curIdx;
+  }
+
+  const stepKey = engine.currentStep === 'questions'
+    ? `q-${engine.currentQuestionIndex}`
+    : engine.currentStep;
 
   const renderStep = () => {
     switch (engine.currentStep) {
       case 'intro':
-        return (
-          <motion.div key="intro" custom={1} variants={pageVariants} initial="enter" animate="center" exit="exit">
-            <TestIntroScreen
-              isLoading={engine.isLoading}
-              isError={engine.isError}
-              totalQuestions={engine.totalQuestions}
-              onStart={engine.handleStart}
-            />
-          </motion.div>
-        );
+        return <TestIntroScreen
+          isLoading={engine.isLoading}
+          isError={engine.isError}
+          totalQuestions={engine.totalQuestions}
+          onStart={engine.handleStart}
+        />;
       case 'questions':
-        return (
-          <motion.div key={`q-${engine.currentQuestionIndex}`} custom={1} variants={pageVariants} initial="enter" animate="center" exit="exit">
-            <TestQuestionScreen engine={engine} />
-          </motion.div>
-        );
+        return <TestQuestionScreen engine={engine} />;
       case 'contact':
-        return (
-          <motion.div key="contact" custom={1} variants={pageVariants} initial="enter" animate="center" exit="exit">
-            <TestContactScreen
-              onSubmit={engine.handleContactSubmit}
-              onBack={engine.handlePrev}
-              isSubmitting={engine.isSubmitting}
-            />
-          </motion.div>
-        );
+        return <TestContactScreen
+          onSubmit={engine.handleContactSubmit}
+          onBack={engine.handlePrev}
+          isSubmitting={engine.isSubmitting}
+        />;
       case 'submitting':
-        return (
-          <motion.div key="submitting" variants={pageVariants} initial="enter" animate="center" exit="exit">
-            <TestSubmittingScreen />
-          </motion.div>
-        );
+        return <TestSubmittingScreen />;
       default:
         return null;
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', pt: { xs: 4, md: 6 } }}>
-      <AnimatePresence mode="wait" custom={1}>
-        {renderStep()}
+    <Box sx={{ minHeight: '100vh', overflow: 'hidden' }}>
+      <AnimatePresence mode="wait" custom={dirRef.current}>
+        <motion.div
+          key={stepKey}
+          custom={dirRef.current}
+          variants={pageVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          style={{ willChange: 'transform, opacity, filter' }}
+        >
+          {renderStep()}
+        </motion.div>
       </AnimatePresence>
     </Box>
   );

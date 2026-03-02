@@ -13,12 +13,6 @@
   --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
-
-  /* Colours (CSS vars for non-MUI usage) */
-  --color-blue-500: #1a56db;
-  --color-navy-900: #0a0f1e;
-  --color-white: #ffffff;
-  --color-slate-50: #f8fafc;
 }
 
 /* ─── Reset & Base ────────────────────────────────────────────────────────── */

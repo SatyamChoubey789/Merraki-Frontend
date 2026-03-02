@@ -7,14 +7,25 @@ import {
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { colorTokens } from "@/theme";
+
+const T = {
+  white: "#FFFFFF",
+  offwhite: "#F9F8F5",
+  border: "#E2DED5",
+  ink: "#0C0E12",
+  inkMuted: "#64748B",
+  inkFaint: "#94A3B8",
+  gold: "#B8922A",
+  goldLight: "#DDB96A",
+  goldGlow: "rgba(184,146,42,0.06)",
+};
 
 export default function NotFound() {
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(160deg, ${colorTokens.darkNavy[900]} 0%, ${colorTokens.darkNavy[800]} 100%)`,
+        background: T.offwhite,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -22,14 +33,49 @@ export default function NotFound() {
         overflow: "hidden",
       }}
     >
+      {/* Subtle architectural grid */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          background: `radial-gradient(ellipse at center, rgba(26,86,219,0.12) 0%, transparent 65%)`,
-          pointerEvents: "none",
+          backgroundImage: `
+            linear-gradient(${T.border} 1px, transparent 1px),
+            linear-gradient(90deg, ${T.border} 1px, transparent 1px)
+          `,
+          backgroundSize: "72px 72px",
+          opacity: 0.28,
         }}
       />
+
+      {/* Gold atmosphere glow */}
+      <Box
+        sx={{
+          position: "absolute",
+          width: "60vw",
+          height: "40vw",
+          top: "-25vw",
+          left: "20vw",
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`,
+        }}
+      />
+
+      {/* Ghost 404 watermark */}
+      <Box
+        sx={{
+          position: "absolute",
+          right: { xs: -40, md: -80 },
+          bottom: -120,
+          fontFamily: '"Instrument Serif", serif',
+          fontStyle: "italic",
+          fontSize: { xs: "40vw", md: "28vw" },
+          color: "rgba(12,14,18,0.025)",
+          lineHeight: 1,
+          userSelect: "none",
+        }}
+      >
+        404
+      </Box>
 
       <Container
         maxWidth="sm"
@@ -40,59 +86,47 @@ export default function NotFound() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         >
-          {/* 404 */}
-          <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 180,
-              damping: 16,
-              delay: 0.1,
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: "clamp(6rem, 20vw, 10rem)",
-                lineHeight: 1,
-                background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, #A78BFA)`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                mb: 2,
-                letterSpacing: "-0.05em",
-              }}
-            >
-              404
-            </Typography>
-          </motion.div>
-
+          {/* Micro label */}
           <Typography
-            variant="h4"
             sx={{
-              color: "#fff",
-              fontWeight: 800,
-              mb: 1.5,
-              letterSpacing: "-0.02em",
+              fontFamily: '"DM Mono", monospace',
+              fontSize: "0.65rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: T.inkFaint,
+              mb: 4,
             }}
           >
-            Page Not Found
+            Page Not Available
+          </Typography>
+
+          {/* Editorial headline */}
+          <Typography
+            sx={{
+              fontFamily: '"Instrument Serif", serif',
+              fontStyle: "italic",
+              fontSize: { xs: "2.5rem", md: "3.5rem" },
+              lineHeight: 1,
+              letterSpacing: "-0.04em",
+              color: T.ink,
+              mb: 2,
+            }}
+          >
+            This page doesn’t exist.
           </Typography>
 
           <Typography
-            variant="body1"
             sx={{
-              color: "rgba(255,255,255,0.5)",
+              color: T.inkMuted,
+              lineHeight: 1.8,
               mb: 5,
-              lineHeight: 1.75,
-              maxWidth: 380,
+              maxWidth: 420,
               mx: "auto",
             }}
           >
-            The page you&apos;re looking for doesn&apos;t exist or may have been
-            moved. Let&apos;s get you back on track.
+            The content you’re looking for may have been moved,
+            archived, or never published.
+            Let’s return you to a more intentional place.
           </Typography>
 
           <Box
@@ -103,46 +137,43 @@ export default function NotFound() {
               flexWrap: "wrap",
             }}
           >
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
               <Button
                 component={Link}
                 href="/"
-                variant="contained"
-                size="large"
                 startIcon={<HomeIcon />}
                 sx={{
                   px: 4,
-                  py: 1.75,
-                  fontWeight: 700,
+                  py: 1.6,
                   borderRadius: "14px",
-                  background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, ${colorTokens.financeBlue[600]})`,
-                  boxShadow: "0 8px 28px rgba(26,86,219,0.4)",
-                  fontSize: "1rem",
+                  fontWeight: 600,
+                  background: `linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
+                  color: T.white,
+                  boxShadow: "0 8px 24px rgba(184,146,42,0.35)",
+                  transition: "all 0.25s ease",
+                  "&:hover": {
+                    boxShadow: "0 12px 30px rgba(184,146,42,0.45)",
+                  },
                 }}
               >
-                Back Home
+                Return Home
               </Button>
             </motion.div>
 
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
               <Button
                 component={Link}
                 href="/templates"
-                variant="outlined"
-                size="large"
                 endIcon={<ArrowIcon />}
                 sx={{
                   px: 4,
-                  py: 1.75,
-                  fontWeight: 600,
+                  py: 1.6,
                   borderRadius: "14px",
-                  color: "rgba(255,255,255,0.8)",
-                  borderColor: "rgba(255,255,255,0.2)",
-                  borderWidth: "1.5px",
-                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: T.ink,
+                  border: `1.5px solid ${T.border}`,
                   "&:hover": {
-                    borderColor: "rgba(255,255,255,0.4)",
-                    backgroundColor: "rgba(255,255,255,0.06)",
+                    backgroundColor: "rgba(184,146,42,0.04)",
                   },
                 }}
               >

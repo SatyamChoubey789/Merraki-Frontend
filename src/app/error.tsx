@@ -4,7 +4,18 @@ import { useEffect } from "react";
 import { Box, Container, Typography, Button } from "@mui/material";
 import { Refresh as RetryIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import { colorTokens } from "@/theme";
+
+const T = {
+  white: "#FFFFFF",
+  offwhite: "#F9F8F5",
+  border: "#E2DED5",
+  ink: "#0C0E12",
+  inkMuted: "#64748B",
+  inkFaint: "#94A3B8",
+  gold: "#B8922A",
+  goldLight: "#DDB96A",
+  goldGlow: "rgba(184,146,42,0.06)",
+};
 
 export default function GlobalError({
   error,
@@ -21,65 +32,125 @@ export default function GlobalError({
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(160deg, ${colorTokens.darkNavy[900]}, ${colorTokens.darkNavy[800]})`,
+        background: T.offwhite,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      <Container maxWidth="sm" sx={{ textAlign: "center" }}>
+      {/* Subtle architectural grid */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `
+            linear-gradient(${T.border} 1px, transparent 1px),
+            linear-gradient(90deg, ${T.border} 1px, transparent 1px)
+          `,
+          backgroundSize: "72px 72px",
+          opacity: 0.28,
+        }}
+      />
+
+      {/* Gold atmosphere */}
+      <Box
+        sx={{
+          position: "absolute",
+          width: "60vw",
+          height: "40vw",
+          top: "-20vw",
+          left: "20vw",
+          borderRadius: "50%",
+          background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`,
+        }}
+      />
+
+      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: "center" }}
         >
-          <Typography sx={{ fontSize: "4rem", mb: 2 }}>⚠️</Typography>
+          {/* Micro label */}
           <Typography
-            variant="h4"
             sx={{
-              color: "#fff",
-              fontWeight: 800,
-              mb: 1.5,
-              letterSpacing: "-0.02em",
+              fontFamily: '"DM Mono", monospace',
+              fontSize: "0.65rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: T.inkFaint,
+              mb: 4,
             }}
           >
-            Something Went Wrong
+            System Interruption
           </Typography>
+
+          {/* Headline */}
           <Typography
-            variant="body1"
-            sx={{ color: "rgba(255,255,255,0.5)", mb: 4, lineHeight: 1.75 }}
+            sx={{
+              fontFamily: '"Instrument Serif", serif',
+              fontStyle: "italic",
+              fontSize: { xs: "2.5rem", md: "3.5rem" },
+              lineHeight: 1,
+              letterSpacing: "-0.04em",
+              color: T.ink,
+              mb: 2,
+            }}
           >
-            An unexpected error occurred. Our team has been notified.
-            {error.digest && (
-              <Box
-                component="span"
-                sx={{
-                  display: "block",
-                  mt: 1,
-                  fontSize: "0.8125rem",
-                  opacity: 0.6,
-                }}
-              >
-                Error ID: {error.digest}
-              </Box>
-            )}
+            We encountered an issue.
           </Typography>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+
+          <Typography
+            sx={{
+              color: T.inkMuted,
+              lineHeight: 1.8,
+              mb: 4,
+            }}
+          >
+            Our systems have been notified and are already working on it.
+            Please try again.
+          </Typography>
+
+          {error.digest && (
+            <Typography
+              sx={{
+                fontFamily: '"DM Mono", monospace',
+                fontSize: "0.7rem",
+                letterSpacing: "0.12em",
+                color: T.inkFaint,
+                mb: 5,
+              }}
+            >
+              Reference ID · {error.digest}
+            </Typography>
+          )}
+
+          <motion.div
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <Button
               onClick={reset}
-              variant="contained"
-              size="large"
               startIcon={<RetryIcon />}
               sx={{
                 px: 4,
-                py: 1.75,
-                fontWeight: 700,
+                py: 1.6,
                 borderRadius: "14px",
-                background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, ${colorTokens.financeBlue[600]})`,
-                boxShadow: "0 8px 28px rgba(26,86,219,0.4)",
+                fontWeight: 600,
+                fontFamily: '"DM Sans", sans-serif',
+                background: `linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
+                color: T.white,
+                boxShadow: "0 8px 24px rgba(184,146,42,0.35)",
+                transition: "all 0.25s ease",
+                "&:hover": {
+                  boxShadow: "0 12px 30px rgba(184,146,42,0.45)",
+                },
               }}
             >
-              Try Again
+              Retry
             </Button>
           </motion.div>
         </motion.div>

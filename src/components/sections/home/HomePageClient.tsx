@@ -1,6 +1,6 @@
 "use client";
 
-import { HeroSection } from "./HeroSection";
+
 import { StatsSection } from "./StatsSection";
 import { ServicesSection } from "./ServicesSection";
 import { FeaturedTemplates } from "./FeaturedTemplates";
@@ -9,6 +9,7 @@ import { FeaturedBlog } from "./FeaturedBlog";
 import { FoundersSection } from "./FoundersSection";
 import { TestimonialsSection } from "./TestimonialsSection";
 import { FinalCTA } from "./FinalCTA";
+import {HeroSection} from "./HeroSection";
 
 export function HomePageClient() {
   return (
@@ -16,9 +17,7 @@ export function HomePageClient() {
       <HeroSection />
       <StatsSection />
       <ServicesSection />
-      <FeaturedTemplates />
       <FounderTestCTA />
-      <FeaturedBlog />
       <FoundersSection />
       <TestimonialsSection />
       <FinalCTA />

@@ -2,98 +2,80 @@
 
 import { useState } from "react";
 import {
-  AppBar,
   Box,
   Container,
-  IconButton,
   Typography,
-  Button,
+  IconButton,
   Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Divider,
   Badge,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
   ShoppingCart as CartIcon,
-  KeyboardArrowDown as ChevronIcon,
-  ArrowForward as ArrowIcon,
 } from "@mui/icons-material";
-import {
-  motion,
-  useMotionValueEvent,
-  useScroll,
-  AnimatePresence,
-} from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_LINKS } from "./navLinks";
 import { useCartStore } from "@/lib/stores/cartStore";
 import { CurrencySelector } from "../CurrencySelector/CurrencySelector";
-import { MerrakiLogo } from "@/components/ui/MerrakiLogo/MerrakiLogo";
+import { MerrakiLogoAnimated } from "@/components/ui/MerrakiLogo/MerrakiLogo";
 
-/* ── tokens ──────────────────────────────────────────────────────────── */
+/* ══ TOKENS — LIGHT THEME ════════════════════════════ */
 const T = {
-  bg:          "#FFFFFF",
-  bgDark:      "rgba(10,12,16,0.55)",
-  border:      "#E8EAED",
-  borderDark:  "rgba(255,255,255,0.09)",
-  ink:         "#0F1117",
-  inkMid:      "#374151",
-  inkMuted:    "#6B7280",
-  inkDark:     "rgba(255,255,255,0.82)",
-  inkMutedDark:"rgba(255,255,255,0.5)",
-  accent:      "#0057FF",
-  accentHov:   "#0041CC",
-  hover:       "rgba(15,17,23,0.04)",
-  hoverDark:   "rgba(255,255,255,0.06)",
+  bgScrolled: "rgba(255,250,242,0.96)",
+  borderScrolled: "rgba(184,146,42,0.18)",
+
+  ink: "#1A1712",
+  inkMid: "#2E2A23",
+  inkMuted: "#7A6F5A",
+  inkFaint: "#A89C84",
+
+  gold: "#B8922A",
+  goldMid: "#C9A84C",
+  goldLight: "#DDB96A",
+  goldGlow: "rgba(184,146,42,0.18)",
+  goldDim: "rgba(184,146,42,0.10)",
+
+  drawerBg: "#FFFFFF",
+  drawerBorder: "rgba(184,146,42,0.18)",
 };
 
-const FONT_BODY    = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
-const FONT_MONO    = `"DM Mono", "JetBrains Mono", monospace`;
+const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
+const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-const MotionAppBar = motion.create(AppBar);
-
-/* ══════════════════════════════════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════════════════════════════════ */
+/* ══ HEADER ══════════════════════════════════════════════ */
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const itemCount = useCartStore((s) => s.getItemCount());
-  const openCart  = useCartStore((s) => s.openDrawer);
-  const { scrollY } = useScroll();
+  const openCart = useCartStore((s) => s.openDrawer);
 
-  useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 40));
-
-  const isHomePage = pathname === "/";
-  const isDark     = isHomePage && !scrolled;
-
-  /* animated bar styles */
-  const barBg     = scrolled ? T.bg : isHomePage ? T.bgDark : T.bg;
-  const barBorder = scrolled
-    ? `1px solid ${T.border}`
-    : isHomePage ? `1px solid ${T.borderDark}` : `1px solid ${T.border}`;
-  const barShadow = scrolled ? "0 1px 0 rgba(15,17,23,0.06), 0 4px 16px rgba(15,17,23,0.04)" : "none";
+  const fgColor = T.inkMid;
+  const fgMuted = T.inkMuted;
+  const hoverBg = "rgba(184,146,42,0.08)";
+  const hoverColor = T.ink;
 
   return (
     <>
-      <MotionAppBar
-        position="fixed"
-        elevation={0}
+      <motion.header
         animate={{
-          backgroundColor: barBg,
-          backdropFilter: "blur(20px) saturate(200%)",
-          borderBottom: barBorder,
-          boxShadow: barShadow,
+          background: T.bgScrolled,
+          borderBottom: `1px solid ${T.borderScrolled}`,
+          boxShadow: "0 8px 30px rgba(120,90,40,0.06)",
         }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
-        sx={{ zIndex: 1100, fontFamily: FONT_BODY }}
+        transition={{ duration: 0.25 }}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+          backdropFilter: "blur(22px) saturate(160%)",
+          WebkitBackdropFilter: "blur(22px) saturate(160%)",
+        }}
       >
         <Container maxWidth="xl">
           <Box
@@ -101,27 +83,18 @@ export function Header() {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-              height: { xs: 60, md: 66 },
-              gap: 2,
+              height: { xs: 62, md: 68 },
             }}
           >
-
-            {/* ── Logo ──────────────────────────────────────────────── */}
+            {/* ── Logo ── */}
             <Link href="/" style={{ textDecoration: "none", flexShrink: 0 }}>
-              <motion.div
-                whileHover={{ opacity: 0.8 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.15 }}
-              >
-                <MerrakiLogo
-                  variant={isDark ? "white" : "color"}
-                  width={96}
-                  animate={false}
-                />
-              </motion.div>
+              <MerrakiLogoAnimated
+                variant="gold"
+                animate={false}
+              />
             </Link>
 
-            {/* ── Desktop Nav (centre) ───────────────────────────────── */}
+            {/* ── Desktop Nav ── */}
             <Box
               component="nav"
               sx={{
@@ -136,135 +109,93 @@ export function Header() {
                   key={link.href}
                   link={link}
                   isActive={pathname === link.href}
-                  isDark={isDark}
+                  fgMuted={fgMuted}
+                  hoverBg={hoverBg}
+                  hoverColor={hoverColor}
                 />
               ))}
             </Box>
 
-            {/* ── Right Actions ─────────────────────────────────────── */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
-
-              {/* Currency */}
+            {/* ── Right actions ── */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                flexShrink: 0,
+              }}
+            >
               <Box sx={{ display: { xs: "none", md: "block" } }}>
-                <CurrencySelector isDark={isDark} />
+                <CurrencySelector isDark={false} />
               </Box>
 
-              {/* Cart */}
-              <IconButton
-                onClick={openCart}
-                size="small"
-                sx={{
-                  color: isDark ? T.inkDark : T.inkMid,
-                  width: 36, height: 36,
-                  borderRadius: "8px",
-                  transition: "all 0.15s ease",
-                  "&:hover": {
-                    background: isDark ? T.hoverDark : T.hover,
-                    color: isDark ? "#fff" : T.ink,
-                  },
-                }}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Badge
-                  badgeContent={itemCount}
-                  max={9}
+                <IconButton
+                  onClick={openCart}
+                  size="small"
                   sx={{
-                    "& .MuiBadge-badge": {
-                      background: T.accent,
-                      color: "#fff",
-                      fontWeight: 700,
-                      fontSize: "0.55rem",
-                      minWidth: 15,
-                      height: 15,
-                      padding: "0 3px",
-                    },
+                    width: 38,
+                    height: 38,
+                    borderRadius: "10px",
+                    color: fgMuted,
+                    transition: "all 0.18s ease",
+                    "&:hover": { background: hoverBg, color: hoverColor },
                   }}
                 >
-                  <CartIcon sx={{ fontSize: "1.2rem" }} />
-                </Badge>
-              </IconButton>
-
-              {/* Book CTA — Capchase-style bordered pill */}
-              <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.5, ml: 0.5 }}>
-
-                {/* Ghost "Log in" link */}
-                <Button
-                  component={Link}
-                  href="/login"
-                  disableElevation
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    fontWeight: 500,
-                    fontSize: "0.875rem",
-                    color: isDark ? T.inkDark : T.inkMid,
-                    textTransform: "none",
-                    letterSpacing: "-0.01em",
-                    px: 1.75,
-                    py: 0.75,
-                    borderRadius: "8px",
-                    minWidth: "auto",
-                    transition: "all 0.15s ease",
-                    "&:hover": {
-                      background: isDark ? T.hoverDark : T.hover,
-                      color: isDark ? "#fff" : T.ink,
-                    },
-                  }}
-                >
-                  Log in
-                </Button>
-
-                {/* Bordered "Book a call" */}
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  <Button
-                    component={Link}
-                    href="/book-consultation"
-                    disableElevation
-                    endIcon={<ArrowIcon sx={{ fontSize: "0.85rem !important" }} />}
+                  <Badge
+                    badgeContent={itemCount}
+                    max={9}
                     sx={{
-                      fontFamily: FONT_BODY,
-                      fontWeight: 600,
-                      fontSize: "0.875rem",
-                      color: isDark ? "#fff" : T.ink,
-                      textTransform: "none",
-                      letterSpacing: "-0.01em",
-                      px: 2,
-                      py: 0.875,
-                      borderRadius: "8px",
-                      border: `1.5px solid ${isDark ? "rgba(255,255,255,0.25)" : T.ink}`,
-                      background: "transparent",
-                      transition: "all 0.15s ease",
-                      "&:hover": {
-                        background: isDark ? "rgba(255,255,255,0.08)" : T.ink,
-                        color: isDark ? "#fff" : "#fff",
-                        borderColor: isDark ? "rgba(255,255,255,0.4)" : T.ink,
+                      "& .MuiBadge-badge": {
+                        background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
+                        color: "#0C0B08",
+                        fontWeight: 700,
+                        fontSize: "0.52rem",
+                        minWidth: 15,
+                        height: 15,
+                        padding: "0 3px",
                       },
                     }}
                   >
-                    Book a call
-                  </Button>
-                </motion.div>
+                    <CartIcon sx={{ fontSize: "1.15rem" }} />
+                  </Badge>
+                </IconButton>
+              </motion.div>
+
+              <Box sx={{ display: { xs: "none", md: "block" }, ml: 0.5 }}>
+                <BookButton />
               </Box>
 
-              {/* Hamburger */}
-              <IconButton
-                onClick={() => setMobileOpen(true)}
-                size="small"
-                sx={{
-                  display: { xs: "flex", lg: "none" },
-                  color: isDark ? T.inkDark : T.inkMid,
-                  width: 36, height: 36,
-                  borderRadius: "8px",
-                  ml: 0.5,
-                  "&:hover": { background: isDark ? T.hoverDark : T.hover },
-                }}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <MenuIcon sx={{ fontSize: "1.2rem" }} />
-              </IconButton>
+                <IconButton
+                  onClick={() => setMobileOpen(true)}
+                  size="small"
+                  sx={{
+                    display: { xs: "flex", lg: "none" },
+                    width: 38,
+                    height: 38,
+                    borderRadius: "10px",
+                    color: fgMuted,
+                    ml: 0.25,
+                    transition: "all 0.18s ease",
+                    "&:hover": { background: hoverBg, color: hoverColor },
+                  }}
+                >
+                  <MenuIcon sx={{ fontSize: "1.2rem" }} />
+                </IconButton>
+              </motion.div>
             </Box>
           </Box>
         </Container>
-      </MotionAppBar>
+      </motion.header>
 
-      <MobileNavDrawer
+      <MobileDrawer
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         pathname={pathname}
@@ -275,91 +206,128 @@ export function Header() {
   );
 }
 
-/* ─── Nav Item ────────────────────────────────────────────────────────── */
+/* ══ BOOK BUTTON ══════════════════════════════════ */
+function BookButton() {
+  return (
+    <Link href="/book-consultation" style={{ textDecoration: "none" }}>
+      <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 1,
+            px: "18px",
+            py: "9px",
+            borderRadius: "10px",
+            background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
+            border: "1px solid transparent",
+            boxShadow: `0 4px 20px ${T.goldGlow}`,
+            transition: "all 0.22s ease",
+            cursor: "pointer",
+            "&:hover": {
+              background: `linear-gradient(135deg,${T.goldMid},${T.gold})`,
+              boxShadow: `0 6px 28px ${T.goldGlow}`,
+            },
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: SANS,
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              color: "#1A1712",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Book a call
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: MONO,
+              fontSize: "0.7rem",
+              color: "rgba(26,23,18,0.45)",
+              lineHeight: 1,
+            }}
+          >
+            →
+          </Typography>
+        </Box>
+      </motion.div>
+    </Link>
+  );
+}
+
+/* ══ NAV ITEM ═════════════════════════════════════ */
 interface NavItemProps {
   link: { label: string; href: string; badge?: string };
   isActive: boolean;
-  isDark: boolean;
+  fgMuted: string;
+  hoverBg: string;
+  hoverColor: string;
 }
 
-function NavItem({ link, isActive, isDark }: NavItemProps) {
+function NavItem({
+  link,
+  isActive,
+  fgMuted,
+  hoverBg,
+  hoverColor,
+}: NavItemProps) {
   return (
     <Link href={link.href} style={{ textDecoration: "none" }}>
       <Box
         sx={{
           position: "relative",
-          px: 1.5,
-          py: 0.875,
+          px: 1.75,
+          py: 1,
           borderRadius: "8px",
           display: "flex",
           alignItems: "center",
-          gap: 0.5,
+          gap: 0.75,
           cursor: "pointer",
-          transition: "background 0.15s ease",
-          "&:hover": {
-            background: isDark ? T.hoverDark : T.hover,
-          },
+          transition: "background 0.18s ease",
+          "&:hover": { background: hoverBg },
+          "&:hover .label": { color: `${hoverColor} !important` },
         }}
       >
         <Typography
+          className="label"
           sx={{
-            fontFamily: FONT_BODY,
+            fontFamily: SANS,
             fontWeight: isActive ? 600 : 450,
-            fontSize: "0.9rem",
-            letterSpacing: "-0.01em",
-            color: isDark
-              ? isActive ? "#fff" : T.inkDark
-              : isActive ? T.ink : T.inkMid,
-            transition: "color 0.15s ease",
+            fontSize: "0.875rem",
+            color: isActive ? T.goldLight : fgMuted,
+            transition: "color 0.18s ease",
             lineHeight: 1,
           }}
         >
           {link.label}
         </Typography>
-
         {link.badge && (
           <Box
             sx={{
               px: "6px",
-              py: "2px",
-              borderRadius: "4px",
-              background: T.accent,
-              fontSize: "0.55rem",
-              fontFamily: FONT_MONO,
-              fontWeight: 600,
-              color: "#fff",
-              letterSpacing: "0.06em",
+              py: "2.5px",
+              borderRadius: "5px",
+              background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
+              fontFamily: MONO,
+              fontSize: "0.48rem",
+              fontWeight: 700,
+              color: "#0C0B08",
               lineHeight: 1.5,
             }}
           >
             {link.badge}
           </Box>
         )}
-
-        {/* active underline dot */}
-        {isActive && (
-          <motion.span
-            layoutId="nav-active-dot"
-            style={{
-              position: "absolute",
-              bottom: -1,
-              left: "50%",
-              translateX: "-50%",
-              width: 16,
-              height: 2,
-              background: T.accent,
-              borderRadius: "999px",
-              display: "block",
-            }}
-          />
-        )}
       </Box>
     </Link>
   );
 }
 
-/* ─── Mobile Drawer ────────────────────────────────────────────────────── */
-function MobileNavDrawer({
+/* ══ MOBILE DRAWER ═════════════════════════════════════ */
+function MobileDrawer({
   open,
   onClose,
   pathname,
@@ -379,147 +347,157 @@ function MobileNavDrawer({
       onClose={onClose}
       PaperProps={{
         sx: {
-          width: 288,
-          background: "#fff",
-          boxShadow: "-8px 0 40px rgba(15,17,23,0.12)",
-          borderLeft: `1px solid ${T.border}`,
+          width: 300,
+          background: T.drawerBg,
+          borderLeft: `1px solid ${T.drawerBorder}`,
+          boxShadow: "-20px 0 80px rgba(0,0,0,0.08)",
         },
       }}
     >
-      <Box sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}>
-
-        {/* top row */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-          <MerrakiLogo variant="color" width={84} animate={false} />
+      <Box
+        sx={{
+          p: 3,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+        }}
+      >
+        {/* Header row */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 4,
+          }}
+        >
+          <MerrakiLogoAnimated variant="gold" animate={false} />
           <IconButton
             onClick={onClose}
             size="small"
             sx={{
-              color: T.inkMid,
-              width: 32, height: 32,
-              border: `1px solid ${T.border}`,
-              borderRadius: "8px",
-              "&:hover": { background: T.hover },
+              width: 34,
+              height: 34,
+              borderRadius: "9px",
+              color: T.inkMuted,
+              border: `1px solid ${T.drawerBorder}`,
+              "&:hover": { color: T.goldLight, borderColor: T.goldLight },
             }}
           >
             <CloseIcon sx={{ fontSize: "1rem" }} />
           </IconButton>
         </Box>
 
-        <Divider sx={{ borderColor: T.border, mb: 1.5 }} />
-
-        {/* nav links */}
-        <List disablePadding sx={{ flex: 1 }}>
+        {/* Nav links */}
+        <Box
+          sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
           {NAV_LINKS.map((link, i) => (
-            <motion.div
+            <Link
               key={link.href}
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: open ? 1 : 0, x: open ? 0 : 16 }}
-              transition={{ delay: i * 0.04, duration: 0.28 }}
+              href={link.href}
+              onClick={onClose}
+              style={{ textDecoration: "none" }}
             >
-              <ListItem disablePadding sx={{ mb: 0.25 }}>
-                <ListItemButton
-                  component={Link}
-                  href={link.href}
-                  onClick={onClose}
-                  selected={pathname === link.href}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 1.75,
+                  py: 1.25,
+                  borderRadius: "10px",
+                  background:
+                    pathname === link.href
+                      ? "rgba(184,146,42,0.1)"
+                      : "transparent",
+                  "&:hover": { background: "rgba(184,146,42,0.08)" },
+                }}
+              >
+                <Typography
                   sx={{
-                    borderRadius: "8px",
-                    py: 1.125,
-                    px: 1.5,
-                    "&.Mui-selected": {
-                      background: "rgba(0,87,255,0.05)",
-                      "& .MuiListItemText-primary": {
-                        fontWeight: 600,
-                        color: T.accent,
-                      },
-                    },
-                    "&:hover": { background: T.hover },
+                    fontFamily: SANS,
+                    fontWeight: pathname === link.href ? 600 : 400,
+                    fontSize: "0.9375rem",
+                    color: pathname === link.href ? T.goldLight : T.inkMuted,
+                    lineHeight: 1,
                   }}
                 >
-                  <ListItemText
-                    primary={link.label}
-                    primaryTypographyProps={{
-                      fontFamily: FONT_BODY,
-                      fontWeight: 450,
-                      fontSize: "0.9375rem",
-                      letterSpacing: "-0.01em",
-                      color: T.inkMid,
-                    }}
-                  />
-                  {link.badge && (
-                    <Box
-                      sx={{
-                        px: "7px",
-                        py: "2.5px",
-                        borderRadius: "4px",
-                        background: T.accent,
-                        fontSize: "0.55rem",
-                        fontFamily: FONT_MONO,
-                        fontWeight: 600,
-                        color: "#fff",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      {link.badge}
-                    </Box>
-                  )}
-                </ListItemButton>
-              </ListItem>
-            </motion.div>
+                  {link.label}
+                </Typography>
+              </Box>
+            </Link>
           ))}
-        </List>
+        </Box>
 
-        <Divider sx={{ borderColor: T.border, my: 2 }} />
-
-        {/* bottom actions */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <CurrencySelector isDark={false} fullWidth />
-
-          <Button
-            variant="outlined"
-            startIcon={<CartIcon sx={{ fontSize: "1rem !important" }} />}
-            onClick={() => { openCart(); onClose(); }}
-            fullWidth
-            sx={{
-              fontFamily: FONT_BODY,
+        {/* Bottom actions */}
+        <Box
+          sx={{ display: "flex", flexDirection: "column", gap: 1.25, mt: 3 }}
+        >
+          <CurrencySelector isDark={false} />
+          <motion.button
+            onClick={() => {
+              openCart();
+              onClose();
+            }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "11px 20px",
+              borderRadius: "10px",
+              border: `1px solid ${T.drawerBorder}`,
+              background: "rgba(184,146,42,0.08)",
+              color: T.inkMuted,
+              fontFamily: SANS,
               fontWeight: 500,
               fontSize: "0.875rem",
-              textTransform: "none",
+              cursor: "pointer",
               letterSpacing: "-0.01em",
-              borderRadius: "8px",
-              py: 1.125,
-              color: T.inkMid,
-              borderColor: T.border,
-              "&:hover": { borderColor: T.ink, color: T.ink, background: T.hover },
+              transition: "all 0.18s ease",
             }}
           >
-            Cart {itemCount > 0 && `(${itemCount})`}
-          </Button>
+            <CartIcon style={{ fontSize: "1rem" }} />
+            Cart{itemCount > 0 ? ` (${itemCount})` : ""}
+          </motion.button>
 
-          <Button
-            component={Link}
+          <Link
             href="/book-consultation"
             onClick={onClose}
-            fullWidth
-            disableElevation
-            endIcon={<ArrowIcon sx={{ fontSize: "0.9rem !important" }} />}
-            sx={{
-              fontFamily: FONT_BODY,
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              textTransform: "none",
-              letterSpacing: "-0.01em",
-              borderRadius: "8px",
-              py: 1.125,
-              color: "#fff",
-              background: T.ink,
-              border: `1.5px solid ${T.ink}`,
-              "&:hover": { background: "#1B2030" },
-            }}
+            style={{ textDecoration: "none" }}
           >
-            Book a call
-          </Button>
+            <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 1,
+                  py: "12px",
+                  borderRadius: "10px",
+                  background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
+                  boxShadow: `0 4px 20px ${T.goldGlow}`,
+                  cursor: "pointer",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontWeight: 700,
+                    fontSize: "0.875rem",
+                    color: "#1A1712",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Book a free call →
+                </Typography>
+              </Box>
+            </motion.div>
+          </Link>
         </Box>
       </Box>
     </Drawer>

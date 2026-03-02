@@ -1,343 +1,128 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Box, Grid, Typography } from "@mui/material";
+import { useState, useMemo } from 'react';
+import { Box, Grid, Typography } from '@mui/material';
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
-import { colorTokens } from "@/theme";
-import { CalcLayout } from "./CalcLayout";
-import { CalcInput } from "./CalcInput";
-import { MetricCard } from "./MetricCard";
-import { formatDate } from "@/lib/utils/formatters";
+  AreaChart, Area, ComposedChart, Bar, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
+} from 'recharts';
+import { CalcLayout, T, FONT_MONO, FONT_SANS } from './CalcLayout';
+import { CalcInput } from './CalcInput';
+import { MetricCard } from './MetricCard';
 
-const ACCENT = colorTokens.warning.main;
+const ACCENT = '#8B5E3C';
 
-const STATUS_CONFIG = {
-  profitable: {
-    label: "🎉 Revenue Positive",
-    color: colorTokens.success.main,
-    bg: colorTokens.success.light,
-  },
-  healthy: {
-    label: "✅ Healthy Runway",
-    color: colorTokens.success.main,
-    bg: colorTokens.success.light,
-  },
-  warning: {
-    label: "⚠️ Watch Carefully",
-    color: colorTokens.warning.main,
-    bg: colorTokens.warning.light,
-  },
-  critical: {
-    label: "🚨 Critical — Act Now",
-    color: colorTokens.error.main,
-    bg: colorTokens.error.light,
-  },
-} as const;
+function fmtINR(n: number) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+}
 
-type StatusKey = keyof typeof STATUS_CONFIG; // 'profitable' | 'healthy' | 'warning' | 'critical'
-
-function computeRunway(inputs: {
-  currentCash: number;
-  monthlyBurnRate: number;
-  monthlyRevenue: number;
-  months: number;
-}) {
-  const { currentCash, monthlyBurnRate, monthlyRevenue, months } = inputs;
-  const netBurn = monthlyBurnRate - monthlyRevenue;
-
-  const forecast: {
-    month: number;
-    cash: number;
-    revenue: number;
-    burn: number;
-    netBurn: number;
-  }[] = [];
-
-  let cash = currentCash;
-  let runwayMonths: number | null = null;
-
-  for (let m = 1; m <= months; m++) {
-    cash = cash - netBurn;
-    if (cash <= 0 && runwayMonths === null) {
-      runwayMonths = m - 1;
-    }
-    forecast.push({
-      month: m,
-      cash: Math.max(Math.round(cash), 0),
-      revenue: monthlyRevenue,
-      burn: monthlyBurnRate,
-      netBurn: netBurn,
-    });
+function compute(i: { cashBalance: number; monthlyRevenue: number; revenueGrowthRate: number; monthlyBurn: number; burnGrowthRate: number }) {
+  const netBurn = i.monthlyBurn - i.monthlyRevenue;
+  const runwayMonths = netBurn > 0 ? Math.floor(i.cashBalance / netBurn) : Infinity;
+  const forecast: any[] = [];
+  let cash = i.cashBalance;
+  let exhaustedMonth: number | null = null;
+  for (let m = 1; m <= 36; m++) {
+    const revenue = m === 1 ? i.monthlyRevenue : forecast[m-2].revenue * (1 + i.revenueGrowthRate/100);
+    const burn    = m === 1 ? i.monthlyBurn    : forecast[m-2].burn    * (1 + i.burnGrowthRate/100);
+    const net     = revenue - burn;
+    cash += net;
+    if (cash <= 0 && exhaustedMonth === null) exhaustedMonth = m;
+    forecast.push({ month: m, revenue: Math.round(revenue), burn: Math.round(burn), net: Math.round(net), cashBalance: Math.max(0, Math.round(cash)) });
   }
-
-  const runwayDate =
-    runwayMonths !== null
-      ? new Date(Date.now() + runwayMonths * 30 * 24 * 60 * 60 * 1000)
-      : null;
-
-  const status: StatusKey =
-    netBurn <= 0
-      ? "profitable"
-      : runwayMonths === null
-        ? "healthy"
-        : runwayMonths < 3
-          ? "critical"
-          : runwayMonths < 6
-            ? "warning"
-            : "healthy";
-
-  const monthsOfRunway = runwayMonths ?? (netBurn <= 0 ? Infinity : months);
-
-  return {
-    forecast,
-    runwayMonths: monthsOfRunway,
-    runwayDate,
-    netBurn,
-    status,
-  };
+  return { netBurn: Math.round(netBurn), runwayMonths: isFinite(runwayMonths) ? runwayMonths : null, exhaustedMonth, forecast };
 }
 
-function fmtINR(n: number): string {
-  if (n >= 1e7) return `₹${(n / 1e7).toFixed(2)} Cr`;
-  if (n >= 1e5) return `₹${(n / 1e5).toFixed(1)} L`;
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <Box sx={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: '12px', p: 2, boxShadow: '0 8px 32px rgba(12,14,18,0.1)', minWidth: 180 }}>
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.58rem', letterSpacing: '0.12em', color: T.inkFaint, mb: 1, textTransform: 'uppercase' }}>Month {label}</Typography>
+      {payload.map((p: any) => (
+        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2.5, mb: 0.35 }}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.75rem', color: T.inkMuted }}>{p.name}</Typography>
+          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', fontWeight: 600, color: T.ink }}>{fmtINR(p.value)}</Typography>
+        </Box>
+      ))}
+    </Box>
+  );
 }
+
+function ChartLabel({ text }: { text: string }) {
+  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.62rem', letterSpacing: '0.12em', color: T.inkMuted, textTransform: 'uppercase', mb: 2 }}>{text}</Typography>;
+}
+
+const axisStyle = { fill: T.inkFaint, fontSize: 11, fontFamily: FONT_MONO };
 
 export function RunwayCalculator() {
-  const [inputs, setInputs] = useState({
-    currentCash: 5000000,
-    monthlyBurnRate: 500000,
-    monthlyRevenue: 200000,
-    months: 24,
-  });
+  const [inputs, setInputs] = useState({ cashBalance: 5000000, monthlyRevenue: 500000, revenueGrowthRate: 10, monthlyBurn: 800000, burnGrowthRate: 2 });
+  const set = (k: keyof typeof inputs) => (v: number) => setInputs(p => ({ ...p, [k]: v }));
+  const r = useMemo(() => compute(inputs), [inputs]);
 
-  const set = (key: keyof typeof inputs) => (v: number) =>
-    setInputs((p) => ({ ...p, [key]: v }));
-
-  const result = useMemo(() => computeRunway(inputs), [inputs]);
-  const statusConfig = STATUS_CONFIG[result.status];
+  const runwayDisplay = r.runwayMonths === null ? 'Cash positive' : `${r.runwayMonths} months`;
 
   return (
     <CalcLayout
       title="Runway Calculator"
-      description="How many months until you run out of cash? Track your burn rate, net burn, and project exactly when you need to raise — or become profitable."
+      description="See exactly how long your cash will last, when you reach zero, and how revenue growth vs burn rate affect your survival timeline."
       accent={ACCENT}
+      glyph="04"
       inputsPanel={
         <Box>
-          <CalcInput
-            label="Current Cash / Bank Balance (₹)"
-            value={inputs.currentCash}
-            onChange={set("currentCash")}
-            prefix="₹"
-            step={100000}
-            helperText="Total cash available today"
-          />
-          <CalcInput
-            label="Monthly Burn Rate (₹)"
-            value={inputs.monthlyBurnRate}
-            onChange={set("monthlyBurnRate")}
-            prefix="₹"
-            step={10000}
-            helperText="Total monthly expenses"
-          />
-          <CalcInput
-            label="Monthly Revenue (₹)"
-            value={inputs.monthlyRevenue}
-            onChange={set("monthlyRevenue")}
-            prefix="₹"
-            step={10000}
-            helperText="Current monthly revenue (MRR)"
-          />
-          <CalcInput
-            label="Forecast Months"
-            value={inputs.months}
-            onChange={set("months")}
-            min={3}
-            step={1}
-          />
-
-          {/* Status */}
-          <Box
-            sx={{
-              mt: 3,
-              p: 2.5,
-              borderRadius: "14px",
-              backgroundColor: statusConfig.bg,
-              border: `1px solid ${statusConfig.color}33`,
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 700, color: statusConfig.color, mb: 1 }}
-            >
-              {statusConfig.label}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: statusConfig.color, opacity: 0.8, lineHeight: 1.5 }}
-            >
-              Net Burn: <strong>{fmtINR(Math.abs(result.netBurn))}/mo</strong>
-              {result.netBurn < 0 ? " (net positive ✓)" : " outflow"}
-            </Typography>
-          </Box>
+          <CalcInput label="Current Cash Balance" value={inputs.cashBalance} onChange={set('cashBalance')} prefix="₹" step={100000} helperText="Total cash in bank right now" />
+          <CalcInput label="Monthly Revenue" value={inputs.monthlyRevenue} onChange={set('monthlyRevenue')} prefix="₹" step={10000} />
+          <CalcInput label="Revenue Growth Rate" value={inputs.revenueGrowthRate} onChange={set('revenueGrowthRate')} suffix="%" step={0.5} helperText="Monthly % growth in revenue" />
+          <CalcInput label="Monthly Burn (Total Costs)" value={inputs.monthlyBurn} onChange={set('monthlyBurn')} prefix="₹" step={10000} helperText="All monthly outflows incl. salaries" />
+          <CalcInput label="Burn Growth Rate" value={inputs.burnGrowthRate} onChange={set('burnGrowthRate')} suffix="%" step={0.5} helperText="Monthly % increase in costs" />
         </Box>
       }
       resultsPanel={
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <MetricCard
-              label="Runway"
-              value={
-                result.status === "profitable"
-                  ? "∞ Profitable"
-                  : isFinite(result.runwayMonths)
-                    ? `${result.runwayMonths} months`
-                    : `${inputs.months}+ months`
-              }
-              subValue={
-                result.runwayDate
-                  ? `Cash out: ${result.runwayDate.toLocaleDateString("en-IN", { month: "short", year: "numeric" })}`
-                  : "No cash-out projected"
-              }
-              accent={statusConfig.color}
-              bg={statusConfig.bg}
-              icon="⏱️"
-              highlight
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <MetricCard
-              label="Net Burn / Month"
-              value={fmtINR(Math.abs(result.netBurn))}
-              subValue={
-                result.netBurn <= 0 ? "Net positive" : "Monthly cash outflow"
-              }
-              accent={
-                result.netBurn <= 0
-                  ? colorTokens.success.main
-                  : colorTokens.error.main
-              }
-              bg={
-                result.netBurn <= 0
-                  ? colorTokens.success.light
-                  : colorTokens.error.light
-              }
-              icon="🔥"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <MetricCard
-              label="Monthly Burn"
-              value={fmtINR(inputs.monthlyBurnRate)}
-              subValue="Total monthly expenses"
-              accent={ACCENT}
-              bg={colorTokens.warning.light}
-              icon="💸"
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <MetricCard
-              label="Monthly Revenue"
-              value={fmtINR(inputs.monthlyRevenue)}
-              subValue={`${((inputs.monthlyRevenue / inputs.monthlyBurnRate) * 100).toFixed(0)}% of burn covered`}
-              accent={colorTokens.financeBlue[500]}
-              bg={colorTokens.financeBlue[50]}
-              icon="💚"
-            />
-          </Grid>
+          {[
+            { label: 'Runway',        value: runwayDisplay,            sub: 'months until cash zero',   highlight: true },
+            { label: 'Net Burn / Mo', value: fmtINR(r.netBurn),        sub: r.netBurn > 0 ? 'burning cash' : 'cash positive' },
+            { label: 'Cash Depleted', value: r.exhaustedMonth ? `Month ${r.exhaustedMonth}` : 'Never', sub: 'at current trajectory' },
+            { label: 'Starting Cash', value: fmtINR(inputs.cashBalance), sub: 'current balance' },
+          ].map((m, i) => (
+            <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
+              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={ACCENT} highlight={m.highlight} index={i} />
+            </Grid>
+          ))}
         </Grid>
       }
       chartsPanel={
         <Box>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 700, color: colorTokens.darkNavy[800], mb: 2 }}
-          >
-            Cash Runway Projection
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart
-              data={result.forecast}
-              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-            >
+          <ChartLabel text="Cash Balance Over Time" />
+          <ResponsiveContainer width="100%" height={260}>
+            <AreaChart data={r.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={ACCENT} stopOpacity={0.2} />
+                  <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.18} />
                   <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={colorTokens.slate[100]}
-              />
-              <XAxis
-                dataKey="month"
-                tickFormatter={(v) => `M${v}`}
-                tick={{ fill: colorTokens.slate[400], fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={(v) =>
-                  v >= 1000000
-                    ? `₹${(v / 1000000).toFixed(1)}M`
-                    : `₹${(v / 1000).toFixed(0)}K`
-                }
-                tick={{ fill: colorTokens.slate[400], fontSize: 11 }}
-                tickLine={false}
-                axisLine={false}
-                width={72}
-              />
-              <Tooltip
-                formatter={(v?: number, name?: string) => [
-                  fmtINR(v ?? 0),
-                  name ?? "",
-                ]}
-                contentStyle={{
-                  borderRadius: "12px",
-                  border: `1px solid ${colorTokens.slate[200]}`,
-                  fontFamily: "var(--font-body)",
-                }}
-              />
-              {isFinite(result.runwayMonths) &&
-                result.status !== "profitable" && (
-                  <ReferenceLine
-                    x={result.runwayMonths}
-                    stroke={colorTokens.error.main}
-                    strokeDasharray="5 3"
-                    strokeWidth={2}
-                    label={{
-                      value: `Cash Out M${result.runwayMonths}`,
-                      fill: colorTokens.error.main,
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
-                  />
-                )}
-              <Area
-                type="monotone"
-                dataKey="cash"
-                name="Cash Balance"
-                stroke={ACCENT}
-                strokeWidth={2.5}
-                fill="url(#cashGrad)"
-                dot={false}
-                activeDot={{ r: 5, fill: ACCENT, strokeWidth: 0 }}
-              />
+              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
+              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
+              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
+              <ReferenceLine y={0} stroke={T.borderMd} strokeDasharray="4 3" strokeWidth={1} />
+              {r.exhaustedMonth && (
+                <ReferenceLine x={r.exhaustedMonth} stroke="#DC2626" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: `M${r.exhaustedMonth}`, fill: '#DC2626', fontSize: 10, fontFamily: FONT_MONO, fontWeight: 700 }} />
+              )}
+              <Area type="monotone" dataKey="cashBalance" name="Cash Balance" stroke={ACCENT} strokeWidth={2} fill="url(#cashGrad)" dot={false} activeDot={{ r: 4, fill: ACCENT, strokeWidth: 0 }} />
             </AreaChart>
+          </ResponsiveContainer>
+
+          <Box sx={{ mt: 4, mb: 2 }}><ChartLabel text="Revenue vs Burn Rate" /></Box>
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={r.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
+              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
+              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
+              <Bar dataKey="revenue" name="Revenue" fill={ACCENT + '44'} radius={[3,3,0,0]} barSize={8} />
+              <Line type="monotone" dataKey="burn" name="Burn" stroke="#DC2626" strokeWidth={1.5} dot={false} />
+            </ComposedChart>
           </ResponsiveContainer>
         </Box>
       }

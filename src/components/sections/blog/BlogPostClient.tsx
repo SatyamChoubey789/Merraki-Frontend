@@ -1,622 +1,438 @@
 "use client";
 
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Chip,
-  Button,
-  Divider,
-  Skeleton,
-  Alert,
-} from "@mui/material";
-import {
-  AccessTime as TimeIcon,
-  ArrowBack as BackIcon,
-  Share as ShareIcon,
-  CalendarToday as CalIcon,
-  Visibility as ViewIcon,
-} from "@mui/icons-material";
-import { motion } from "framer-motion";
+import { Box, Container, Typography, Skeleton } from "@mui/material";
+import { AccessTime as TimeIcon, ArrowBack as BackIcon, Share as ShareIcon, CalendarToday as CalIcon } from "@mui/icons-material";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import Link from "next/link";
-import { useMemo } from "react";
-import { colorTokens, shadowTokens } from "@/theme";
+import { useMemo, useRef } from "react";
 import { useBlogPost, useBlogPosts } from "@/lib/hooks/useBlogPosts";
 import { formatDate } from "@/lib/utils/formatters";
 import { sanitizeBlogContent } from "@/lib/utils/sanitizeBlogContent";
 import { BlogCard } from "./BlogCard";
 
-interface BlogPostClientProps {
-  slug: string;
+/* ── Tokens ────────────────────────────────────────────── */
+const T = {
+  white:     '#FFFFFF',
+  offwhite:  '#F8F6F1',
+  cream:     '#F0EDE4',
+  parchment: '#E8E3D8',
+  ink:       '#0A0C0F',
+  inkMid:    '#1C2333',
+  inkMuted:  '#4A5568',
+  inkFaint:  '#8896A8',
+  inkGhost:  '#B8C4D0',
+  rule:      '#D8D3C8',
+  ruleMd:    '#C4BDB0',
+  gold:      '#B8922A',
+  goldMid:   '#C9A84C',
+  goldLight: '#DDB96A',
+  goldGlow:  'rgba(184,146,42,0.07)',
+};
+const FONT_DISPLAY = '"Instrument Serif", "Playfair Display", Georgia, serif';
+const FONT_SANS    = '"DM Sans", "Mona Sans", system-ui, sans-serif';
+const FONT_MONO    = '"DM Mono", "JetBrains Mono", ui-monospace, monospace';
+const EASE         = [0.16, 1, 0.3, 1] as const;
+
+/* ── Reading progress bar ──────────────────────────────── */
+function ReadingProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
+  return (
+    <Box sx={{ position: 'fixed', top: 0, left: 0, right: 0, height: '2px', zIndex: 9999, background: T.rule }}>
+      <motion.div style={{ scaleX, transformOrigin: '0%', height: '100%', background: `linear-gradient(90deg, ${T.gold}, ${T.goldLight})` }} />
+    </Box>
+  );
 }
+
+interface BlogPostClientProps { slug: string; }
 
 export function BlogPostClient({ slug }: BlogPostClientProps) {
   const { data, isLoading, isError } = useBlogPost(slug);
   const { data: relatedData } = useBlogPosts({ limit: 4 });
-
   const post = data?.data;
+  const cleanContent = useMemo(() => (post?.content ? sanitizeBlogContent(post.content) : ''), [post?.content]);
+  const relatedPosts = relatedData?.data?.filter(p => p.slug !== slug).slice(0, 3) ?? [];
 
-  // Sanitize once — memoized so it doesn't re-run on unrelated renders
-  const cleanContent = useMemo(
-    () => (post?.content ? sanitizeBlogContent(post.content) : ""),
-    [post?.content]
-  );
+  /* Parallax hero */
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
+  const heroY  = useTransform(heroProgress, [0, 1], [0, 60]);
+  const heroO  = useTransform(heroProgress, [0, 0.7], [1, 0]);
+  const sY = useSpring(heroY, { stiffness: 80, damping: 22 });
+  const sO = useSpring(heroO, { stiffness: 80, damping: 22 });
 
-  const relatedPosts =
-    relatedData?.data?.filter((p) => p.slug !== slug).slice(0, 3) ?? [];
-
-  // ── Loading ────────────────────────────────────────────────────────────────
+  /* ── Loading ── */
   if (isLoading) {
     return (
-      <Box sx={{ pt: { xs: 8, md: 12 }, pb: 12 }}>
+      <Box sx={{ pt: { xs: 10, md: 14 }, pb: 12, background: T.offwhite }}>
         <Container maxWidth="lg">
-          <Skeleton
-            variant="rectangular"
-            height={420}
-            sx={{ borderRadius: "20px", mb: 5 }}
-          />
-          <Skeleton variant="text" height={60} width="80%" sx={{ mb: 2 }} />
-          <Skeleton variant="text" height={24} width="40%" sx={{ mb: 5 }} />
-          {[94, 86, 84, 94, 90, 84, 83, 93].map((w, i) => (
-            <Skeleton
-              key={i}
-              variant="text"
-              height={22}
-              sx={{ mb: 1, width: `${w}%` }}
-            />
+          <Skeleton variant="rectangular" height={400} sx={{ borderRadius: '3px', mb: 5, background: T.parchment }} />
+          <Skeleton variant="text" height={64} width="80%" sx={{ mb: 1.5, background: T.parchment }} />
+          <Skeleton variant="text" height={24} width="40%" sx={{ mb: 5, background: T.parchment }} />
+          {[94,86,84,94,90,84,83,93].map((w, i) => (
+            <Skeleton key={i} variant="text" height={22} sx={{ mb: 1, width: `${w}%`, background: T.parchment }} />
           ))}
         </Container>
       </Box>
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
+  /* ── Error ── */
   if (isError || !post) {
     return (
-      <Container maxWidth="md" sx={{ pt: 10, pb: 12 }}>
-        <Alert severity="error" sx={{ borderRadius: "14px", mb: 3 }}>
-          Article not found. It may have been moved or deleted.
-        </Alert>
-        <Button
-          component={Link}
-          href="/blog"
-          variant="contained"
-          startIcon={<BackIcon />}
-          sx={{
-            background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-            borderRadius: "12px",
-          }}
-        >
-          Back to Blog
-        </Button>
+      <Container maxWidth="md" sx={{ pt: 12, pb: 14, background: T.offwhite, textAlign: 'center' }}>
+        <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '2.5rem', color: T.inkMuted, mb: 2 }}>Article not found.</Typography>
+        <Box component={Link} href="/blog" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, fontFamily: FONT_SANS, fontSize: '0.875rem', color: T.gold, border: `1px solid ${T.gold}`, borderRadius: '2px', px: 2, py: 0.875, textDecoration: 'none', transition: 'all 0.15s', '&:hover': { background: `${T.gold}08` } }}>
+          ← Back to The Review
+        </Box>
       </Container>
     );
   }
 
-  // ── Page ───────────────────────────────────────────────────────────────────
   return (
-    <Box>
-      {/* Hero image / colour block */}
-      <Box
-        sx={{
-          position: "relative",
-          height: { xs: 260, md: 440 },
-          backgroundColor: colorTokens.darkNavy[900],
-          overflow: "hidden",
-        }}
-      >
-        {/* Gradient hero — used when there's no usable cover image */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: `linear-gradient(135deg, ${colorTokens.darkNavy[900]} 0%, #0C1F5C 100%)`,
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(ellipse at 30% 50%, rgba(26,86,219,0.18) 0%, transparent 60%)",
-          }}
-        />
+    <Box sx={{ minHeight: '100vh', background: T.offwhite, fontFamily: FONT_SANS }}>
+      <ReadingProgress />
 
-        {/* Back button */}
-        <Box sx={{ position: "absolute", top: 20, left: 20, zIndex: 10 }}>
-          <Button
-            component={Link}
-            href="/blog"
-            startIcon={<BackIcon />}
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.1)",
-              backdropFilter: "blur(12px)",
-              color: "#fff",
-              border: "1px solid rgba(255,255,255,0.16)",
-              borderRadius: "10px",
-              fontWeight: 600,
-              fontSize: "0.8125rem",
-              "&:hover": { backgroundColor: "rgba(255,255,255,0.18)" },
-            }}
-          >
-            Back to Blog
-          </Button>
-        </Box>
+      {/* ══ HERO ═══════════════════════════════════════════ */}
+      <Box ref={heroRef} sx={{ background: T.white, borderBottom: `3px double ${T.rule}`, position: 'relative', overflow: 'hidden', pt: { xs: 12, md: 16 }, pb: 0 }}>
+        {/* Grid */}
+        <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${T.rule} 1px, transparent 1px), linear-gradient(90deg, ${T.rule} 1px, transparent 1px)`, backgroundSize: '72px 72px', opacity: 0.28 }} />
+        {/* Gold glow */}
+        <Box sx={{ position: 'absolute', width: '55vw', height: '35vw', top: '-15vw', left: '22vw', borderRadius: '50%', background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
-        {/* Category + Title overlay */}
-        <Container
-          maxWidth="lg"
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            pb: { xs: 4, md: 6 },
-            pt: 10,
-          }}
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Chip
-              label={post.category.name}
-              size="small"
-              sx={{
-                mb: 2,
-                backgroundColor: "rgba(26,86,219,0.35)",
-                color: colorTokens.financeBlue[200],
-                fontWeight: 700,
-                borderRadius: "8px",
-                border: `1px solid rgba(26,86,219,0.4)`,
-                fontSize: "0.75rem",
-              }}
-            />
-            <Typography
-              variant="h2"
-              sx={{
-                color: "#fff",
-                fontWeight: 800,
-                letterSpacing: "-0.025em",
-                lineHeight: 1.18,
-                maxWidth: 760,
-                mb: 2,
-              }}
-            >
-              {post.title}
-            </Typography>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
+          <motion.div style={{ y: sY, opacity: sO }}>
 
-            {/* Meta */}
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}
-            >
-              {/* Author */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "8px",
-                    background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, ${colorTokens.financeBlue[700]})`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      color: "#fff",
-                      fontWeight: 800,
-                      fontSize: "0.8rem",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    {post.author.name.charAt(0)}
-                  </Typography>
+            {/* Back link */}
+            <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, ease: EASE }}>
+              <Box component={Link} href="/blog" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, fontFamily: FONT_MONO, fontSize: '0.56rem', letterSpacing: '0.14em', color: T.inkFaint, textTransform: 'uppercase', textDecoration: 'none', mb: 4, transition: 'color 0.15s', '&:hover': { color: T.gold } }}>
+                <BackIcon sx={{ fontSize: '0.75rem' }} />
+                The Merraki Financial Review
+              </Box>
+            </motion.div>
+
+            {/* Category + date */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.05, ease: EASE }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: T.gold }} />
+                  <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.18em', color: T.gold, textTransform: 'uppercase' }}>{post.category.name}</Typography>
                 </Box>
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "#fff", fontWeight: 600, lineHeight: 1.1 }}
-                  >
-                    {post.author.name}
-                  </Typography>
-                  {post.author.role && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "rgba(255,255,255,0.5)" }}
-                    >
-                      {post.author.role}
-                    </Typography>
-                  )}
-                </Box>
+                <Box sx={{ width: 1, height: 10, background: T.rule }} />
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.1em', color: T.inkFaint, textTransform: 'uppercase' }}>{formatDate(post.publishedAt)}</Typography>
               </Box>
+            </motion.div>
 
-              <Box sx={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.25)" }} />
+            {/* Headline — broadsheet scale */}
+            <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.08, ease: EASE }}>
+              <Typography sx={{
+                fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontWeight: 400,
+                fontSize: { xs: '2.25rem', sm: '3rem', md: '4.25rem', lg: '5.5rem' },
+                color: T.ink, letterSpacing: '-0.03em', lineHeight: 0.97,
+                mb: 3.5, maxWidth: 900,
+              }}>
+                {post.title}
+              </Typography>
+            </motion.div>
 
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <CalIcon sx={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }} />
-                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                  {formatDate(post.publishedAt)}
+            {/* Deck — newspaper sub-headline */}
+            {post.excerpt && (
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.18, ease: EASE }}>
+                <Typography sx={{
+                  fontFamily: FONT_DISPLAY, fontStyle: 'normal', fontWeight: 400,
+                  fontSize: { xs: '1.0625rem', md: '1.25rem' },
+                  color: T.inkMuted, lineHeight: 1.6, mb: 4, maxWidth: 680,
+                  borderLeft: `3px solid ${T.gold}`, pl: 2.5,
+                }}>
+                  {post.excerpt}
                 </Typography>
-              </Box>
+              </motion.div>
+            )}
 
-              <Box sx={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.25)" }} />
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <TimeIcon sx={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }} />
-                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                  {post.readingTime} min read
-                </Typography>
-              </Box>
-
-              {post.viewsCount > 0 && (
-                <>
-                  <Box sx={{ width: 3, height: 3, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.25)" }} />
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <ViewIcon sx={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }} />
-                    <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>
-                      {post.viewsCount.toLocaleString("en-IN")} views
+            {/* Byline strip */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.3 }}>
+              <Box sx={{ borderTop: `1px solid ${T.rule}`, borderBottom: `1px solid ${T.rule}`, py: 1.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 0 }}>
+                {/* Author */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+                  <Box sx={{ width: 40, height: 40, borderRadius: '2px', background: `${T.gold}18`, border: `1px solid ${T.gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.25rem', color: T.gold }}>
+                      {post.author.name.charAt(0)}
                     </Typography>
                   </Box>
-                </>
-              )}
-            </Box>
-          </motion.div>
-        </Container>
-      </Box>
-
-      {/* ── Content + Sidebar ─────────────────────────────────────────────── */}
-      <Container maxWidth="lg" sx={{ pt: 5, pb: 10 }}>
-        <Grid container spacing={5}>
-
-          {/* Article body */}
-          <Grid size={{ xs: 12, lg: 8 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {/* Tags */}
-              {post.tags.length > 0 && (
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 3 }}>
-                  {post.tags.map((tag) => (
-                    <Chip
-                      key={tag}
-                      label={`#${tag}`}
-                      size="small"
-                      variant="outlined"
-                      sx={{ borderRadius: "8px", fontSize: "0.75rem", color: colorTokens.slate[500] }}
-                    />
-                  ))}
-                  <Box sx={{ ml: "auto" }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<ShareIcon sx={{ fontSize: "0.875rem !important" }} />}
-                      onClick={() => navigator.clipboard?.writeText(window.location.href)}
-                      sx={{ borderRadius: "8px", fontWeight: 600, fontSize: "0.75rem", py: 0.625, borderWidth: "1.5px" }}
-                    >
-                      Share
-                    </Button>
+                  <Box>
+                    <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: '0.875rem', color: T.ink, lineHeight: 1.1 }}>{post.author.name}</Typography>
+                    {post.author.role && (
+                      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.1em', color: T.inkFaint, textTransform: 'uppercase' }}>{post.author.role} · Merraki Solutions</Typography>
+                    )}
                   </Box>
                 </Box>
-              )}
 
-              {/* Article content — sanitized HTML */}
-              <Box
-                sx={{
-                  backgroundColor: colorTokens.white,
-                  borderRadius: "20px",
-                  p: { xs: 3, md: 4.5 },
-                  boxShadow: shadowTokens.lg,
-                  border: `1px solid ${colorTokens.slate[100]}`,
-                  mb: 4,
-                  // ── Typography for rendered HTML ──────────────────────
-                  "& p": {
-                    fontSize: "1.0625rem",
-                    lineHeight: 1.85,
-                    color: colorTokens.slate[700],
-                    mb: 2,
-                  },
-                  "& h2": {
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 800,
-                    fontSize: "clamp(1.375rem, 3vw, 1.75rem)",
-                    color: colorTokens.darkNavy[900],
-                    mt: 4,
-                    mb: 1.5,
-                    letterSpacing: "-0.02em",
-                  },
-                  "& h3": {
-                    fontFamily: "var(--font-display)",
-                    fontWeight: 700,
-                    fontSize: "clamp(1.125rem, 2.5vw, 1.375rem)",
-                    color: colorTokens.darkNavy[800],
-                    mt: 3.5,
-                    mb: 1.25,
-                  },
-                  "& ul, & ol": { pl: 3, mb: 2 },
-                  "& li": {
-                    fontSize: "1.0625rem",
-                    lineHeight: 1.8,
-                    color: colorTokens.slate[700],
-                    mb: 0.5,
-                  },
-                  // Remove inline images that sneak through (favicons etc.)
-                  "& li img, & p img[src*='gstatic']": { display: "none" },
-                  // Real content images — style them nicely
-                  "& img": {
-                    maxWidth: "100%",
-                    borderRadius: "12px",
-                    my: 3,
-                    display: "block",
-                    "&[src*='gstatic']": { display: "none" }, // belt-and-braces
-                  },
-                  "& blockquote": {
-                    borderLeft: `4px solid ${colorTokens.financeBlue[400]}`,
-                    pl: 3,
-                    py: 1,
-                    my: 3,
-                    backgroundColor: colorTokens.financeBlue[50],
-                    borderRadius: "0 12px 12px 0",
-                    "& p": {
-                      color: colorTokens.financeBlue[800],
-                      fontWeight: 500,
-                      fontStyle: "italic",
-                      mb: 0,
-                    },
-                  },
-                  "& code": {
-                    fontFamily: "monospace",
-                    fontSize: "0.9em",
-                    backgroundColor: colorTokens.slate[100],
-                    px: "6px",
-                    py: "2px",
-                    borderRadius: "4px",
-                    color: colorTokens.financeBlue[700],
-                  },
-                  "& pre": {
-                    backgroundColor: colorTokens.darkNavy[900],
-                    p: 3,
-                    borderRadius: "12px",
-                    overflowX: "auto",
-                    mb: 2.5,
-                    "& code": { backgroundColor: "transparent", color: "#E2E8F0", p: 0 },
-                  },
-                  "& strong": { fontWeight: 700, color: colorTokens.darkNavy[800] },
-                  "& a": {
-                    color: colorTokens.financeBlue[600],
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    borderBottom: `1px solid ${colorTokens.financeBlue[200]}`,
-                    transition: "all 0.2s",
-                    "&:hover": {
-                      borderBottomColor: colorTokens.financeBlue[500],
-                      color: colorTokens.financeBlue[700],
-                    },
-                  },
-                  "& table": { width: "100%", borderCollapse: "collapse", mb: 3 },
-                  "& th": {
-                    backgroundColor: colorTokens.slate[50],
-                    fontWeight: 700,
-                    p: "10px 14px",
-                    borderBottom: `2px solid ${colorTokens.slate[200]}`,
-                    textAlign: "left",
-                    color: colorTokens.slate[700],
-                  },
-                  "& td": {
-                    p: "10px 14px",
-                    borderBottom: `1px solid ${colorTokens.slate[100]}`,
-                    color: colorTokens.slate[600],
-                  },
-                }}
-                dangerouslySetInnerHTML={{ __html: cleanContent }}
-              />
-
-              {/* Author card */}
-              <Box
-                sx={{
-                  backgroundColor: colorTokens.white,
-                  borderRadius: "20px",
-                  p: { xs: 3, md: 4 },
-                  border: `1px solid ${colorTokens.slate[100]}`,
-                  boxShadow: shadowTokens.md,
-                  mb: 5,
-                  display: "flex",
-                  gap: 3,
-                  alignItems: "flex-start",
-                  flexDirection: { xs: "column", sm: "row" },
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "16px",
-                    background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    boxShadow: "0 6px 20px rgba(26,86,219,0.3)",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      color: "#fff",
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 800,
-                      fontSize: "1.5rem",
-                    }}
-                  >
-                    {post.author.name.charAt(0)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="overline"
-                    sx={{ color: colorTokens.slate[400], letterSpacing: "0.1em", display: "block", mb: 0.5 }}
-                  >
-                    Written by
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: colorTokens.darkNavy[900], mb: 0.25 }}>
-                    {post.author.name}
-                  </Typography>
-                  {post.author.role && (
-                    <Typography variant="body2" sx={{ color: colorTokens.financeBlue[600], fontWeight: 600, mb: 0.75 }}>
-                      {post.author.role} · Merraki Solutions
-                    </Typography>
+                {/* Meta */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <TimeIcon sx={{ fontSize: '0.75rem', color: T.inkFaint }} />
+                    <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.1em', color: T.inkFaint, textTransform: 'uppercase' }}>{post.readingTime} min read</Typography>
+                  </Box>
+                  {post.viewsCount > 0 && (
+                    <>
+                      <Box sx={{ width: 1, height: 10, background: T.rule }} />
+                      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.1em', color: T.inkFaint, textTransform: 'uppercase' }}>{post.viewsCount.toLocaleString('en-IN')} views</Typography>
+                    </>
                   )}
-                  {post.author.bio && (
-                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                      {post.author.bio}
-                    </Typography>
-                  )}
+                  <Box sx={{ width: 1, height: 10, background: T.rule }} />
+                  <Box
+                    component="button"
+                    onClick={() => navigator.clipboard?.writeText(window.location.href)}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.75, background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.1em', color: T.inkFaint, textTransform: 'uppercase', transition: 'color 0.15s', '&:hover': { color: T.gold }, outline: 'none' }}
+                  >
+                    <ShareIcon sx={{ fontSize: '0.75rem' }} />
+                    Share
+                  </Box>
                 </Box>
               </Box>
             </motion.div>
-          </Grid>
+          </motion.div>
+        </Container>
 
-          {/* Sidebar */}
-          <Grid size={{ xs: 12, lg: 4 }}>
-            <Box sx={{ position: { lg: "sticky" }, top: { lg: 100 } }}>
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-              >
-                {/* Consultation CTA */}
-                <Box
-                  sx={{
-                    background: `linear-gradient(135deg, ${colorTokens.darkNavy[900]}, #0C1F5C)`,
-                    borderRadius: "20px",
-                    p: 3.5,
-                    mb: 3,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      background: "radial-gradient(ellipse at 80% 20%, rgba(26,86,219,0.2) 0%, transparent 60%)",
-                      pointerEvents: "none",
-                    }}
-                  />
-                  <Box sx={{ position: "relative", zIndex: 1 }}>
-                    <Typography sx={{ fontSize: "2rem", mb: 1.5 }}>🎯</Typography>
-                    <Typography variant="h6" sx={{ color: "#fff", fontWeight: 800, mb: 1 }}>
-                      Free Consultation
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.55)", lineHeight: 1.7, mb: 3 }}>
-                      Apply what you learned. Book a free 30-min strategy session with Parag or Khyati.
-                    </Typography>
-                    <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                      <Button
-                        component="a"
-                        href={process.env.NEXT_PUBLIC_CALENDLY_URL}
-                        target="_blank"
-                        variant="contained"
-                        fullWidth
-                        sx={{
-                          background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, ${colorTokens.financeBlue[600]})`,
-                          borderRadius: "12px",
-                          py: 1.5,
-                          fontWeight: 700,
-                          boxShadow: "0 4px 16px rgba(26,86,219,0.4)",
-                        }}
-                      >
-                        Book Free Call
-                      </Button>
-                    </motion.div>
+        {/* Hero cover image — below byline, bleeds to edges */}
+        {post.coverImage && (
+          <Box sx={{ mt: 0, height: { xs: 240, md: 420 }, overflow: 'hidden', position: 'relative' }}>
+            <Box component="img" src={post.coverImage} alt={post.title}
+              sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <Box sx={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(248,246,241,0.4), transparent)' }} />
+          </Box>
+        )}
+      </Box>
+
+      {/* ══ CONTENT + SIDEBAR ══════════════════════════════ */}
+      <Container maxWidth="lg" sx={{ pt: { xs: 5, md: 7 }, pb: 12 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: { xs: 6, lg: 8 }, alignItems: 'start' }}>
+
+          {/* ── Article body ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE }}
+          >
+            {/* Tags */}
+            {post.tags.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3.5 }}>
+                {post.tags.map(tag => (
+                  <Box key={tag} sx={{ px: 1.5, py: 0.5, border: `1px solid ${T.rule}`, borderRadius: '2px' }}>
+                    <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.5rem', letterSpacing: '0.14em', color: T.inkFaint, textTransform: 'uppercase' }}>#{tag}</Typography>
                   </Box>
-                </Box>
+                ))}
+              </Box>
+            )}
 
-                {/* Templates CTA */}
-                <Box
-                  sx={{
-                    backgroundColor: colorTokens.white,
-                    borderRadius: "20px",
-                    p: 3,
-                    border: `1px solid ${colorTokens.slate[100]}`,
-                    boxShadow: shadowTokens.md,
-                    mb: 3,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: colorTokens.darkNavy[900], mb: 1, fontSize: "1rem" }}>
-                    📊 Explore Templates
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7, mb: 2.5, fontSize: "0.875rem" }}>
-                    Put these insights to work with professional Excel models and dashboards.
-                  </Typography>
-                  <Button
-                    component={Link}
-                    href="/templates"
-                    variant="outlined"
-                    fullWidth
-                    size="small"
-                    sx={{ borderRadius: "10px", fontWeight: 600, borderWidth: "1.5px" }}
-                  >
-                    Browse Templates
-                  </Button>
-                </Box>
+            {/* Article HTML — newspaper typography */}
+            <Box
+              sx={{
+                background: T.white,
+                borderRadius: '3px',
+                border: `1px solid ${T.rule}`,
+                p: { xs: 3, md: 5 },
+                mb: 4,
+                // ── Newspaper typography ──────────────────────
+                '& p': {
+                  fontFamily: FONT_SANS,
+                  fontSize: '1.0625rem',
+                  lineHeight: 1.88,
+                  color: T.inkMid,
+                  mb: '1.2em',
+                  textAlign: 'justify',
+                  hyphens: 'auto',
+                },
+                /* Drop cap on first paragraph */
+                '& > p:first-of-type::first-letter': {
+                  fontFamily: FONT_DISPLAY,
+                  fontStyle: 'italic',
+                  float: 'left',
+                  fontSize: '4.5em',
+                  lineHeight: 0.82,
+                  paddingRight: '0.08em',
+                  paddingTop: '0.05em',
+                  color: T.ink,
+                  fontWeight: 400,
+                },
+                '& h2': {
+                  fontFamily: FONT_DISPLAY,
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                  color: T.ink,
+                  mt: '2em', mb: '0.6em',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.1,
+                  borderTop: `1px solid ${T.rule}`,
+                  pt: '1.25em',
+                },
+                '& h3': {
+                  fontFamily: FONT_DISPLAY,
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  fontSize: 'clamp(1.125rem, 2.5vw, 1.375rem)',
+                  color: T.inkMid,
+                  mt: '1.75em', mb: '0.5em',
+                  letterSpacing: '-0.01em',
+                },
+                '& ul, & ol': { pl: '1.5em', mb: '1.2em' },
+                '& li': { fontFamily: FONT_SANS, fontSize: '1.0625rem', lineHeight: 1.8, color: T.inkMid, mb: '0.35em' },
+                '& li::marker': { color: T.gold },
+                '& blockquote': {
+                  borderLeft: `3px solid ${T.gold}`,
+                  pl: 3, py: 0.5, my: '2em',
+                  background: `${T.gold}05`,
+                  borderRadius: '0 3px 3px 0',
+                  '& p': {
+                    fontFamily: FONT_DISPLAY,
+                    fontStyle: 'italic',
+                    fontSize: '1.25rem',
+                    lineHeight: 1.55,
+                    color: T.inkMid,
+                    textAlign: 'left',
+                    hyphens: 'none',
+                    mb: 0,
+                    '&::first-letter': { all: 'unset' },  // no drop cap in blockquote
+                  },
+                },
+                '& code': { fontFamily: FONT_MONO, fontSize: '0.875em', background: T.cream, px: '5px', py: '2px', borderRadius: '2px', color: T.inkMid },
+                '& pre': { background: T.ink, p: 3, borderRadius: '3px', overflowX: 'auto', mb: '1.5em', '& code': { background: 'transparent', color: '#E2E8F0', p: 0 } },
+                '& strong': { fontWeight: 700, color: T.ink },
+                '& a': { color: T.gold, fontWeight: 500, textDecoration: 'none', borderBottom: `1px solid ${T.goldLight}55`, transition: 'all 0.15s', '&:hover': { borderBottomColor: T.gold } },
+                '& img': { maxWidth: '100%', borderRadius: '3px', my: '2em', display: 'block', border: `1px solid ${T.rule}` },
+                '& table': { width: '100%', borderCollapse: 'collapse', mb: '1.5em', border: `1px solid ${T.rule}` },
+                '& th': { background: T.cream, fontFamily: FONT_MONO, fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600, p: '10px 14px', borderBottom: `2px solid ${T.ruleMd}`, color: T.inkMid, textAlign: 'left' },
+                '& td': { p: '10px 14px', borderBottom: `1px solid ${T.rule}`, color: T.inkMuted, fontFamily: FONT_SANS, fontSize: '0.9375rem' },
+                '& hr': { border: 'none', borderTop: `1px solid ${T.rule}`, my: '2.5em' },
+              }}
+              dangerouslySetInnerHTML={{ __html: cleanContent }}
+            />
 
-                {/* Founder test */}
-                <Box
-                  sx={{
-                    backgroundColor: colorTokens.financeBlue[50],
-                    borderRadius: "20px",
-                    p: 3,
-                    border: `1px solid ${colorTokens.financeBlue[100]}`,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: colorTokens.financeBlue[800], mb: 1, fontSize: "1rem" }}>
-                    🧠 Know Your Financial Type
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: colorTokens.financeBlue[700], lineHeight: 1.7, mb: 2.5, fontSize: "0.875rem" }}>
-                    Take our free founder test and get a personalised financial personality report.
-                  </Typography>
-                  <Button
-                    component={Link}
-                    href="/founder-test"
-                    variant="contained"
-                    fullWidth
-                    size="small"
+            {/* Author card — newspaper colophon style */}
+            <Box sx={{
+              background: T.white,
+              border: `1px solid ${T.rule}`,
+              borderRadius: '3px',
+              p: { xs: 3, md: 4 },
+              mb: 5,
+              display: 'flex', gap: 3, alignItems: 'flex-start',
+              flexDirection: { xs: 'column', sm: 'row' },
+            }}>
+              <Box sx={{ width: 60, height: 60, borderRadius: '3px', background: `${T.gold}18`, border: `1px solid ${T.gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.75rem', color: T.gold, fontWeight: 400 }}>
+                  {post.author.name.charAt(0)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.14em', color: T.inkFaint, textTransform: 'uppercase', mb: 0.5 }}>Written by</Typography>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.25rem', color: T.ink, letterSpacing: '-0.01em', mb: 0.25 }}>{post.author.name}</Typography>
+                {post.author.role && (
+                  <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.58rem', letterSpacing: '0.1em', color: T.gold, textTransform: 'uppercase', mb: 1 }}>{post.author.role} · Merraki Solutions</Typography>
+                )}
+                {post.author.bio && (
+                  <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.9rem', color: T.inkMuted, lineHeight: 1.72 }}>{post.author.bio}</Typography>
+                )}
+              </Box>
+            </Box>
+          </motion.div>
+
+          {/* ── Sidebar ── */}
+          <Box sx={{ position: { lg: 'sticky' }, top: { lg: 96 } }}>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5, ease: EASE }}
+            >
+
+              {/* Consultation CTA */}
+              <Box sx={{
+                background: T.white,
+                border: `1px solid ${T.rule}`,
+                borderTop: `3px solid ${T.gold}`,
+                borderRadius: '3px',
+                p: 3, mb: 3,
+              }}>
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.18em', color: T.gold, textTransform: 'uppercase', mb: 1.5 }}>
+                  Free Session
+                </Typography>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.375rem', color: T.ink, letterSpacing: '-0.015em', lineHeight: 1.15, mb: 1.25 }}>
+                  Apply what you just learned.
+                </Typography>
+                <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.875rem', color: T.inkMuted, lineHeight: 1.7, mb: 2.5 }}>
+                  Book a free 30-min session with Parag or Khyati and walk away with a personalised action plan.
+                </Typography>
+                <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
+                  <Box
+                    component="a"
+                    href={process.env.NEXT_PUBLIC_CALENDLY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     sx={{
-                      borderRadius: "10px",
-                      fontWeight: 600,
-                      background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      py: 1.5, borderRadius: '2px',
+                      background: `linear-gradient(115deg, ${T.goldLight}, ${T.gold})`,
+                      textDecoration: 'none',
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': { boxShadow: `0 6px 20px ${T.goldGlow}` },
                     }}
                   >
-                    Take Free Test
-                  </Button>
-                </Box>
-              </motion.div>
-            </Box>
-          </Grid>
-        </Grid>
+                    <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: '0.875rem', color: T.ink, letterSpacing: '-0.01em' }}>
+                      Book Free Call
+                    </Typography>
+                  </Box>
+                </motion.div>
+              </Box>
 
-        {/* Related posts */}
+              {/* Templates */}
+              <Box sx={{ background: T.white, border: `1px solid ${T.rule}`, borderRadius: '3px', p: 3, mb: 3 }}>
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.18em', color: T.inkFaint, textTransform: 'uppercase', mb: 1.25 }}>Templates</Typography>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.125rem', color: T.ink, letterSpacing: '-0.01em', lineHeight: 1.2, mb: 1 }}>
+                  Professional Excel models
+                </Typography>
+                <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.8125rem', color: T.inkMuted, lineHeight: 1.7, mb: 2 }}>
+                  Put these insights to work with investor-ready financial models and dashboards.
+                </Typography>
+                <Box component={Link} href="/templates" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1.25, borderRadius: '2px', border: `1px solid ${T.rule}`, textDecoration: 'none', transition: 'all 0.15s', '&:hover': { borderColor: T.gold } }}>
+                  <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 500, fontSize: '0.8125rem', color: T.inkMuted }}>Browse Templates →</Typography>
+                </Box>
+              </Box>
+
+              {/* Founder test */}
+              <Box sx={{ background: T.cream, border: `1px solid ${T.rule}`, borderRadius: '3px', p: 3 }}>
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.18em', color: T.inkFaint, textTransform: 'uppercase', mb: 1.25 }}>Free Assessment</Typography>
+                <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1.125rem', color: T.ink, letterSpacing: '-0.01em', lineHeight: 1.2, mb: 1 }}>
+                  Know your financial type
+                </Typography>
+                <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.8125rem', color: T.inkMuted, lineHeight: 1.7, mb: 2 }}>
+                  Take our founder test and get a personalised financial personality report.
+                </Typography>
+                <Box component={Link} href="/founder-test" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 1.25, borderRadius: '2px', background: T.ink, textDecoration: 'none', transition: 'opacity 0.15s', '&:hover': { opacity: 0.85 } }}>
+                  <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 600, fontSize: '0.8125rem', color: T.white }}>Take Free Test →</Typography>
+                </Box>
+              </Box>
+
+            </motion.div>
+          </Box>
+        </Box>
+
+        {/* ── Related posts ── */}
         {relatedPosts.length > 0 && (
-          <Box sx={{ mt: 4, mb: 6 }}>
-            <Divider sx={{ mb: 5 }} />
-            <Typography variant="h4" sx={{ fontWeight: 800, color: colorTokens.darkNavy[900], mb: 4, letterSpacing: "-0.02em" }}>
-              More from the Blog
-            </Typography>
-            <Grid container spacing={3}>
+          <Box sx={{ mt: 6 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 5 }}>
+              <Box sx={{ height: '2px', flex: 1, background: T.ink }} />
+              <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.56rem', letterSpacing: '0.22em', color: T.inkMid, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                More from the Review
+              </Typography>
+              <Box sx={{ height: '2px', flex: 1, background: T.ink }} />
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 0 }}>
               {relatedPosts.map((related, i) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={related.id}>
-                  <BlogCard post={related} index={i} />
-                </Grid>
+                <Box key={related.id} sx={{ px: { xs: 0, md: 3.5 }, borderRight: { md: i < relatedPosts.length - 1 ? `1px solid ${T.rule}` : 'none' } }}>
+                  <BlogCard post={related} index={i} variant="default" />
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Box>
         )}
       </Container>

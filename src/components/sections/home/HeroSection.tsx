@@ -1,598 +1,635 @@
 "use client";
 
-import { Box, Container, Typography, Button, Grid } from "@mui/material";
-import {
-  ArrowForward as ArrowIcon,
-  PlayArrow as PlayIcon,
-} from "@mui/icons-material";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import Link from "next/link";
-import { colorTokens } from "@/theme";
-import { GlassCard } from "@/components/ui";
+import { WhyMerrakiSection } from "./Whymerrakisection";
 
-type FloatingCard = {
-  id: string;
-  top?: string;
-  bottom?: string;
-  left?: string | { xs: string; md: string };
-  right?: string | { xs: string; md: string };
-  label: string;
-  value: string;
-  sub: string;
-  color: string;
-  delay: number;
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════════ */
+const C = {
+  parchment: "#FFFFFF",
+  cream: "#F5F3ED",
+  paper: "#EFECEA",
+  silk: "#E8E4DC",
+  obsidian: "#0E0C09",
+  inkDark: "#1E1C17",
+  ink: "#2E2C26",
+  inkMid: "#4A4840",
+  inkMuted: "#6E6C64",
+  inkFaint: "#9E9C94",
+  gold: "#B08A2E",
+  goldMid: "#C9A84C",
+  goldLight: "#DFC06A",
+  goldPale: "#EDD98A",
+  goldGlow: "rgba(176,138,46,0.18)",
+  goldDim: "rgba(176,138,46,0.10)",
+  goldBorder: "rgba(176,138,46,0.22)",
+  border: "rgba(14,12,9,0.07)",
+  borderMid: "rgba(14,12,9,0.12)",
+  borderHard: "rgba(14,12,9,0.18)",
 };
 
-const FLOATING_CARDS: FloatingCard[] = [
-  {
-    id: "card1",
-    top: "18%",
-    right: { xs: "-5%", md: "2%" },
-    label: "Revenue Growth",
-    value: "+₹2.4 Cr",
-    sub: "Q3 2024 vs Q2",
-    color: colorTokens.success.main,
-    delay: 0.2,
-  },
-  {
-    id: "card2",
-    bottom: "28%",
-    left: { xs: "-5%", md: "1%" },
-    label: "Models Built",
-    value: "150+",
-    sub: "Financial models",
-    color: colorTokens.financeBlue[400],
-    delay: 0.4,
-  },
-  {
-    id: "card3",
-    bottom: "12%",
-    right: { xs: "-5%", md: "4%" },
-    label: "Founders Helped",
-    value: "300+",
-    sub: "Across 12 industries",
-    color: "#A78BFA",
-    delay: 0.6,
-  },
-];
+const FONT_SERIF = `"Cormorant Garamond", "Playfair Display", Georgia, serif`;
+const FONT_SANS = `"Outfit", "DM Sans", sans-serif`;
+const FONT_MONO = `"JetBrains Mono", "Fira Code", monospace`;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
-export function HeroSection() {
-  const { scrollYProgress } = useScroll();
-  const yParallax = useTransform(scrollYProgress, [0, 0.3], [0, -60]);
-  const opacityFade = useTransform(scrollYProgress, [0, 0.25], [1, 0]);
-
+/* ═══════════════════════════════════════════════════════════════
+   REUSABLE ATOMS
+═══════════════════════════════════════════════════════════════ */
+function GoldLine({ width = 28 }: { width?: number }) {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: `linear-gradient(160deg, ${colorTokens.darkNavy[900]} 0%, ${colorTokens.darkNavy[800]} 45%, #0C1F5C 100%)`,
-        display: "flex",
-        alignItems: "center",
-        position: "relative",
-        overflow: "hidden",
-        pt: { xs: 12, md: 0 },
-        pb: { xs: 8, md: 0 },
+    <div
+      style={{
+        width,
+        height: 1,
+        flexShrink: 0,
+        background: `linear-gradient(90deg, ${C.gold}, ${C.goldLight})`,
       }}
-    >
-      {/* Background mesh */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background: `
-            radial-gradient(ellipse at 15% 50%, rgba(26,86,219,0.18) 0%, transparent 55%),
-            radial-gradient(ellipse at 85% 20%, rgba(139,92,246,0.12) 0%, transparent 50%),
-            radial-gradient(ellipse at 60% 85%, rgba(26,86,219,0.08) 0%, transparent 50%)
-          `,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Grid overlay */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)
-          `,
-          backgroundSize: "60px 60px",
-          pointerEvents: "none",
-        }}
-      />
-
-      <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
-        <Grid container spacing={6} alignItems="center">
-          {/* Left — Copy */}
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <motion.div
-              style={{ y: yParallax, opacity: opacityFade }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            >
-              {/* Eyebrow */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-              >
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 1,
-                    px: 2,
-                    py: 0.875,
-                    borderRadius: "999px",
-                    backgroundColor: "rgba(26,86,219,0.15)",
-                    border: "1px solid rgba(26,86,219,0.3)",
-                    mb: 3,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 7,
-                      height: 7,
-                      borderRadius: "50%",
-                      backgroundColor: colorTokens.financeBlue[400],
-                      boxShadow: `0 0 8px ${colorTokens.financeBlue[400]}`,
-                    }}
-                  />
-                  <Typography
-                    variant="overline"
-                    sx={{
-                      color: colorTokens.financeBlue[300],
-                      letterSpacing: "0.1em",
-                      fontSize: "0.7rem",
-                      lineHeight: 1,
-                    }}
-                  >
-                    Trusted by 300+ Founders Across India
-                  </Typography>
-                </Box>
-              </motion.div>
-
-              {/* Headline */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                <Typography
-                  variant="h1"
-                  sx={{
-                    color: "#fff",
-                    mb: 2.5,
-                    fontWeight: 800,
-                    letterSpacing: "-0.035em",
-                    lineHeight: 1.06,
-                  }}
-                >
-                  Your Trusted{" "}
-                  <Box
-                    component="span"
-                    sx={{
-                      background: `linear-gradient(135deg, ${colorTokens.financeBlue[300]} 0%, #A78BFA 60%, ${colorTokens.financeBlue[400]} 100%)`,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      backgroundClip: "text",
-                    }}
-                  >
-                    Partner
-                  </Box>{" "}
-                  in Fiscal Fitness
-                </Typography>
-              </motion.div>
-
-              {/* Sub */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    color: "rgba(255,255,255,0.6)",
-                    mb: 4,
-                    maxWidth: 520,
-                    lineHeight: 1.8,
-                    fontWeight: 400,
-                  }}
-                >
-                  We transform numbers into strategies, insights into action,
-                  and complexity into confidence — so you can focus on building.
-                </Typography>
-              </motion.div>
-
-              {/* Transform pills */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.38, duration: 0.5 }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1.5,
-                    flexWrap: "wrap",
-                    mb: 4,
-                  }}
-                >
-                  {[
-                    { from: "Numbers", to: "Strategies" },
-                    { from: "Insights", to: "Action" },
-                    { from: "Complexity", to: "Confidence" },
-                  ].map((item) => (
-                    <Box
-                      key={item.from}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.75,
-                        px: 1.75,
-                        py: 0.875,
-                        borderRadius: "8px",
-                        backgroundColor: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.5)",
-                          fontWeight: 500,
-                          fontFamily: "var(--font-display)",
-                        }}
-                      >
-                        {item.from}
-                      </Typography>
-                      <ArrowIcon
-                        sx={{
-                          fontSize: "0.75rem",
-                          color: colorTokens.financeBlue[400],
-                        }}
-                      />
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: colorTokens.financeBlue[300],
-                          fontWeight: 700,
-                          fontFamily: "var(--font-display)",
-                        }}
-                      >
-                        {item.to}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </motion.div>
-
-              {/* CTAs */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45, duration: 0.5 }}
-              >
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <motion.div
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Button
-                      component={Link}
-                      href="/templates"
-                      variant="contained"
-                      size="large"
-                      endIcon={<ArrowIcon />}
-                      sx={{
-                        px: 4,
-                        py: 1.875,
-                        fontSize: "1rem",
-                        fontWeight: 700,
-                        borderRadius: "14px",
-                        background: `linear-gradient(135deg, ${colorTokens.financeBlue[400]}, ${colorTokens.financeBlue[600]})`,
-                        boxShadow: "0 8px 32px rgba(26,86,219,0.45)",
-                        "&:hover": {
-                          boxShadow: "0 12px 40px rgba(26,86,219,0.55)",
-                        },
-                      }}
-                    >
-                      Browse Templates
-                    </Button>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Button
-                      component={Link}
-                      href="/founder-test"
-                      variant="outlined"
-                      size="large"
-                      startIcon={<PlayIcon />}
-                      sx={{
-                        px: 4,
-                        py: 1.875,
-                        fontSize: "1rem",
-                        fontWeight: 600,
-                        borderRadius: "14px",
-                        color: "rgba(255,255,255,0.85)",
-                        borderColor: "rgba(255,255,255,0.2)",
-                        borderWidth: "1.5px",
-                        "&:hover": {
-                          borderColor: "rgba(255,255,255,0.4)",
-                          backgroundColor: "rgba(255,255,255,0.06)",
-                        },
-                      }}
-                    >
-                      Take Founder Test
-                    </Button>
-                  </motion.div>
-                </Box>
-              </motion.div>
-            </motion.div>
-          </Grid>
-
-          {/* Right — Floating Dashboard */}
-          <Grid size={{ xs: 12, lg: 6 }}>
-            <Box
-              sx={{
-                position: "relative",
-                height: { xs: 360, md: 500 },
-                display: { xs: "none", md: "block" },
-              }}
-            >
-              {/* Central card */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  delay: 0.3,
-                  duration: 0.7,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%,-50%)",
-                  width: "70%",
-                }}
-              >
-                <GlassCard
-                  intensity="medium"
-                  sx={{
-                    p: 3,
-                    background: "rgba(255,255,255,0.07)",
-                    border: "1px solid rgba(255,255,255,0.14)",
-                  }}
-                >
-                  <Typography
-                    variant="overline"
-                    sx={{
-                      color: "rgba(255,255,255,0.4)",
-                      mb: 2,
-                      display: "block",
-                      letterSpacing: "0.1em",
-                    }}
-                  >
-                    Financial Health Score
-                  </Typography>
-
-                  {/* Score bars */}
-                  {[
-                    {
-                      label: "Cash Flow",
-                      pct: 82,
-                      color: colorTokens.success.main,
-                    },
-                    {
-                      label: "Profitability",
-                      pct: 68,
-                      color: colorTokens.financeBlue[400],
-                    },
-                    { label: "Growth Rate", pct: 91, color: "#A78BFA" },
-                    {
-                      label: "Risk Score",
-                      pct: 54,
-                      color: colorTokens.warning.main,
-                    },
-                  ].map((bar, i) => (
-                    <Box key={bar.label} sx={{ mb: 1.75 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          mb: 0.5,
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: "rgba(255,255,255,0.65)",
-                            fontWeight: 500,
-                          }}
-                        >
-                          {bar.label}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: bar.color,
-                            fontWeight: 700,
-                            fontFamily: "var(--font-display)",
-                          }}
-                        >
-                          {bar.pct}%
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          height: 6,
-                          borderRadius: "999px",
-                          backgroundColor: "rgba(255,255,255,0.08)",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${bar.pct}%` }}
-                          transition={{
-                            delay: 0.5 + i * 0.12,
-                            duration: 0.8,
-                            ease: "easeOut",
-                          }}
-                          style={{
-                            height: "100%",
-                            backgroundColor: bar.color,
-                            borderRadius: "999px",
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  ))}
-                </GlassCard>
-              </motion.div>
-
-              {/* Floating metric cards */}
-              {FLOATING_CARDS.map((card) => (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{
-                    delay: card.delay,
-                    duration: 0.5,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  style={{
-                    position: "absolute",
-                    top: card.top as string | undefined,
-                    bottom: card.bottom as string | undefined,
-                    right:
-                      typeof card.right === "string" ? card.right : undefined,
-                    left: typeof card.left === "string" ? card.left : undefined,
-                  }}
-                >
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{
-                      duration: 3 + Math.random() * 2,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: Math.random() * 2,
-                    }}
-                  >
-                    <GlassCard
-                      intensity="high"
-                      sx={{
-                        px: 2.5,
-                        py: 1.75,
-                        minWidth: 160,
-                        background: "rgba(255,255,255,0.1)",
-                        border: `1px solid ${card.color}33`,
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.5)",
-                          display: "block",
-                          mb: 0.25,
-                        }}
-                      >
-                        {card.label}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 800,
-                          fontSize: "1.25rem",
-                          color: card.color,
-                          lineHeight: 1.2,
-                          letterSpacing: "-0.02em",
-                        }}
-                      >
-                        {card.value}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.35)",
-                          mt: 0.25,
-                          display: "block",
-                        }}
-                      >
-                        {card.sub}
-                      </Typography>
-                    </GlassCard>
-                  </motion.div>
-                </motion.div>
-              ))}
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-
-      {/* Scroll indicator */}
-      <motion.div
-        style={{
-          position: "absolute",
-          bottom: 32,
-          left: "50%",
-          translateX: "-50%",
-          opacity: opacityFade,
-        }}
-        animate={{ y: [0, 8, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 0.75,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{ color: "rgba(255,255,255,0.3)", letterSpacing: "0.08em" }}
-          >
-            Scroll to explore
-          </Typography>
-          <Box
-            sx={{
-              width: 24,
-              height: 38,
-              borderRadius: "12px",
-              border: "1.5px solid rgba(255,255,255,0.2)",
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "center",
-              pt: 0.75,
-            }}
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              style={{
-                width: 4,
-                height: 8,
-                borderRadius: "2px",
-                backgroundColor: "rgba(255,255,255,0.4)",
-              }}
-            />
-          </Box>
-        </Box>
-      </motion.div>
-    </Box>
+    />
   );
 }
+/* ═══════════════════════════════════════════════════════════════
+   HERO BACKGROUND LAYERS
+═══════════════════════════════════════════════════════════════ */
+function HeroBackground() {
+  return (
+    <>
+      {/* Base gradient */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `linear-gradient(152deg, ${C.parchment} 0%, ${C.cream} 45%, #EDE9E0 100%)`,
+        }}
+      />
+
+      {/* Subtle grid */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          backgroundImage: `
+          linear-gradient(${C.border} 1px, transparent 1px),
+          linear-gradient(90deg, ${C.border} 1px, transparent 1px)
+        `,
+          backgroundSize: "88px 88px",
+        }}
+      />
+
+      {/* Thin vertical editorial rule */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          right: "32%",
+          width: 1,
+          height: "100%",
+          background: `linear-gradient(180deg,
+          transparent 0%, ${C.borderMid} 20%,
+          ${C.borderMid} 80%, transparent 100%)`,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Gold bloom — top right */}
+      <div
+        style={{
+          position: "absolute",
+          width: 920,
+          height: 920,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(201,168,76,0.10) 0%, transparent 58%)`,
+          top: -320,
+          right: -220,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Soft gold bloom — bottom left */}
+      <div
+        style={{
+          position: "absolute",
+          width: 560,
+          height: 560,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(176,138,46,0.07) 0%, transparent 60%)`,
+          bottom: -140,
+          left: -120,
+          pointerEvents: "none",
+        }}
+      />
+    </>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEFT COLUMN — Headline, body copy, CTAs, stats
+═══════════════════════════════════════════════════════════════ */
+function HeroLeft() {
+  return (
+    <div>
+      {/* Eyebrow label */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, ease: EASE }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 34,
+          }}
+        >
+          <GoldLine />
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "0.58rem",
+              letterSpacing: "0.24em",
+              color: C.gold,
+              textTransform: "uppercase",
+            }}
+          >
+            Finance Intelligence for Founders
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Headline */}
+      <motion.div
+        initial={{ opacity: 0, y: 48 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.0, delay: 0.08, ease: EASE }}
+      >
+        <h1
+          style={{
+            fontFamily: FONT_SERIF,
+            fontStyle: "italic",
+            fontWeight: 300,
+            fontSize: "clamp(3.4rem, 5.8vw, 6rem)",
+            lineHeight: 0.92,
+            letterSpacing: "-0.042em",
+            color: C.inkDark,
+            margin: "0 0 8px",
+          }}
+        >
+          Helping founders
+        </h1>
+        <h1
+          style={{
+            fontFamily: FONT_SERIF,
+            fontStyle: "italic",
+            fontWeight: 400,
+            fontSize: "clamp(3.4rem, 5.8vw, 6rem)",
+            lineHeight: 0.92,
+            letterSpacing: "-0.042em",
+            margin: "0 0 22px",
+            background: `linear-gradient(108deg, ${C.gold} 0%, ${C.goldPale} 68%)`,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          grow financially.
+        </h1>
+        {/* Decorative gold rule */}
+        <div
+          style={{
+            width: 52,
+            height: 2,
+            background: `linear-gradient(90deg, ${C.gold}, ${C.goldLight})`,
+            borderRadius: 1,
+            marginBottom: 28,
+          }}
+        />
+      </motion.div>
+
+      {/* Body copy */}
+      <motion.p
+        initial={{ opacity: 0, y: 22 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.75, delay: 0.22, ease: EASE }}
+        style={{
+          fontFamily: FONT_SANS,
+          fontSize: "1.06rem",
+          color: C.inkMid,
+          lineHeight: 1.88,
+          maxWidth: 450,
+          margin: "0 0 46px",
+        }}
+      >
+        Whether you're struggling with fundraising, managing cash flow, or
+        making sense of your numbers — we bring{" "}
+        <em style={{ fontStyle: "normal", color: C.inkDark, fontWeight: 500 }}>
+          clarity, structure, and strategy
+        </em>{" "}
+        to your finances.
+      </motion.p>
+
+      {/* CTAs */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.65, delay: 0.36, ease: EASE }}
+        style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 54 }}
+      >
+        <motion.a
+          href="/book-consultation"
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            fontFamily: FONT_SANS,
+            fontSize: "0.88rem",
+            fontWeight: 600,
+            color: C.obsidian,
+            textDecoration: "none",
+            padding: "14px 32px",
+            borderRadius: 11,
+            background: `linear-gradient(135deg, ${C.gold}, ${C.goldLight})`,
+            boxShadow: `0 4px 26px ${C.goldGlow}, 0 1px 0 rgba(255,255,255,0.3) inset`,
+            letterSpacing: "0.02em",
+          }}
+        >
+          Book Free Call →
+        </motion.a>
+        </motion.div>
+
+      {/* Stats strip */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.65, delay: 0.52, ease: EASE }}
+        style={{
+          display: "flex",
+          paddingTop: 26,
+          borderTop: `1px solid ${C.border}`,
+        }}
+      >
+        {[
+          { val: "300+", label: "Founders Advised" },
+          { val: "₹50Cr+", label: "Revenue Modelled" },
+          { val: "150+", label: "Models Delivered" },
+          { val: "5 Yrs", label: "Deep Expertise" },
+        ].map((s, i) => (
+          <div
+            key={s.label}
+            style={{
+              paddingLeft: i > 0 ? 22 : 0,
+              paddingRight: 22,
+              borderLeft: i > 0 ? `1px solid ${C.border}` : "none",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: "1.05rem",
+                fontWeight: 500,
+                color: C.inkDark,
+                letterSpacing: "-0.025em",
+                lineHeight: 1,
+              }}
+            >
+              {s.val}
+            </div>
+            <div
+              style={{
+                fontFamily: FONT_MONO,
+                fontSize: "0.47rem",
+                letterSpacing: "0.13em",
+                color: C.inkFaint,
+                textTransform: "uppercase",
+                marginTop: 5,
+              }}
+            >
+              {s.label}
+            </div>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RIGHT COLUMN — Feature cards + testimonial
+═══════════════════════════════════════════════════════════════ */
+function HeroRight() {
+  const cards = [
+    {
+      icon: "◈",
+      title: "3-Statement Models",
+      desc: "Audit-ready P&L, Balance Sheet, Cash Flow — boardroom-confident.",
+    },
+    {
+      icon: "⊞",
+      title: "Live Excel Dashboards",
+      desc: "Decisions from data, not spreadsheet chaos.",
+    },
+    {
+      icon: "◎",
+      title: "CFO-as-a-Service",
+      desc: "Strategic finance partner — on demand, no full-time hire.",
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 42 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 1.1, delay: 0.14, ease: EASE }}
+      style={{ display: "flex", flexDirection: "column", gap: 18 }}
+    >
+      {/* Feature cards */}
+      {cards.map((card, i) => (
+        <motion.div
+          key={card.title}
+          initial={{ opacity: 0, x: 32 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.28 + i * 0.12, duration: 0.7, ease: EASE }}
+          whileHover={{ x: 5 }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = C.goldBorder;
+            e.currentTarget.style.boxShadow = `0 10px 36px rgba(14,12,9,0.09), 0 0 0 1px ${C.goldBorder}, 0 1px 0 rgba(255,255,255,0.8) inset`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = C.border;
+            e.currentTarget.style.boxShadow =
+              "0 2px 14px rgba(14,12,9,0.04), 0 1px 0 rgba(255,255,255,0.8) inset";
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            padding: "18px 22px",
+            background: "rgba(255,255,255,0.78)",
+            border: `1px solid ${C.border}`,
+            borderRadius: 15,
+            backdropFilter: "blur(14px)",
+            boxShadow:
+              "0 2px 14px rgba(14,12,9,0.04), 0 1px 0 rgba(255,255,255,0.8) inset",
+            cursor: "default",
+            transition: "border-color 0.25s ease, box-shadow 0.25s ease",
+          }}
+        >
+          {/* Icon badge */}
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 11,
+              flexShrink: 0,
+              background: `linear-gradient(135deg, ${C.goldDim}, rgba(212,174,88,0.05))`,
+              border: `1px solid ${C.goldBorder}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "1.05rem",
+              color: C.gold,
+            }}
+          >
+            {card.icon}
+          </div>
+
+          {/* Text */}
+          <div style={{ flex: 1 }}>
+            <div
+              style={{
+                fontFamily: FONT_SANS,
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                color: C.inkDark,
+                marginBottom: 3,
+              }}
+            >
+              {card.title}
+            </div>
+            <div
+              style={{
+                fontFamily: FONT_SANS,
+                fontSize: "0.78rem",
+                color: C.inkMuted,
+                lineHeight: 1.55,
+              }}
+            >
+              {card.desc}
+            </div>
+          </div>
+
+          <span
+            style={{
+              color: C.inkFaint,
+              fontSize: "0.7rem",
+              marginLeft: "auto",
+            }}
+          >
+            →
+          </span>
+        </motion.div>
+      ))}
+
+      {/* Testimonial chip */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.68, duration: 0.65, ease: EASE }}
+        style={{
+          padding: "18px 22px",
+          background: C.goldDim,
+          border: `1px solid ${C.goldBorder}`,
+          borderRadius: 15,
+          display: "flex",
+          gap: 13,
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: FONT_SERIF,
+            fontSize: "2rem",
+            color: C.gold,
+            lineHeight: 1,
+            marginTop: -4,
+            flexShrink: 0,
+          }}
+        >
+          "
+        </div>
+        <div>
+          <p
+            style={{
+              fontFamily: FONT_SERIF,
+              fontStyle: "italic",
+              fontSize: "0.93rem",
+              color: C.inkDark,
+              lineHeight: 1.65,
+              margin: "0 0 8px",
+            }}
+          >
+            Merraki built our Series A model in 4 days. Investors loved the
+            clarity.
+          </p>
+          <div
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "0.5rem",
+              color: C.inkMuted,
+              textTransform: "uppercase",
+              letterSpacing: "0.13em",
+            }}
+          >
+            — Founder, D2C Startup · ₹8Cr raised
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLL INDICATOR
+═══════════════════════════════════════════════════════════════ */
+function ScrollCue() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1.3, duration: 0.6 }}
+      style={{
+        position: "absolute",
+        bottom: 30,
+        left: "50%",
+        transform: "translateX(-50%)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 8,
+        zIndex: 10,
+      }}
+    >
+      {/* Scroll pill */}
+      <motion.div
+        animate={{ y: [0, 9, 0] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+        style={{
+          width: 22,
+          height: 36,
+          borderRadius: 11,
+          border: `1.5px solid ${C.borderHard}`,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          padding: "4px 0",
+        }}
+      >
+        <motion.div
+          animate={{ y: [0, 14, 0], opacity: [1, 0.15, 1] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ width: 3, height: 7, borderRadius: 2, background: C.gold }}
+        />
+      </motion.div>
+      <span
+        style={{
+          fontFamily: FONT_MONO,
+          fontSize: "0.43rem",
+          letterSpacing: "0.2em",
+          color: C.inkFaint,
+          textTransform: "uppercase",
+        }}
+      >
+        scroll
+      </span>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO SECTION  (pure hero — no chat, no calc embedded here)
+═══════════════════════════════════════════════════════════════ */
+function Hero() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const translateY = useTransform(scrollYProgress, [0, 1], ["0%", "16%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  return (
+    <section
+      ref={heroRef}
+      style={{
+        minHeight: "100vh",
+        paddingTop: 64,
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <HeroBackground />
+
+      <motion.div
+        style={{
+          y: translateY,
+          opacity,
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "68px 52px 52px",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1.08fr",
+              gap: "76px",
+              alignItems: "center",
+            }}
+          >
+            <HeroLeft />
+            <HeroRight />
+          </div>
+        </div>
+      </motion.div>
+
+      <ScrollCue />
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE ROOT EXPORT
+   Renders: NavBar → Hero → WhyMerrakiSection (chat)
+═══════════════════════════════════════════════════════════════ */
+export function HeroSection() {
+  return (
+    <div
+      style={{
+        fontFamily: FONT_SANS,
+        background: C.parchment,
+        overflowX: "hidden",
+      }}
+    >
+      <Hero />
+      {/* Chat section mounts directly after hero */}
+      <WhyMerrakiSection />
+    </div>
+  );
+}
+
+export default HeroSection;

@@ -42,44 +42,90 @@ export class ErrorBoundary extends React.Component<
       return (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            py: 8,
-            px: 3,
+            position: "relative",
+            border: "1px solid #E2DED5",
+            borderRadius: "18px",
+            background: "#FFFFFF",
+            px: { xs: 3, md: 6 },
+            py: { xs: 6, md: 8 },
             textAlign: "center",
+            overflow: "hidden",
           }}
         >
+          {/* Subtle gold glow */}
           <Box
             sx={{
-              width: 64,
-              height: 64,
+              position: "absolute",
+              width: "60%",
+              height: "120%",
+              top: "-40%",
+              left: "20%",
               borderRadius: "50%",
-              backgroundColor: colorTokens.error.light,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.75rem",
+              background:
+                "radial-gradient(ellipse, rgba(184,146,42,0.06) 0%, transparent 70%)",
+              pointerEvents: "none",
+            }}
+          />
+
+          {/* Micro label */}
+          <Typography
+            sx={{
+              fontFamily: '"DM Mono", monospace',
+              fontSize: "0.65rem",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#94A3B8",
+              mb: 3,
+            }}
+          >
+            Section Unavailable
+          </Typography>
+
+          {/* Editorial headline */}
+          <Typography
+            sx={{
+              fontFamily: '"Instrument Serif", serif',
+              fontStyle: "italic",
+              fontSize: { xs: "1.8rem", md: "2.2rem" },
+              lineHeight: 1.1,
+              letterSpacing: "-0.03em",
+              color: "#0C0E12",
               mb: 2,
             }}
           >
-            ⚠️
-          </Box>
-          <Typography variant="h5" fontWeight={700} mb={1}>
-            Something went wrong
+            We couldn’t load this section.
           </Typography>
+
           <Typography
-            variant="body2"
-            color="text.secondary"
-            mb={3}
-            sx={{ maxWidth: 400 }}
+            sx={{
+              color: "#64748B",
+              mb: 4,
+              maxWidth: 420,
+              mx: "auto",
+              lineHeight: 1.8,
+            }}
           >
             {this.state.error?.message ??
-              "An unexpected error occurred. Please try again."}
+              "An unexpected issue occurred. Please try again."}
           </Typography>
-          <Button variant="contained" onClick={this.handleReset}>
-            Try Again
+
+          <Button
+            onClick={this.handleReset}
+            sx={{
+              px: 4,
+              py: 1.5,
+              borderRadius: "14px",
+              fontWeight: 600,
+              background: "linear-gradient(135deg, #DDB96A, #B8922A)",
+              color: "#FFFFFF",
+              boxShadow: "0 8px 24px rgba(184,146,42,0.35)",
+              transition: "all 0.25s ease",
+              "&:hover": {
+                boxShadow: "0 12px 30px rgba(184,146,42,0.45)",
+              },
+            }}
+          >
+            Reload Section
           </Button>
         </Box>
       );

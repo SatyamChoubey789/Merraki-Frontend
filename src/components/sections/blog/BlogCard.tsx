@@ -1,280 +1,162 @@
-// components/sections/blog/BlogCard.tsx
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { AccessTime as TimeIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { colorTokens, shadowTokens } from "@/theme";
 import { formatDate } from "@/lib/utils/formatters";
 import type { BlogPost } from "@/types/blog.types";
+
+const T = {
+  white:     '#FFFFFF',
+  offwhite:  '#F8F6F1',
+  cream:     '#F0EDE4',
+  parchment: '#E8E3D8',
+  ink:       '#0A0C0F',
+  inkMid:    '#1C2333',
+  inkMuted:  '#4A5568',
+  inkFaint:  '#8896A8',
+  inkGhost:  '#B8C4D0',
+  rule:      '#D8D3C8',
+  ruleMd:    '#C4BDB0',
+  gold:      '#B8922A',
+  goldMid:   '#C9A84C',
+  goldLight: '#DDB96A',
+  goldGlow:  'rgba(184,146,42,0.07)',
+};
+
+const FONT_DISPLAY = '"Instrument Serif", "Playfair Display", Georgia, serif';
+const FONT_SANS    = '"DM Sans", "Mona Sans", system-ui, sans-serif';
+const FONT_MONO    = '"DM Mono", "JetBrains Mono", ui-monospace, monospace';
+const EASE         = [0.16, 1, 0.3, 1] as const;
 
 interface BlogCardProps {
   post: BlogPost;
   index?: number;
+  variant?: 'default' | 'horizontal' | 'compact';
 }
 
-// Unsplash page URLs are not direct image URLs — detect and skip them.
-// A direct image URL contains "images.unsplash.com" or ends in an image ext.
-function isDirectImageUrl(url: string | null): boolean {
-  if (!url) return false;
-  return (
-    url.includes("images.unsplash.com") ||
-    url.includes("cdn.") ||
-    /\.(jpg|jpeg|png|webp|avif|gif)(\?.*)?$/i.test(url)
-  );
-}
-
-// Pick an emoji cover based on tags / title keywords
-function getCoverEmoji(post: BlogPost): string {
-  const text = (post.title + " " + post.tags.join(" ")).toLowerCase();
-  if (text.includes("valuation") || text.includes("dcf")) return "📈";
-  if (text.includes("cash") || text.includes("runway")) return "💰";
-  if (text.includes("excel") || text.includes("dashboard")) return "📊";
-  if (text.includes("tax") || text.includes("gst")) return "🧾";
-  if (text.includes("startup") || text.includes("founder")) return "🚀";
-  if (text.includes("invest")) return "💎";
-  if (text.includes("profit") || text.includes("margin")) return "📉";
-  return "📝";
-}
-
-export function BlogCard({ post, index = 0 }: BlogCardProps) {
-  const hasDirectImage = isDirectImageUrl(post.coverImage);
-  const emoji = getCoverEmoji(post);
+export function BlogCard({ post, index = 0, variant = 'default' }: BlogCardProps) {
+  const isHorizontal = variant === 'horizontal';
+  const isCompact    = variant === 'compact';
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.4, ease: "easeOut" }}
-      whileHover={{ y: -6 }}
+      transition={{ delay: index * 0.06, duration: 0.45, ease: EASE }}
+      whileHover={{ y: -4 }}
+      style={{ height: '100%' }}
     >
-      <Link
-        href={`/blog/${post.slug}`}
-        style={{ textDecoration: "none", display: "block", height: "100%" }}
-      >
-        <Box
-          sx={{
-            borderRadius: "18px",
-            border: `1px solid ${colorTokens.slate[100]}`,
-            overflow: "hidden",
-            backgroundColor: colorTokens.white,
-            boxShadow: shadowTokens.md,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            transition: "all 0.3s ease",
-            "&:hover": {
-              boxShadow: shadowTokens.xl,
-              borderColor: colorTokens.financeBlue[100],
-              "& .blog-card-image": { transform: "scale(1.04)" },
-            },
-          }}
-        >
-          {/* ── Cover ────────────────────────────────────────────────── */}
-          <Box
-            sx={{
-              position: "relative",
-              height: 220,
-              overflow: "hidden",
-              backgroundColor: colorTokens.financeBlue[50],
+      <Link href={`/blog/${post.slug}`} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: isHorizontal ? 'row' : 'column',
+          height: '100%',
+          background: T.white,
+          border: `1px solid ${T.rule}`,
+          borderRadius: '3px',
+          overflow: 'hidden',
+          transition: 'box-shadow 0.25s ease, border-color 0.2s ease',
+          '&:hover': {
+            boxShadow: `0 6px 28px rgba(10,12,15,0.07)`,
+            borderColor: T.ruleMd,
+            '& .card-title': { color: T.gold },
+            '& .card-cover img': { transform: 'scale(1.04)' },
+          },
+        }}>
+
+          {/* Cover */}
+          {!isCompact && (
+            <Box className="card-cover" sx={{
+              position: 'relative',
               flexShrink: 0,
-            }}
-          >
-            {hasDirectImage ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <Box
-                component="img"
-                className="blog-card-image"
-                src={post.coverImage!}
-                alt={post.title}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  transition: "transform 0.4s ease",
-                }}
-                onError={(e) => {
-                  // If image fails to load, hide it — emoji fallback shows
-                  (e.target as HTMLElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "3.5rem",
-                  background: `linear-gradient(135deg, ${colorTokens.financeBlue[100]} 0%, ${colorTokens.financeBlue[50]} 100%)`,
-                }}
-              >
-                {emoji}
-              </Box>
-            )}
-
-            {/* Category badge */}
-            <Box sx={{ position: "absolute", top: 14, left: 14 }}>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.625,
-                  borderRadius: "8px",
-                  background: "rgba(10,20,48,0.72)",
-                  backdropFilter: "blur(8px)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#fff",
-                    fontWeight: 700,
-                    letterSpacing: "0.04em",
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  {post.category.name}
-                </Typography>
-              </Box>
-            </Box>
-
-            {post.isFeatured && (
-              <Box sx={{ position: "absolute", top: 14, right: 14 }}>
-                <Box
-                  sx={{
-                    px: 1.5,
-                    py: 0.625,
-                    borderRadius: "8px",
-                    background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-                  }}
-                >
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "#fff", fontWeight: 700, fontSize: "0.65rem" }}
-                  >
-                    FEATURED
-                  </Typography>
+              height: isHorizontal ? '100%' : 200,
+              width: isHorizontal ? 180 : '100%',
+              background: T.parchment,
+              overflow: 'hidden',
+            }}>
+              {post.coverImage ? (
+                <Box component="img" src={post.coverImage} alt={post.title}
+                  sx={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.45s ease' }} />
+              ) : (
+                <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: T.cream }}>
+                  <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '3.5rem', color: T.rule }}>M</Typography>
                 </Box>
-              </Box>
-            )}
-          </Box>
+              )}
 
-          {/* ── Content ──────────────────────────────────────────────── */}
-          <Box sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
-            {/* Meta row */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-              <Typography
-                variant="caption"
-                sx={{ color: colorTokens.slate[400], fontWeight: 500 }}
-              >
-                {formatDate(post.publishedAt)}
-              </Typography>
-              <Box
-                sx={{
-                  width: 3,
-                  height: 3,
-                  borderRadius: "50%",
-                  backgroundColor: colorTokens.slate[300],
-                }}
-              />
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <TimeIcon sx={{ fontSize: "0.75rem", color: colorTokens.slate[400] }} />
-                <Typography
-                  variant="caption"
-                  sx={{ color: colorTokens.slate[400], fontWeight: 500 }}
-                >
-                  {post.readingTime} min read
+              {/* Category chip */}
+              <Box sx={{ position: 'absolute', top: 10, left: 10, px: 1.25, py: 0.5, background: 'rgba(10,12,15,0.72)', backdropFilter: 'blur(6px)' }}>
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.48rem', letterSpacing: '0.18em', color: T.white, textTransform: 'uppercase' }}>
+                  {post.category?.name}
                 </Typography>
               </Box>
+
+              {post.isFeatured && (
+                <Box sx={{ position: 'absolute', top: 10, right: 10, px: 1.25, py: 0.5, background: T.gold }}>
+                  <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.18em', color: T.white, textTransform: 'uppercase' }}>Featured</Typography>
+                </Box>
+              )}
             </Box>
+          )}
+
+          {/* Body */}
+          <Box sx={{ p: isCompact ? 1.75 : 2.5, flex: 1, display: 'flex', flexDirection: 'column', borderLeft: isHorizontal ? `1px solid ${T.rule}` : 'none' }}>
+
+            {/* Compact: category inline */}
+            {isCompact && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: T.gold, opacity: 0.65 }} />
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.5rem', letterSpacing: '0.16em', color: T.gold, textTransform: 'uppercase' }}>
+                  {post.category?.name}
+                </Typography>
+              </Box>
+            )}
 
             {/* Title */}
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                color: colorTokens.darkNavy[900],
-                lineHeight: 1.35,
-                mb: 1.5,
-                letterSpacing: "-0.015em",
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                fontSize: { xs: "1.0625rem", md: "1.125rem" },
-                transition: "color 0.2s ease",
-                "&:hover": { color: colorTokens.financeBlue[600] },
-              }}
-            >
+            <Typography className="card-title" sx={{
+              fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontWeight: 400,
+              fontSize: isCompact ? '0.9375rem' : isHorizontal ? '1.0625rem' : '1.1875rem',
+              color: T.ink, letterSpacing: '-0.01em', lineHeight: 1.2,
+              mb: isCompact ? 0.75 : 1.25,
+              overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: isCompact ? 2 : 2, WebkitBoxOrient: 'vertical',
+              transition: 'color 0.2s',
+            }}>
               {post.title}
             </Typography>
 
-            {/* Excerpt */}
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                lineHeight: 1.7,
-                flex: 1,
-                overflow: "hidden",
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                mb: 2.5,
-              }}
-            >
-              {post.excerpt}
-            </Typography>
+            {/* Excerpt — only for default/horizontal */}
+            {!isCompact && (
+              <Typography sx={{
+                fontFamily: FONT_SANS, fontSize: '0.84375rem', color: T.inkMuted, lineHeight: 1.72,
+                flex: 1, mb: 2,
+                overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: isHorizontal ? 2 : 3, WebkitBoxOrient: 'vertical',
+              }}>
+                {post.excerpt}
+              </Typography>
+            )}
 
-            {/* Author */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: `linear-gradient(135deg, ${colorTokens.financeBlue[500]}, ${colorTokens.financeBlue[700]})`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: "#fff",
-                    fontWeight: 800,
-                    fontSize: "0.8125rem",
-                    fontFamily: "var(--font-display)",
-                  }}
-                >
-                  {post.author.name.charAt(0)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 700,
-                    color: colorTokens.darkNavy[700],
-                    display: "block",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {post.author.name}
-                </Typography>
-                {post.author.role && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: colorTokens.slate[400], lineHeight: 1 }}
-                  >
-                    {post.author.role}
+            {/* Meta footer */}
+            <Box sx={{
+              pt: isCompact ? 0.75 : 2,
+              borderTop: `1px solid ${T.rule}`,
+              display: 'flex', alignItems: 'center', gap: 1.5, mt: 'auto',
+              flexWrap: 'wrap',
+            }}>
+              {!isCompact && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                  <Box sx={{ width: 24, height: 24, borderRadius: '2px', background: `${T.gold}18`, border: `1px solid ${T.gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.75rem', color: T.gold }}>
+                      {post.author.name.charAt(0)}
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.52rem', letterSpacing: '0.08em', color: T.inkFaint, textTransform: 'uppercase', lineHeight: 1.2 }}>
+                    {post.author.name}
                   </Typography>
-                )}
-              </Box>
+                </Box>
+              )}
+              <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.5rem', letterSpacing: '0.1em', color: T.inkGhost, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                {formatDate(post.publishedAt)} · {post.readingTime} min
+              </Typography>
             </Box>
           </Box>
         </Box>
