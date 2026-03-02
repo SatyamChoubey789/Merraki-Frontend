@@ -5,19 +5,19 @@ import { useState, useEffect } from 'react';
 
 /* ══ TOKENS — warm luxury (Merraki palette) ══════════════ */
 const T = {
-  bg:        '#0C0B08',
-  bgCard:    '#141210',
-  ink:       '#FAFAF7',
-  inkMid:    '#C8C4BB',
-  inkMuted:  '#8A877E',
-  inkFaint:  '#5A5750',
-  border:    'rgba(255,255,255,0.07)',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldPale:  '#F0D898',
-  goldGlow:  'rgba(184,146,42,0.20)',
-  goldDim:   'rgba(184,146,42,0.08)',
+  white: "#FFFFFF",
+  offwhite: "#F5F7FB",
+  cream: "#EDF3FF",
+  parchment: "rgba(59,123,246,0.06)",
+  border: "rgba(10,10,20,0.08)",
+
+  ink: "#0A0A0F",
+  inkFaint: "#9898AE",
+
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
 
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
@@ -59,9 +59,9 @@ function OrbitalRing({
           position: 'absolute',
           width: 5, height: 5,
           borderRadius: '50%',
-          background: `linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
+          background: `linear-gradient(135deg, ${T.blueLight}, ${T.blue})`,
           top: -2.5, left: '50%', marginLeft: -2.5,
-          boxShadow: `0 0 8px ${T.goldGlow}, 0 0 16px ${T.goldGlow}`,
+          boxShadow: `0 0 8px ${T.blueGlow}, 0 0 16px ${T.blueGlow}`,
         }}
       />
     </motion.div>
@@ -92,7 +92,7 @@ export default function PaymentLoading() {
   return (
     <Box sx={{
       minHeight: '100vh',
-      background: T.bg,
+      background: T.offwhite,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -122,7 +122,7 @@ export default function PaymentLoading() {
           position: 'absolute',
           width: 600, height: 600,
           borderRadius: '50%',
-          background: `radial-gradient(circle, ${T.goldDim} 0%, transparent 65%)`,
+          background: `radial-gradient(circle, ${T.parchment} 0%, transparent 65%)`,
           pointerEvents: 'none',
         }}
       />
@@ -131,7 +131,7 @@ export default function PaymentLoading() {
       <Box sx={{
         position: 'absolute', width: 400, height: 400,
         bottom: '-10%', right: '-8%', borderRadius: '50%',
-        background: `radial-gradient(circle, rgba(184,146,42,0.05) 0%, transparent 65%)`,
+        background: `radial-gradient(circle, ${T.parchment} 0%, transparent 65%)`,
         pointerEvents: 'none',
       }} />
 
@@ -169,7 +169,7 @@ export default function PaymentLoading() {
             style={{
               position: 'absolute',
               inset: 20, borderRadius: '50%',
-              border: `1px solid ${T.gold}`,
+              border: `1px solid ${T.blue}`,
             }}
           />
 
@@ -177,8 +177,8 @@ export default function PaymentLoading() {
           <Box sx={{
             position: 'absolute',
             inset: 34, borderRadius: '50%',
-            background: `linear-gradient(145deg, ${T.bgCard}, ${T.bg})`,
-            border: `1px solid rgba(184,146,42,0.25)`,
+            background: `linear-gradient(145deg, ${T.offwhite}, ${T.white})`,
+            border: `1px solid rgba(59,123,246,0.25)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: `0 0 0 1px ${T.border}, 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)`,
           }}>
@@ -186,7 +186,7 @@ export default function PaymentLoading() {
             <Typography sx={{
               fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
               fontSize: '1.6rem', lineHeight: 1,
-              background: `linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
+              background: `linear-gradient(135deg, ${T.blueLight}, ${T.blue})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             }}>
               M
@@ -199,7 +199,7 @@ export default function PaymentLoading() {
             transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
             style={{
               position: 'absolute', inset: -8, borderRadius: '50%',
-              background: `radial-gradient(circle, ${T.goldGlow} 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${T.blueGlow} 0%, transparent 70%)`,
               pointerEvents: 'none',
             }}
           />
@@ -220,7 +220,7 @@ export default function PaymentLoading() {
             >
               <Typography sx={{
                 fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-                fontSize: '1.25rem', color: T.inkMid, letterSpacing: '-0.02em',
+                fontSize: '1.25rem', color: T.inkFaint, letterSpacing: '-0.02em',
                 whiteSpace: 'nowrap',
               }}>
                 {MESSAGES[msgIdx]}
@@ -238,9 +238,9 @@ export default function PaymentLoading() {
           <motion.div
             style={{
               height: '100%',
-              background: `linear-gradient(90deg, ${T.gold}, ${T.goldLight})`,
+              background: `linear-gradient(90deg, ${T.blue}, ${T.blueLight})`,
               borderRadius: 1,
-              boxShadow: `0 0 8px ${T.goldGlow}`,
+              boxShadow: `0 0 8px ${T.blueGlow}`,
             }}
             animate={{ x: ['-100%', '100%'] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
@@ -263,9 +263,9 @@ export default function PaymentLoading() {
             <svg width="11" height="13" viewBox="0 0 11 13" fill="none">
               <path
                 d="M5.5 0.5L1 2.5V6C1 8.76 3 11.32 5.5 12C8 11.32 10 8.76 10 6V2.5L5.5 0.5Z"
-                stroke={T.goldMid} strokeWidth="1" fill="none" strokeLinejoin="round"
+                stroke={T.blueMid} strokeWidth="1" fill="none" strokeLinejoin="round"
               />
-              <path d="M3.5 6.5L4.75 7.75L7.5 5" stroke={T.goldMid} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3.5 6.5L4.75 7.75L7.5 5" stroke={T.blueMid} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <Typography sx={{
               fontFamily: MONO, fontSize: '0.48rem',
@@ -287,13 +287,13 @@ export default function PaymentLoading() {
       }}>
         <Box sx={{
           width: 20, height: 20, borderRadius: '6px',
-          background: `linear-gradient(135deg, ${T.gold}, ${T.goldLight})`,
+          background: `linear-gradient(135deg, ${T.blue}, ${T.blueLight})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
           <Typography sx={{
             fontFamily: SERIF, fontStyle: 'italic', fontWeight: 600,
-            fontSize: '0.65rem', color: T.bg, lineHeight: 1,
+            fontSize: '0.65rem', color: T.white, lineHeight: 1,
           }}>M</Typography>
         </Box>
         <Typography sx={{

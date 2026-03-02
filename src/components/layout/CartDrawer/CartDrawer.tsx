@@ -18,25 +18,32 @@ import { useCartStore } from "@/lib/stores/cartStore";
 /* ── tokens ──────────────────────────────────────────────────────────── */
 const T = {
   bg: "#FFFFFF",
-  surface: "#F7F8FA",
-  border: "#E8EAED",
-  borderMid: "#D1D5DB",
-  ink: "#0F1117",
-  inkMid: "#374151",
-  inkMuted: "#6B7280",
-  inkFaint: "#9CA3AF",
-  accent: "#0057FF",
-  accentBg: "rgba(0,87,255,0.06)",
+  surface: "#F5F7FB",
+  border: "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.14)",
+
+  ink: "#0A0A0F",
+  inkMid: "#1E1E2A",
+  inkMuted: "#5A5A72",
+  inkFaint: "#9898AE",
+
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale: "#EDF3FF",
+  blueGlow: "rgba(59,123,246,0.18)",
+  blueDim: "rgba(59,123,246,0.08)",
+  blueGrad: "linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)",
+
   error: "#DC2626",
   errorBg: "rgba(220,38,38,0.06)",
-  success: "#059669",
 };
 
 const FONT_BODY = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
 const FONT_MONO = `"DM Mono", "JetBrains Mono", monospace`;
 const FONT_DISPLAY = `"Instrument Serif", "Playfair Display", Georgia, serif`;
 
-/* ── Close button ────────────────────────────────────────────────────── */
+/* ── Close button ─────────────────────────────────────────────────────── */
 function CloseBtn({ onClick }: { onClick: () => void }) {
   return (
     <Box
@@ -55,7 +62,7 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
         borderRadius: "8px",
         cursor: "pointer",
         transition: "all 0.15s ease",
-        "&:hover": { background: T.surface, borderColor: T.inkMuted },
+        "&:hover": { background: T.bluePale, borderColor: T.blue },
         "&:active": { transform: "scale(0.95)" },
       }}
     >
@@ -114,11 +121,11 @@ export function CartDrawer() {
           overflow: "hidden",
           background: T.bg,
           fontFamily: FONT_BODY,
-          boxShadow: "-8px 0 48px rgba(15,17,23,0.1)",
+          boxShadow: "-8px 0 48px rgba(10,10,20,0.09)",
         },
       }}
     >
-      {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────────────────── */}
       <Box
         sx={{
           px: 2.5,
@@ -151,12 +158,12 @@ export function CartDrawer() {
                 px: "8px",
                 py: "2px",
                 borderRadius: "5px",
-                background: T.accentBg,
-                border: `1px solid rgba(0,87,255,0.15)`,
+                background: T.blueDim,
+                border: `1px solid rgba(59,123,246,0.18)`,
                 fontFamily: FONT_MONO,
                 fontSize: "0.6rem",
                 fontWeight: 600,
-                color: T.accent,
+                color: T.blue,
                 letterSpacing: "0.1em",
                 lineHeight: 1.6,
               }}
@@ -169,11 +176,10 @@ export function CartDrawer() {
         <CloseBtn onClick={closeDrawer} />
       </Box>
 
-      {/* ── Items ──────────────────────────────────────────────────── */}
+      {/* ── Items ───────────────────────────────────────────────────── */}
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
         <AnimatePresence mode="popLayout">
           {items.length === 0 ? (
-            /* Empty state */
             <motion.div
               key="empty"
               initial={{ opacity: 0, y: 12 }}
@@ -204,6 +210,7 @@ export function CartDrawer() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    background: T.surface,
                     mb: 0.5,
                   }}
                 >
@@ -237,7 +244,6 @@ export function CartDrawer() {
                   Browse our financial templates and add them to your cart.
                 </Typography>
 
-                {/* Browse templates CTA */}
                 <Button
                   component={Link}
                   href="/templates"
@@ -257,8 +263,12 @@ export function CartDrawer() {
                     py: 1.125,
                     borderRadius: "9px",
                     color: "#fff",
-                    background: T.ink,
-                    "&:hover": { background: "#1B2030" },
+                    background: T.blueGrad,
+                    boxShadow: `0 4px 18px ${T.blueGlow}`,
+                    "&:hover": {
+                      filter: "brightness(1.06)",
+                      boxShadow: `0 6px 24px ${T.blueGlow}`,
+                    },
                   }}
                 >
                   Browse Templates
@@ -302,8 +312,8 @@ export function CartDrawer() {
                       border: `1px solid ${T.border}`,
                       transition: "all 0.15s ease",
                       "&:hover": {
-                        borderColor: T.inkMid,
-                        background: T.surface,
+                        borderColor: T.blue,
+                        background: T.bluePale,
                       },
                     }}
                   >
@@ -318,7 +328,7 @@ export function CartDrawer() {
                         fontWeight: 500,
                         letterSpacing: "-0.01em",
                         transition: "color 0.15s",
-                        "&:hover": { color: T.ink },
+                        "&:hover": { color: T.blue },
                       }}
                     >
                       Browse more templates
@@ -334,7 +344,7 @@ export function CartDrawer() {
         </AnimatePresence>
       </Box>
 
-      {/* ── Footer ─────────────────────────────────────────────────── */}
+      {/* ── Footer ──────────────────────────────────────────────────── */}
       <AnimatePresence>
         {items.length > 0 && (
           <motion.div
@@ -395,10 +405,8 @@ export function CartDrawer() {
                   </Typography>
                 </Box>
 
-                {/* Divider */}
                 <Box sx={{ borderTop: `1px solid ${T.border}`, my: 1.25 }} />
 
-                {/* Disclaimer */}
                 <Typography
                   sx={{
                     fontFamily: FONT_MONO,
@@ -437,9 +445,13 @@ export function CartDrawer() {
                       py: 1.5,
                       borderRadius: "10px",
                       minHeight: 50,
-                      background: T.ink,
+                      background: T.blueGrad,
                       color: "#fff",
-                      "&:hover": { background: "#1B2030" },
+                      boxShadow: `0 4px 20px ${T.blueGlow}`,
+                      "&:hover": {
+                        filter: "brightness(1.06)",
+                        boxShadow: `0 6px 28px ${T.blueGlow}`,
+                      },
                     }}
                   >
                     Proceed to Checkout
@@ -465,12 +477,12 @@ export function CartDrawer() {
                     py: 1.375,
                     borderRadius: "10px",
                     minHeight: 48,
-                    color: T.inkMid,
-                    borderColor: T.border,
+                    color: T.blue,
+                    borderColor: "rgba(59,123,246,0.3)",
+                    background: T.bluePale,
                     "&:hover": {
-                      borderColor: T.inkMid,
-                      color: T.ink,
-                      background: "rgba(15,17,23,0.03)",
+                      borderColor: T.blue,
+                      background: T.blueDim,
                     },
                   }}
                 >
@@ -485,7 +497,7 @@ export function CartDrawer() {
   );
 }
 
-/* ─── Cart Item Row ─────────────────────────────────────────────────── */
+/* ─── Cart Item Row ──────────────────────────────────────────────────── */
 interface CartItemRowProps {
   item: CartItem;
   onRemove: () => void;
@@ -520,8 +532,8 @@ function CartItemRow({
           position: "relative",
           transition: "border-color 0.15s ease, box-shadow 0.15s ease",
           "&:hover": {
-            borderColor: T.borderMid,
-            boxShadow: "0 2px 12px rgba(15,17,23,0.06)",
+            borderColor: "rgba(59,123,246,0.25)",
+            boxShadow: `0 2px 16px ${T.blueDim}`,
           },
         }}
       >
@@ -536,7 +548,7 @@ function CartItemRow({
             background: T.surface,
             border: `1px solid ${T.border}`,
           }}
-        ></Box>
+        />
 
         {/* Details */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -546,7 +558,7 @@ function CartItemRow({
               fontFamily: FONT_MONO,
               fontSize: "0.55rem",
               letterSpacing: "0.14em",
-              color: T.accent,
+              color: T.blue,
               fontWeight: 600,
               mb: 0.4,
               display: "block",
@@ -594,61 +606,40 @@ function CartItemRow({
                 height: 30,
               }}
             >
-              <Box
-                component="button"
-                onClick={() => onUpdateQty(quantity - 1)}
-                sx={{
-                  width: 28,
-                  height: 30,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: T.inkMuted,
-                  transition: "background 0.12s ease",
-                  "&:hover": { background: T.surface, color: T.ink },
-                  "&:active": { transform: "scale(0.9)" },
-                }}
-              >
-                <RemoveIcon sx={{ fontSize: "0.75rem" }} />
-              </Box>
-
-              <Typography
-                sx={{
-                  fontFamily: FONT_MONO,
-                  fontWeight: 600,
-                  fontSize: "0.8125rem",
-                  minWidth: 24,
-                  textAlign: "center",
-                  color: T.ink,
-                  userSelect: "none",
-                }}
-              >
-                {quantity}
-              </Typography>
-
-              <Box
-                component="button"
-                onClick={() => onUpdateQty(quantity + 1)}
-                sx={{
-                  width: 28,
-                  height: 30,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: T.inkMuted,
-                  transition: "background 0.12s ease",
-                  "&:hover": { background: T.surface, color: T.ink },
-                  "&:active": { transform: "scale(0.9)" },
-                }}
-              >
-                <AddIcon sx={{ fontSize: "0.75rem" }} />
-              </Box>
+              {[
+                {
+                  type: "dec",
+                  icon: <RemoveIcon sx={{ fontSize: "0.75rem" }} />,
+                  action: () => onUpdateQty(quantity - 1),
+                },
+                {
+                  type: "inc",
+                  icon: <AddIcon sx={{ fontSize: "0.75rem" }} />,
+                  action: () => onUpdateQty(quantity + 1),
+                },
+              ].map(({ type, icon, action }) => (
+                <Box
+                  key={type}
+                  component="button"
+                  onClick={action}
+                  sx={{
+                    width: 28,
+                    height: 30,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: T.inkMuted,
+                    transition: "background 0.12s ease",
+                    "&:hover": { background: T.bluePale, color: T.blue },
+                    "&:active": { transform: "scale(0.9)" },
+                  }}
+                >
+                  {icon}
+                </Box>
+              ))}
             </Box>
 
             {/* Price */}

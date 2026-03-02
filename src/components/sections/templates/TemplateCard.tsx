@@ -18,21 +18,29 @@ import { useCart } from '@/lib/hooks/useCart';
 import { useCurrency } from '@/lib/hooks/useCurrency';
 import { TemplateDetailDrawer } from './TemplateDetailDrawer';
 import type { Template } from '@/types/template.types';
+import { border } from '@mui/system';
 
 /* ══ TOKENS ══════════════════════════════════════════════ */
 const T = {
-  white: '#FFFFFF',
-  cream: '#F0EDE6',
-  parchment: '#E8E4DA',
-  ink: '#0C0E12',
-  inkMuted: '#64748B',
-  inkFaint: '#94A3B8',
-  inkGhost: '#CBD5E1',
-  border: '#E2DED5',
-  gold: '#B8922A',
-  goldMid: '#C9A84C',
-  goldLight: '#DDB96A',
-  goldGlow: 'rgba(184,146,42,0.13)',
+  white:     '#FFFFFF',
+  offwhite:  '#F5F7FB',              // cool section background
+  cream:     '#EDF3FF',              // soft blue pale surface
+  parchment: 'rgba(59,123,246,0.06)',// subtle blue tint layer
+
+  ink:       '#0A0A0F',
+  inkMid:    '#1E1E2A',
+  inkMuted:  '#5A5A72',
+  inkFaint:  '#9898AE',
+  inkGhost:  '#C2CAD6',
+
+  rule:      'rgba(10,10,20,0.08)',
+  ruleMd:    'rgba(10,10,20,0.14)',
+
+  blue:      '#3B7BF6',
+  blueMid:   '#5A92F8',
+  blueLight: '#7AABFF',
+  blueGlow:  'rgba(59,123,246,0.10)',
+  border:    'rgba(10,10,20,0.12)',
 };
 
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
@@ -117,7 +125,7 @@ export function TemplateCard({ template, index = 0 }: Props) {
                 zIndex: 1,
                 pointerEvents: 'none',
                 borderRadius: '18px',
-                background: `radial-gradient(circle at ${glowX} ${glowY}, ${T.goldGlow} 0%, transparent 60%)`,
+                background: `radial-gradient(circle at ${glowX} ${glowY}, ${T.blueGlow} 0%, transparent 60%)`,
               }}
             />
 
@@ -196,7 +204,7 @@ export function TemplateCard({ template, index = 0 }: Props) {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <StarIcon sx={{ fontSize: 16, color: T.goldMid }} />
+                  <StarIcon sx={{ fontSize: 16, color: T.blueMid }} />
                   <Typography sx={{ fontSize: '0.8rem' }}>
                     {template.rating.toFixed(1)} ({template.rating_count})
                   </Typography>
@@ -239,8 +247,8 @@ export function TemplateCard({ template, index = 0 }: Props) {
                     px: 2,
                     py: 1,
                     borderRadius: '8px',
-                    border: 'none',
-                    background: T.gold,
+                    border: `1px solid ${T.blue}`,
+                    background: T.blueLight,
                     cursor: inCart ? 'default' : 'pointer',
                   }}
                 >

@@ -14,23 +14,25 @@ import { useRef, useState } from "react";
 import { MerrakiLogo } from "@/components/ui/MerrakiLogo/MerrakiLogo";
 import { useNewsletterSubscribe } from "@/lib/hooks/useNewsletter";
 
-/* ══ TOKENS — warm luxury (matches site palette) ═════════ */
+/* ══ TOKENS — pure white + black ink + ice-blue accent ═══ */
 const T = {
-  bg:        "#0C0B08",   // near-black with warm undertone
-  bgCard:    "#141210",
-  bgLine:    "rgba(255,255,255,0.055)",
-  ink:       "#FAFAF7",
-  inkMid:    "#C8C4BB",
-  inkMuted:  "#8A877E",
-  inkFaint:  "#5A5750",
-  border:    "rgba(255,255,255,0.07)",
-  borderMid: "rgba(255,255,255,0.12)",
-  gold:      "#B8922A",
-  goldMid:   "#C9A84C",
-  goldLight: "#DDB96A",
-  goldPale:  "#F0D898",
-  goldGlow:  "rgba(184,146,42,0.12)",
-  goldDim:   "rgba(184,146,42,0.07)",
+  bg:        "#FFFFFF",
+  bgSection: "#F5F7FB",
+  ink:       "#0A0A0F",
+  inkMid:    "#1E1E2A",
+  inkMuted:  "#5A5A72",
+  inkFaint:  "#9898AE",
+  border:    "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.14)",
+
+  // ice-blue accent
+  blue:      "#3B7BF6",
+  blueMid:   "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale:  "#EDF3FF",
+  blueGlow:  "rgba(59,123,246,0.10)",
+  blueDim:   "rgba(59,123,246,0.06)",
+  blueGrad:  "linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)",
 };
 
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
@@ -69,8 +71,8 @@ const SOCIALS = [
   { Icon: InstagramIcon, href: "https://instagram.com/merrakisolutions",         label: "Instagram" },
 ];
 
-/* ══ GOLD RULE ═══════════════════════════════════════════ */
-function GoldRule({ width = 28, delay = 0, inView = false }: { width?: number; delay?: number; inView?: boolean }) {
+/* ══ BLUE RULE ═══════════════════════════════════════════ */
+function BlueRule({ width = 28, delay = 0, inView = false }: { width?: number; delay?: number; inView?: boolean }) {
   return (
     <motion.div
       initial={{ scaleX: 0 }}
@@ -78,7 +80,7 @@ function GoldRule({ width = 28, delay = 0, inView = false }: { width?: number; d
       transition={{ duration: 0.55, delay, ease: EASE }}
       style={{ transformOrigin: "left" }}
     >
-      <Box sx={{ width, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
+      <Box sx={{ width, height: 1.5, background: T.blueGrad, borderRadius: 1 }} />
     </motion.div>
   );
 }
@@ -104,11 +106,11 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
       gap: { xs: 5, md: 0 },
       position: "relative",
     }}>
-      {/* Glow bloom behind newsletter */}
+      {/* Blue glow bloom */}
       <Box sx={{
-        position: "absolute", width: 500, height: 300, top: "50%", left: "50%",
+        position: "absolute", width: 600, height: 320, top: "50%", left: "50%",
         transform: "translate(-50%,-50%)", borderRadius: "50%",
-        background: `radial-gradient(ellipse, ${T.goldDim} 0%, transparent 70%)`,
+        background: `radial-gradient(ellipse, ${T.blueDim} 0%, transparent 70%)`,
         pointerEvents: "none",
       }} />
 
@@ -120,8 +122,8 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
         style={{ position: "relative", zIndex: 1 }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-          <GoldRule width={22} delay={0.1} inView={inView} />
-          <Typography sx={{ fontFamily: MONO, fontSize: "0.52rem", letterSpacing: "0.22em", color: T.goldMid, textTransform: "uppercase" }}>
+          <BlueRule width={22} delay={0.1} inView={inView} />
+          <Typography sx={{ fontFamily: MONO, fontSize: "0.52rem", letterSpacing: "0.22em", color: T.blue, textTransform: "uppercase" }}>
             Newsletter
           </Typography>
         </Box>
@@ -150,7 +152,7 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
               fontFamily: SERIF, fontStyle: "italic", fontWeight: 400,
               fontSize: { xs: "1.75rem", md: "2.25rem" },
               letterSpacing: "-0.025em", lineHeight: 1.1,
-              background: `linear-gradient(110deg,${T.goldLight},${T.gold})`,
+              background: T.blueGrad,
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             }}>
               to your inbox.
@@ -163,7 +165,7 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
         </Typography>
       </motion.div>
 
-      {/* Right — bespoke input */}
+      {/* Right — input */}
       <motion.div
         initial={{ opacity: 0, x: 24 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -171,16 +173,18 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
         style={{ position: "relative", zIndex: 1 }}
       >
         <Box sx={{
-          width: { xs: "100%", md: 400 },
-          background: "rgba(255,255,255,0.04)",
-          border: `1px solid ${T.borderMid}`,
+          width: { xs: "100%", md: 420 },
+          background: "#FFFFFF",
+          border: `1.5px solid ${T.borderMid}`,
           borderRadius: "14px",
           p: "6px 6px 6px 18px",
           display: "flex", gap: 1, alignItems: "center",
-          backdropFilter: "blur(10px)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
-          transition: "border-color 0.25s ease",
-          "&:focus-within": { borderColor: `rgba(184,146,42,0.45)` },
+          boxShadow: "0 2px 20px rgba(0,0,0,0.05)",
+          transition: "border-color 0.25s ease, box-shadow 0.25s ease",
+          "&:focus-within": {
+            borderColor: T.blue,
+            boxShadow: `0 0 0 4px ${T.blueDim}, 0 2px 20px rgba(0,0,0,0.05)`,
+          },
         }}>
           <TextField
             value={email}
@@ -210,15 +214,15 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
               border: "none",
               cursor: newsletterMutation.isSuccess ? "default" : "pointer",
               background: newsletterMutation.isSuccess
-                ? "rgba(45,122,78,0.25)"
-                : `linear-gradient(135deg, ${T.gold}, ${T.goldLight})`,
-              color: newsletterMutation.isSuccess ? "#5EBF8A" : "#0C0B08",
+                ? "rgba(34,197,94,0.10)"
+                : T.blueGrad,
+              color: newsletterMutation.isSuccess ? "#16A34A" : "#FFFFFF",
               fontFamily: SANS,
               fontWeight: 700,
               fontSize: "0.82rem",
               letterSpacing: "0.01em",
               whiteSpace: "nowrap",
-              boxShadow: newsletterMutation.isSuccess ? "none" : `0 4px 18px rgba(184,146,42,0.35)`,
+              boxShadow: newsletterMutation.isSuccess ? "none" : `0 4px 18px rgba(59,123,246,0.35)`,
               transition: "all 0.2s ease",
             }}
           >
@@ -251,7 +255,7 @@ function FooterLink({ label, href, delay = 0, inView = false }: {
           lineHeight: 1,
           display: "inline-flex", alignItems: "center", gap: 0.75,
           transition: "color 0.2s ease",
-          "&:hover": { color: T.goldLight },
+          "&:hover": { color: T.blue },
           "&:hover .arrow": { opacity: 1, transform: "translateX(3px)" },
         }}>
           {label}
@@ -261,7 +265,7 @@ function FooterLink({ label, href, delay = 0, inView = false }: {
               fontSize: "0.6rem",
               opacity: 0,
               transition: "opacity 0.2s ease, transform 0.2s ease",
-              color: T.goldMid,
+              color: T.blue,
             }}
           >→</span>
         </Typography>
@@ -287,26 +291,19 @@ export function Footer() {
         borderTop: `1px solid ${T.border}`,
       }}
     >
-      {/* ── Large ambient glow ── */}
+      {/* Subtle blue ambient at top */}
       <Box sx={{
-        position: "absolute", width: "80vw", height: "60vw",
-        top: "-20vw", left: "10vw", borderRadius: "50%",
-        background: `radial-gradient(ellipse, ${T.goldDim} 0%, transparent 65%)`,
+        position: "absolute", width: "70vw", height: "35vw",
+        top: "-8vw", left: "15vw", borderRadius: "50%",
+        background: `radial-gradient(ellipse, ${T.blueDim} 0%, transparent 65%)`,
         pointerEvents: "none",
       }} />
 
-      {/* Warm grid */}
+      {/* Dot grid */}
       <Box sx={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: `linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-        backgroundSize: "72px 72px", opacity: 0.5,
-      }} />
-
-      {/* Grain */}
-      <Box sx={{
-        position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.04,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundSize: "180px",
+        backgroundImage: `radial-gradient(circle, rgba(10,10,20,0.055) 1px, transparent 1px)`,
+        backgroundSize: "28px 28px",
       }} />
 
       <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
@@ -315,7 +312,12 @@ export function Footer() {
         <NewsletterStrip inView={inView} />
 
         {/* ── Main grid ── */}
-        <Box sx={{ py: { xs: 7, md: 10 }, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.6fr 1fr 1fr 1fr" }, gap: { xs: 7, md: 4 } }}>
+        <Box sx={{
+          py: { xs: 7, md: 10 },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1.6fr 1fr 1fr 1fr" },
+          gap: { xs: 7, md: 4 },
+        }}>
 
           {/* Brand column */}
           <motion.div
@@ -324,10 +326,13 @@ export function Footer() {
             transition={{ duration: 0.65, ease: EASE }}
           >
             <Box sx={{ mb: 3 }}>
-              {inView && <MerrakiLogo variant="white" animate />}
+              {inView && <MerrakiLogo variant="color" animate />}
             </Box>
 
-            <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.inkMuted, lineHeight: 1.85, mb: 4, maxWidth: 280 }}>
+            <Typography sx={{
+              fontFamily: SANS, fontSize: "0.875rem", color: T.inkMuted,
+              lineHeight: 1.85, mb: 4, maxWidth: 280,
+            }}>
               We simplify finance so businesses amplify growth. Financial modelling, dashboards, and strategic CFO consulting for Indian founders.
             </Typography>
 
@@ -352,13 +357,13 @@ export function Footer() {
                     sx={{
                       width: 36, height: 36, borderRadius: "10px",
                       color: T.inkMuted,
-                      background: "rgba(255,255,255,0.05)",
+                      background: T.bgSection,
                       border: `1px solid ${T.border}`,
                       transition: "all 0.22s ease",
                       "&:hover": {
-                        color: T.goldLight,
-                        background: T.goldDim,
-                        borderColor: `rgba(184,146,42,0.3)`,
+                        color: T.blue,
+                        background: T.bluePale,
+                        borderColor: `rgba(59,123,246,0.3)`,
                       },
                     }}
                   >
@@ -367,7 +372,6 @@ export function Footer() {
                 </motion.div>
               ))}
             </Box>
-
           </motion.div>
 
           {/* Link columns */}
@@ -378,10 +382,9 @@ export function Footer() {
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: 0.1 + colIdx * 0.08, duration: 0.55, ease: EASE }}
             >
-              {/* Column heading */}
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, mb: 3.5 }}>
-                <Box sx={{ width: 16, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})`, flexShrink: 0 }} />
-                <Typography sx={{ fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.18em", color: T.goldMid, textTransform: "uppercase" }}>
+                <Box sx={{ width: 16, height: 1.5, background: T.blueGrad, flexShrink: 0, borderRadius: 1 }} />
+                <Typography sx={{ fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.18em", color: T.blue, textTransform: "uppercase" }}>
                   {heading}
                 </Typography>
               </Box>
@@ -408,7 +411,6 @@ export function Footer() {
           justifyContent: "space-between",
           flexWrap: "wrap", gap: 2,
         }}>
-          {/* Left — copy + location */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : {}}
@@ -429,7 +431,6 @@ export function Footer() {
             </Box>
           </motion.div>
 
-          {/* Right — legal links */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={inView ? { opacity: 1 } : {}}
@@ -446,7 +447,7 @@ export function Footer() {
                     fontFamily: SANS, fontSize: "0.75rem",
                     color: T.inkFaint,
                     transition: "color 0.2s ease",
-                    "&:hover": { color: T.goldLight },
+                    "&:hover": { color: T.blue },
                   }}>
                     {item.label}
                   </Typography>

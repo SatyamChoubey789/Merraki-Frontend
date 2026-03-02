@@ -12,23 +12,32 @@ import { useSearchFilter } from '@/lib/hooks/useSearchFilter';
 
 /* ══ TOKENS ══════════════════════════════════════════════ */
 const T = {
-  white:     '#FFFFFF',
-  offwhite:  '#F9F8F5',
-  cream:     '#F0EDE6',
-  parchment: '#E8E4DA',
-  ink:       '#0C0E12',
-  inkMid:    '#2E3440',
-  inkMuted:  '#64748B',
-  inkFaint:  '#94A3B8',
-  inkGhost:  '#CBD5E1',
-  border:    '#E2DED5',
-  borderMd:  '#C8C3B8',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldGlow:  'rgba(184,146,42,0.08)',
-  goldBdr:   'rgba(184,146,42,0.20)',
+  /* surfaces */
+  white: "#FFFFFF",
+  offwhite: "#F5F7FB",              // soft section background
+  paper: "#EDF3FF",                 // subtle blue tint surface
+  surface: "#F8FAFF",               // very light elevated surface
+
+  /* text */
+  ink: "#0A0A0F",
+  inkMid: "#1E1E2A",
+  inkMuted: "#5A5A72",
+  inkFaint: "#9898AE",
+
+  /* borders */
+  border: "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.14)",
+
+  /* accent — brand blue */
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale: "#EDF3FF",
+  blueDim: "rgba(59,123,246,0.06)",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
+
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
@@ -47,10 +56,10 @@ function Ticker() {
     <Box sx={{
       overflow:'hidden', borderTop:`1px solid ${T.border}`,
       borderBottom:`1px solid ${T.border}`, py:'7px',
-      background:T.cream, position:'relative',
+      background:T.paper, position:'relative',
       '&::before,&::after':{ content:'""', position:'absolute', top:0, bottom:0, width:80, zIndex:2, pointerEvents:'none' },
-      '&::before':{ left:0, background:`linear-gradient(90deg,${T.cream},transparent)` },
-      '&::after':{ right:0, background:`linear-gradient(270deg,${T.cream},transparent)` },
+      '&::before':{ left:0, background:`linear-gradient(90deg,${T.paper},transparent)` },
+      '&::after':{ right:0, background:`linear-gradient(270deg,${T.paper},transparent)` },
     }}>
       <motion.div
         animate={{ x:['0%','-33.33%'] }}
@@ -60,9 +69,9 @@ function Ticker() {
         {all.map((item,i)=>(
           <Box key={i} component="span" sx={{
             fontFamily:MONO, fontSize:'0.52rem', letterSpacing:'0.22em',
-            color:T.inkGhost, px:'22px', display:'inline-flex',
+            color:T.inkMuted, px:'22px', display:'inline-flex',
             alignItems:'center', gap:'16px',
-            '&::after':{ content:'"◆"', color:T.goldMid, fontSize:'0.35rem', opacity:0.5 },
+            '&::after':{ content:'"◆"', color:T.blueMid, fontSize:'0.35rem', opacity:0.5 },
           }}>
             {item}
           </Box>
@@ -111,7 +120,7 @@ export function TemplatesPageClient() {
           backgroundSize:'64px 64px', opacity:0.38 }} />
         {/* Gold radial glow */}
         <Box sx={{ position:'absolute', width:'65vw', height:'42vw', top:'-22vw', left:'17vw',
-          borderRadius:'50%', background:`radial-gradient(ellipse,${T.goldGlow} 0%,transparent 70%)`, pointerEvents:'none' }} />
+          borderRadius:'50%', background:`radial-gradient(ellipse,${T.blueGlow} 0%,transparent 70%)`, pointerEvents:'none' }} />
         {/* Grain */}
         <Box sx={{ position:'absolute', inset:0, pointerEvents:'none', opacity:0.022,
           backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
@@ -134,8 +143,8 @@ export function TemplatesPageClient() {
               transition={{ duration:0.55, ease:EASE }}
             >
               <Box sx={{ display:'flex', alignItems:'center', gap:1.75, mb:3.5 }}>
-                <Box sx={{ width:28, height:'1px', background:`linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
-                <Typography sx={{ fontFamily:MONO, fontSize:'0.56rem', letterSpacing:'0.22em', color:T.goldMid, textTransform:'uppercase' }}>
+                <Box sx={{ width:28, height:'1px', background:`linear-gradient(90deg,${T.blue},${T.blueLight})` }} />
+                <Typography sx={{ fontFamily:MONO, fontSize:'0.56rem', letterSpacing:'0.22em', color:T.blueMid, textTransform:'uppercase' }}>
                   Template Store
                 </Typography>
               </Box>
@@ -159,7 +168,7 @@ export function TemplatesPageClient() {
                   fontFamily:SERIF, fontStyle:'italic', fontWeight:400,
                   fontSize:{ xs:'2.5rem', sm:'3.75rem', md:'5.25rem', lg:'6.75rem' },
                   lineHeight:0.95, letterSpacing:'-0.035em',
-                  background:`linear-gradient(115deg,${T.goldLight} 0%,${T.gold} 55%)`,
+                  background:`linear-gradient(115deg,${T.blueLight} 0%,${T.blue} 55%)`,
                   WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',
                 }}>
                   built to decide.

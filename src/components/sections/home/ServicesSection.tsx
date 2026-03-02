@@ -1,732 +1,526 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef } from 'react';
 import { Box, Container, Typography } from '@mui/material';
-import { ArrowForward as ArrowIcon } from '@mui/icons-material';
-import {
-  motion, useMotionValue, useSpring, useTransform,
-  AnimatePresence,
-} from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useInView } from 'framer-motion';
 import Link from 'next/link';
 
 /* ══ TOKENS ══════════════════════════════════════════════ */
 const T = {
-  white:     '#FFFFFF',
-  offwhite:  '#F9F8F5',
-  cream:     '#F0EDE6',
-  bg:        '#F5F4F1',
-  ink:       '#0C0E12',
-  inkMid:    '#2E3440',
-  inkMuted:  '#64748B',
-  inkFaint:  '#94A3B8',
-  inkGhost:  '#CBD5E1',
-  border:    '#E8E5DF',
-  borderMd:  '#C8C3B8',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldGlow:  'rgba(184,146,42,0.09)',
+  bg:        "#F0F5FF",
+  bgCard:    "#FFFFFF",
+  ink:       "#0A0A0F",
+  inkMid:    "#1E1E2A",
+  inkMuted:  "#5A5A72",
+  inkFaint:  "#9898AE",
+  border:    "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.13)",
+
+  blue:      "#3B7BF6",
+  blueMid:   "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale:  "#EDF3FF",
+  blueGlow:  "rgba(59,123,246,0.15)",
+  blueDim:   "rgba(59,123,246,0.06)",
+  blueGrad:  "linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)",
 };
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 const EASE  = [0.16, 1, 0.3, 1] as const;
 
-/* ══ SERVICES ════════════════════════════════════════════ */
+/* ══ DATA ════════════════════════════════════════════════ */
 const SERVICES = [
   {
-    icon: '◈', title: 'Financial Modelling', short: 'Models that close rounds.',
-    description: 'Custom 3-statement models, DCF, LBO, and scenario analysis built for your specific business. Our models have been used in Series A, B, and PE rounds.',
-    detail: ['3-statement P&L, Balance Sheet & Cash Flow', 'DCF & comparable company analysis', 'Scenario & sensitivity modelling', 'Investor-ready output decks'],
-    href: '/book-consultation', accent: '#2D5BE3',
+    icon: '◈',
+    title: 'Financial Modelling',
+    desc: 'Investor-grade 3-statement models built for fundraising, scenario planning, and scale.',
+    tags: ['P&L', 'Cash Flow', 'Forecasts'],
+    stat: '150+', statLabel: 'Models built',
+    color: '#3B7BF6',
   },
   {
-    icon: '△', title: 'Excel Dashboards', short: 'Numbers your team actually reads.',
-    description: 'Interactive KPI dashboards that update in real-time. Built for operators, loved by investors. Your whole team tracking one version of the truth.',
-    detail: ['Live-linked KPI tracker', 'Revenue & burn rate views', 'Cohort & retention analysis', 'Board-ready one-pagers'],
-    href: '/templates', accent: '#0D7A5F',
+    icon: '△',
+    title: 'Excel Dashboards',
+    desc: 'Real-time KPI dashboards your whole team actually uses — no code, just clarity.',
+    tags: ['KPIs', 'Real-time', 'Reports'],
+    stat: '98%', statLabel: 'Satisfaction',
+    color: '#2563EB',
   },
   {
-    icon: '◆', title: 'Templates & Calculators', short: 'Plug in. Decide faster.',
-    description: 'Plug-and-play financial templates. Download, input your numbers, and make better decisions today. No finance degree required.',
-    detail: ['Runway & burn calculator', 'Unit economics model', 'SaaS metrics dashboard', 'Fundraise readiness kit'],
-    href: '/templates', accent: '#6D28D9',
+    icon: '◆',
+    title: 'Templates & Calculators',
+    desc: 'Plug-and-play financial tools for faster, smarter decisions — ready in minutes.',
+    tags: ['Budget', 'Runway', 'Burn Rate'],
+    stat: '50+', statLabel: 'Templates',
+    color: '#1D4ED8',
   },
   {
-    icon: '○', title: 'Data Analysis & Reporting', short: 'Raw data → boardroom clarity.',
-    description: 'Turn raw data into boardroom-ready reports. We handle the analysis so you handle the strategy. Clean, clear, and always on time.',
-    detail: ['Monthly management accounts', 'Variance & trend analysis', 'Investor update packages', 'Custom KPI frameworks'],
-    href: '/book-consultation', accent: '#A35400',
+    icon: '○',
+    title: 'Data Analysis',
+    desc: 'Raw data transformed into boardroom-ready clarity. Find signal in the noise.',
+    tags: ['Insights', 'Trends', 'Reporting'],
+    stat: '300+', statLabel: 'Founders',
+    color: '#3B7BF6',
   },
   {
-    icon: '◇', title: 'Bookkeeping Support', short: 'Always clean. Always current.',
-    description: 'Accurate, compliant bookkeeping so your numbers are always clean, current, and investor-ready. Never scramble before a board meeting again.',
-    detail: ['Transaction categorisation', 'Reconciliation & audit trail', 'GST & compliance ready', 'Month-end close in 24 hrs'],
-    href: '/book-consultation', accent: '#9D174D',
+    icon: '◇',
+    title: 'Bookkeeping Support',
+    desc: 'Accurate, current, always investor-ready books. Spend time on the business.',
+    tags: ['Monthly', 'Reconciled', 'GST'],
+    stat: '100%', statLabel: 'Accurate',
+    color: '#2563EB',
   },
   {
-    icon: '✦', title: 'Founder Consulting', short: 'A CFO in your corner.',
-    description: "Strategic financial guidance from experts who've built models for 150+ companies. We think like analysts and speak like founders.",
-    detail: ['1:1 strategy sessions', 'Fundraise prep & narrative', 'Financial health audit', 'Ongoing fractional CFO'],
-    href: '/book-consultation', accent: '#1D4ED8',
+    icon: '✦',
+    title: 'Founder Consulting',
+    desc: 'Strategic finance guidance from experienced operators who understand startups.',
+    tags: ['Strategy', 'CFO', 'Advisory'],
+    stat: '30min', statLabel: 'Free call',
+    color: '#1D4ED8',
+  },
+  {
+    icon: '⬡',
+    title: 'Forecasting',
+    desc: 'Clear runway visibility and capital planning so you always know what comes next.',
+    tags: ['Runway', 'Scenarios', 'Planning'],
+    stat: '₹50Cr+', statLabel: 'Modelled',
+    color: '#3B7BF6',
+  },
+  {
+    icon: '⬢',
+    title: 'Reporting',
+    desc: 'Monthly investor-ready reporting packages that build trust and save 5+ hours.',
+    tags: ['Investor', 'Monthly', 'Decks'],
+    stat: '5hrs', statLabel: 'Saved/month',
+    color: '#2563EB',
+  },
+  {
+    icon: '◎',
+    title: 'Growth Strategy',
+    desc: 'Financial systems that scale with your ambition — from seed to Series B and beyond.',
+    tags: ['Scaling', 'Unit Econ.', 'Series A'],
+    stat: '6wks', statLabel: 'Avg raise',
+    color: '#1D4ED8',
   },
 ];
 
-const TOTAL      = SERVICES.length;
-// Each card has 2 steps: front (even) + back (odd)
-const TOTAL_STEPS = TOTAL * 2;
-
-/* ══ CARD FACE ═══════════════════════════════════════════ */
-function CardFace({
-  service,
-  face,
-}: {
+/* ══ SERVICE CARD ════════════════════════════════════════ */
+function ServiceCard({ service, index, inView }: {
   service: typeof SERVICES[0];
-  face: 'front' | 'back';
+  index: number;
+  inView: boolean;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const mx  = useMotionValue(0);
-  const my  = useMotionValue(0);
-  const sx  = useSpring(mx, { stiffness: 240, damping: 24 });
-  const sy  = useSpring(my, { stiffness: 240, damping: 24 });
-  const rotateX = useTransform(sy, [-0.5, 0.5], ['5deg', '-5deg']);
-  const rotateY = useTransform(sx, [-0.5, 0.5], ['-5deg', '5deg']);
-  const glX = useTransform(sx, [-0.5, 0.5], ['12%', '88%']);
-  const glY = useTransform(sy, [-0.5, 0.5], ['12%', '88%']);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 200, damping: 22 });
+  const sy = useSpring(my, { stiffness: 200, damping: 22 });
+  const rotX = useTransform(sy, [-0.5, 0.5], ['7deg', '-7deg']);
+  const rotY = useTransform(sx, [-0.5, 0.5], ['-7deg', '7deg']);
+  const glX  = useTransform(sx, [-0.5, 0.5], ['10%', '90%']);
+  const glY  = useTransform(sy, [-0.5, 0.5], ['10%', '90%']);
 
-  const onMove = useCallback((e: React.MouseEvent) => {
-    const r = ref.current?.getBoundingClientRect();
+  const handleMove = (e: React.MouseEvent) => {
+    const r = cardRef.current?.getBoundingClientRect();
     if (!r) return;
-    mx.set((e.clientX - r.left) / r.width  - 0.5);
-    my.set((e.clientY - r.top)  / r.height - 0.5);
-  }, [mx, my]);
+    mx.set((e.clientX - r.left) / r.width - 0.5);
+    my.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const handleLeave = () => { mx.set(0); my.set(0); };
 
-  const onLeave = useCallback(() => { mx.set(0); my.set(0); }, [mx, my]);
-  const cardIndex = SERVICES.indexOf(service);
+  // Stagger: row of 3, delay by column then row
+  const col = index % 3;
+  const row = Math.floor(index / 3);
+  const delay = 0.08 + col * 0.1 + row * 0.05;
 
-  /* ─ FRONT ─ */
-  if (face === 'front') return (
-    <motion.div
-      ref={ref}
-      style={{ position: 'absolute', inset: 0, rotateX, rotateY, transformStyle: 'preserve-3d' }}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-    >
-      <Box sx={{
-        width: '100%', height: '100%', background: T.white,
-        borderRadius: '22px', border: `1px solid ${T.border}`,
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        alignItems: 'flex-start', px: { xs: 4, md: 7 }, py: 5,
-        position: 'relative', overflow: 'hidden',
-        boxShadow: '0 8px 48px rgba(12,14,18,0.08)',
-      }}>
-        {/* Specular gloss */}
-        <motion.div style={{
-          position: 'absolute', inset: 0, borderRadius: '22px', pointerEvents: 'none',
-          background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.7) 0%, transparent 55%)`,
-        }} />
-        {/* Grid texture */}
-        <Box sx={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          backgroundImage: `linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-          backgroundSize: '56px 56px', opacity: 0.4,
-        }} />
-        {/* Ghost number */}
-        <Box sx={{
-          position: 'absolute', right: -10, bottom: -24,
-          fontFamily: SERIF, fontStyle: 'italic',
-          fontSize: '18vw', lineHeight: 1,
-          color: 'rgba(12,14,18,0.025)',
-          pointerEvents: 'none', userSelect: 'none',
-        }}>
-          {String(cardIndex + 1).padStart(2, '0')}
-        </Box>
-
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{
-            width: 52, height: 52, borderRadius: '13px', mb: 3.5,
-            background: `${service.accent}0e`, border: `1px solid ${service.accent}22`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Typography sx={{ fontFamily: MONO, fontSize: '1.2rem', color: service.accent, lineHeight: 1 }}>
-              {service.icon}
-            </Typography>
-          </Box>
-
-          <Typography sx={{
-            fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.18em',
-            color: service.accent, textTransform: 'uppercase', mb: 1.5,
-          }}>
-            {service.short}
-          </Typography>
-
-          <Typography sx={{
-            fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-            fontSize: { xs: '2.25rem', md: '3.25rem' },
-            color: T.ink, letterSpacing: '-0.03em', lineHeight: 1.0,
-          }}>
-            {service.title}
-          </Typography>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 4 }}>
-            <motion.div
-              animate={{ y: [0, 5, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <Typography sx={{ fontFamily: MONO, fontSize: '0.72rem', color: T.goldMid, lineHeight: 1 }}>↓</Typography>
-            </motion.div>
-            <Typography sx={{
-              fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.16em',
-              color: T.inkGhost, textTransform: 'uppercase',
-            }}>
-              Scroll to reveal
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </motion.div>
-  );
-
-  /* ─ BACK ─ */
   return (
     <motion.div
-      ref={ref}
-      style={{ position: 'absolute', inset: 0, rotateX, rotateY, transformStyle: 'preserve-3d' }}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
+      initial={{ opacity: 0, y: 48, scale: 0.94 }}
+      animate={inView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.7, delay, ease: EASE }}
+      style={{ perspective: 1200 }}
     >
-      <Box sx={{
-        width: '100%', height: '100%', background: T.white,
-        borderRadius: '22px', border: `1px solid ${service.accent}28`,
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        px: { xs: 4, md: 7 }, py: 5,
-        position: 'relative', overflow: 'hidden',
-        boxShadow: `0 16px 60px rgba(12,14,18,0.10), 0 0 0 1px ${service.accent}10`,
-      }}>
-        {/* Specular */}
-        <motion.div style={{
-          position: 'absolute', inset: 0, borderRadius: '22px', pointerEvents: 'none',
-          background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.6) 0%, transparent 55%)`,
-        }} />
-        {/* Top accent line */}
+      <motion.div
+        ref={cardRef}
+        style={{ rotateX: rotX, rotateY: rotY, transformStyle: 'preserve-3d' }}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+        whileHover={{ z: 18, transition: { type: 'spring', stiffness: 300, damping: 22 } }}
+      >
         <Box sx={{
-          position: 'absolute', top: 0, left: 32, right: 32, height: '1.5px',
-          background: `linear-gradient(90deg,transparent,${service.accent}66,transparent)`,
-        }} />
-        {/* Glow blob */}
-        <Box sx={{
-          position: 'absolute', width: '50%', height: '50%', top: '-15%', right: '-10%',
-          borderRadius: '50%',
-          background: `radial-gradient(ellipse,${service.accent}07 0%,transparent 70%)`,
-          pointerEvents: 'none',
-        }} />
+          position: 'relative',
+          borderRadius: '20px',
+          background: T.bgCard,
+          border: `1px solid ${T.border}`,
+          overflow: 'hidden',
+          cursor: 'default',
+          transition: 'border-color 0.3s ease',
+          '&:hover': {
+            borderColor: `rgba(59,123,246,0.28)`,
+          },
+          '&:hover .card-back': { opacity: 1, transform: 'translateY(0)' },
+          '&:hover .card-front-desc': { opacity: 0, transform: 'translateY(-8px)' },
+          '&:hover .card-stat': { opacity: 0 },
+          '&:hover .bottom-bar': { background: T.blueGrad },
+        }}>
 
-        <Box sx={{ position: 'relative', zIndex: 1 }}>
-          {/* Icon + title row */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3.5 }}>
+          {/* Moving specular sheen */}
+          <motion.div style={{
+            position: 'absolute', inset: 0, borderRadius: '20px', pointerEvents: 'none', zIndex: 3,
+            background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.7) 0%, transparent 55%)`,
+          }} />
+
+          {/* Top accent bar — animated in */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={inView ? { scaleX: 1 } : {}}
+            transition={{ duration: 0.6, delay: delay + 0.2, ease: EASE }}
+            style={{ transformOrigin: 'left' }}
+          >
             <Box sx={{
-              width: 36, height: 36, borderRadius: '9px',
-              background: `${service.accent}0e`, border: `1px solid ${service.accent}22`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Typography sx={{ fontFamily: MONO, fontSize: '0.85rem', color: service.accent, lineHeight: 1 }}>
-                {service.icon}
-              </Typography>
-            </Box>
-            <Box sx={{ width: 1, height: 18, background: T.border }} />
-            <Typography sx={{
-              fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.16em',
-              color: T.inkGhost, textTransform: 'uppercase',
-            }}>
-              {service.title}
-            </Typography>
+              position: 'absolute', top: 0, left: 0, right: 0,
+              height: '2.5px', background: T.blueGrad, zIndex: 2,
+            }} />
+          </motion.div>
+
+          {/* Ghost number background */}
+          <Box sx={{
+            position: 'absolute', bottom: -10, right: 0,
+            fontFamily: MONO, fontWeight: 800,
+            fontSize: '6rem', lineHeight: 1,
+            color: `rgba(59,123,246,0.045)`,
+            userSelect: 'none', pointerEvents: 'none', zIndex: 0,
+            letterSpacing: '-0.04em',
+          }}>
+            {service.stat}
           </Box>
 
-          <Typography sx={{
-            fontFamily: SANS, fontSize: { xs: '0.9375rem', md: '1.0625rem' },
-            color: T.inkMid, lineHeight: 1.8, mb: 3.5, maxWidth: 520,
-          }}>
-            {service.description}
-          </Typography>
+          {/* Card content */}
+          <Box sx={{ p: { xs: '24px', md: '28px' }, position: 'relative', zIndex: 1 }}>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.125, mb: 4.5 }}>
-            {service.detail.map((d, i) => (
+            {/* Icon + stat row */}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2.5 }}>
+              {/* Icon pill */}
               <motion.div
-                key={d}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.06 + i * 0.07, duration: 0.35, ease: EASE }}
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={inView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.4, delay: delay + 0.3, type: 'spring', stiffness: 380, damping: 20 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box sx={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                    background: `${service.accent}10`, border: `1px solid ${service.accent}28`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                <Box sx={{
+                  width: 46, height: 46, borderRadius: '13px',
+                  border: `1px solid rgba(59,123,246,0.14)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  background: `linear-gradient(135deg, ${T.bluePale}, #FFFFFF)`,
+                }}>
+                  <Typography sx={{
+                    fontSize: '1.1rem',
+                    background: T.blueGrad,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: 1,
                   }}>
-                    <Typography sx={{ fontFamily: MONO, fontSize: '0.45rem', color: service.accent, lineHeight: 1 }}>✓</Typography>
-                  </Box>
-                  <Typography sx={{ fontFamily: SANS, fontSize: '0.875rem', color: T.inkMuted, lineHeight: 1.5 }}>
-                    {d}
+                    {service.icon}
                   </Typography>
                 </Box>
               </motion.div>
-            ))}
+
+              {/* Stat badge — fades on hover */}
+              <Box className="card-stat" sx={{
+                textAlign: 'right',
+                transition: 'opacity 0.25s ease',
+              }}>
+                <Typography sx={{
+                  fontFamily: MONO, fontWeight: 700,
+                  fontSize: '1rem', color: T.blue, lineHeight: 1,
+                  background: T.blueGrad,
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>
+                  {service.stat}
+                </Typography>
+                <Typography sx={{
+                  fontFamily: MONO, fontSize: '0.48rem',
+                  letterSpacing: '0.12em', color: T.inkFaint,
+                  textTransform: 'uppercase', mt: 0.3,
+                }}>
+                  {service.statLabel}
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Title */}
+            <Typography sx={{
+              fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
+              fontSize: { xs: '1.25rem', md: '1.375rem' },
+              color: T.ink, letterSpacing: '-0.02em', lineHeight: 1.15,
+              mb: 1.25,
+            }}>
+              {service.title}
+            </Typography>
+
+            {/* Description — fades on hover */}
+            <Box className="card-front-desc" sx={{
+              transition: 'opacity 0.22s ease, transform 0.22s ease',
+            }}>
+              <Typography sx={{
+                fontFamily: SANS, fontSize: '0.8125rem',
+                color: T.inkMuted, lineHeight: 1.75, mb: 2.5,
+                minHeight: '3.5rem',
+              }}>
+                {service.desc}
+              </Typography>
+            </Box>
+
+            {/* Tags */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mb: 3 }}>
+              {service.tags.map((tag) => (
+                <Box key={tag} sx={{
+                  px: '9px', py: '3.5px', borderRadius: '6px',
+                  background: T.bluePale, border: `1px solid rgba(59,123,246,0.14)`,
+                  fontFamily: MONO, fontSize: '0.48rem',
+                  letterSpacing: '0.1em', color: T.blue,
+                  textTransform: 'uppercase',
+                }}>
+                  {tag}
+                </Box>
+              ))}
+            </Box>
+
+            {/* Hover reveal layer — slides up */}
+            <Box className="card-back" sx={{
+              position: 'absolute',
+              bottom: 0, left: 0, right: 0,
+              p: '20px 28px',
+              background: `linear-gradient(to top, ${T.bluePale} 0%, rgba(237,243,255,0.95) 100%)`,
+              borderTop: `1px solid rgba(59,123,246,0.14)`,
+              opacity: 0,
+              transform: 'translateY(8px)',
+              transition: 'opacity 0.28s ease, transform 0.28s ease',
+              zIndex: 2,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <Typography sx={{
+                fontFamily: SANS, fontWeight: 600,
+                fontSize: '0.8125rem', color: T.blue,
+                letterSpacing: '-0.01em',
+              }}>
+                Book a consultation
+              </Typography>
+              <Link href="/book-consultation" style={{ textDecoration: 'none' }}>
+                <motion.div whileHover={{ x: 4 }} whileTap={{ scale: 0.95 }}>
+                  <Box sx={{
+                    display: 'inline-flex', alignItems: 'center', gap: 0.75,
+                    px: '14px', py: '8px', borderRadius: '8px',
+                    background: T.blueGrad, boxShadow: `0 4px 14px ${T.blueGlow}`,
+                  }}>
+                    <Typography sx={{
+                      fontFamily: SANS, fontWeight: 700,
+                      fontSize: '0.75rem', color: '#fff',
+                      letterSpacing: '-0.01em', whiteSpace: 'nowrap',
+                    }}>
+                      Get started →
+                    </Typography>
+                  </Box>
+                </motion.div>
+              </Link>
+            </Box>
           </Box>
 
-          <Box
-            component={Link}
-            href={service.href}
-            sx={{
-              display: 'inline-flex', alignItems: 'center', gap: 1.25,
-              px: '22px', py: '11px', borderRadius: '10px',
-              background: `linear-gradient(115deg,${T.goldLight},${T.gold})`,
-              textDecoration: 'none',
-              boxShadow: `0 4px 16px rgba(184,146,42,0.24)`,
-              transition: 'box-shadow 0.2s',
-              '&:hover': { boxShadow: `0 6px 22px rgba(184,146,42,0.34)` },
-            }}
-          >
-            <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: '0.875rem', color: T.ink }}>
-              Get started
-            </Typography>
-            <ArrowIcon sx={{ fontSize: '0.9rem', color: T.ink }} />
-          </Box>
+          {/* Bottom accent bar */}
+          <Box className="bottom-bar" sx={{
+            height: '3px',
+            background: T.border,
+            transition: 'background 0.3s ease',
+          }} />
         </Box>
-      </Box>
+      </motion.div>
     </motion.div>
   );
 }
 
-/* ══ SCROLL-LOCK ENGINE ══════════════════════════════════
-   Strategy:
-   - We pin the viewport by setting overflow:hidden on <html>
-     and <body> only (no position:fixed — avoids layout shifts)
-   - We track accumulated wheel delta; each ±THRESHOLD triggers
-     one step advance/retreat
-   - When steps are exhausted we release the lock and let the
-     browser scroll naturally
-   - Touch support via touchstart/touchmove
-════════════════════════════════════════════════════════ */
-
-const DELTA_THRESHOLD = 80; // px of accumulated delta per step
-
-export function ServicesSection() {
+/* ══ MAIN SECTION ════════════════════════════════════════ */
+export default function ServicesSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-
-  /* locked state lives in refs to avoid stale closures */
-  const lockedRef     = useRef(false);
-  const stepRef       = useRef(0);
-  const accumRef      = useRef(0);        // accumulated wheel delta
-  const touchYRef     = useRef(0);
-  const animatingRef  = useRef(false);    // guard during card transition
-
-  const [step, setStep] = useState(0);
-
-  const cardIndex = Math.floor(step / 2);
-  const isFront   = step % 2 === 0;
-  const service   = SERVICES[cardIndex];
-
-  /* ── lock / unlock ── */
-  const lock = useCallback(() => {
-    if (lockedRef.current) return;
-    lockedRef.current = true;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-  }, []);
-
-  const unlock = useCallback(() => {
-    if (!lockedRef.current) return;
-    lockedRef.current = false;
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-  }, []);
-
-  /* ── advance / retreat one step ── */
-  const advance = useCallback((dir: 1 | -1) => {
-    if (animatingRef.current) return;
-
-    const next = stepRef.current + dir;
-
-    if (next < 0) {
-      /* before first step — release lock so page can scroll up */
-      unlock();
-      stepRef.current = 0;
-      accumRef.current = 0;
-      return;
-    }
-
-    if (next >= TOTAL_STEPS) {
-      /* after last step — release lock so page can scroll down */
-      unlock();
-      stepRef.current = TOTAL_STEPS - 1;
-      accumRef.current = 0;
-      return;
-    }
-
-    animatingRef.current = true;
-    stepRef.current = next;
-    accumRef.current = 0;
-    setStep(next);
-
-    /* block further advances until framer animation settles */
-    setTimeout(() => { animatingRef.current = false; }, 540);
-  }, [unlock]);
-
-  /* ── wheel handler (passive: false so we can preventDefault) ── */
-  useEffect(() => {
-    const onWheel = (e: WheelEvent) => {
-      if (!lockedRef.current) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      /* normalise delta across trackpad / mouse */
-      const raw = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      accumRef.current += raw;
-
-      if (accumRef.current >  DELTA_THRESHOLD) { advance(1);  }
-      if (accumRef.current < -DELTA_THRESHOLD) { advance(-1); }
-    };
-
-    window.addEventListener('wheel', onWheel, { passive: false });
-    return () => window.removeEventListener('wheel', onWheel);
-  }, [advance]);
-
-  /* ── touch support ── */
-  useEffect(() => {
-    const onTouchStart = (e: TouchEvent) => {
-      touchYRef.current = e.touches[0].clientY;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!lockedRef.current) return;
-      e.preventDefault();
-      const dy = touchYRef.current - e.touches[0].clientY;
-      touchYRef.current = e.touches[0].clientY;
-      accumRef.current += dy;
-
-      if (accumRef.current >  DELTA_THRESHOLD) { advance(1);  }
-      if (accumRef.current < -DELTA_THRESHOLD) { advance(-1); }
-    };
-
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    return () => {
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove',  onTouchMove);
-    };
-  }, [advance]);
-
-  /* ── keyboard ── */
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!lockedRef.current) return;
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); advance(1);  }
-      if (e.key === 'ArrowUp'   || e.key === 'ArrowLeft')  { e.preventDefault(); advance(-1); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [advance]);
-
-  /* ── IntersectionObserver — lock when section fills viewport ── */
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          /* lock as soon as the section is ≥50% visible */
-          lock();
-        } else {
-          /* section has left viewport — clean up */
-          unlock();
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    obs.observe(el);
-    return () => { obs.disconnect(); unlock(); };
-  }, [lock, unlock]);
-
-  /* ── direct jump (sidebar nav click) ── */
-  const jumpTo = useCallback((ci: number) => {
-    const target = ci * 2;
-    stepRef.current  = target;
-    accumRef.current = 0;
-    setStep(target);
-  }, []);
-
-  /* ─────────────────────────────────────────────────────── */
+  const headerRef  = useRef<HTMLDivElement>(null);
+  const inView     = useInView(sectionRef, { once: true, amount: 0.08 });
+  const headerView = useInView(headerRef,  { once: true, amount: 0.5  });
 
   return (
     <Box
       ref={sectionRef}
       sx={{
-        py: { xs: 14, md: 20 },
+        py: { xs: 12, md: 18 },
         background: T.bg,
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
+        borderTop: `1px solid ${T.border}`,
       }}
     >
-      {/* Warm grid */}
+      {/* Blue radial glow top */}
       <Box sx={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-        backgroundSize: '64px 64px', opacity: 0.45,
-      }} />
-
-      {/* Gold glow */}
-      <Box sx={{
-        position: 'absolute', width: '60vw', height: '55vw', top: '-15vw', right: '-10vw',
-        borderRadius: '50%',
-        background: `radial-gradient(ellipse,${T.goldGlow} 0%,transparent 70%)`,
+        position: 'absolute', width: '80vw', height: '50vw',
+        top: '-12vw', left: '10vw', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(59,123,246,0.08) 0%, transparent 65%)',
         pointerEvents: 'none',
       }} />
 
-      {/* Grain */}
+      {/* Blue glow bottom-right */}
       <Box sx={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.02,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundSize: '160px',
+        position: 'absolute', width: '40vw', height: '35vw',
+        bottom: '-8vw', right: '-5vw', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(59,123,246,0.06) 0%, transparent 70%)',
+        pointerEvents: 'none',
       }} />
 
-      <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
+      {/* Blue dot grid */}
+      <Box sx={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: `radial-gradient(circle, rgba(59,123,246,0.07) 1px, transparent 1px)`,
+        backgroundSize: '28px 28px',
+      }} />
+
+      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
 
         {/* ── Header ── */}
-        <Box sx={{ mb: { xs: 7, md: 10 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <Box sx={{ width: 26, height: '1px', background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
-            <Typography sx={{
-              fontFamily: MONO, fontSize: '0.54rem',
-              letterSpacing: '0.22em', color: T.goldMid, textTransform: 'uppercase',
-            }}>
-              What We Do
-            </Typography>
-          </Box>
+        <Box ref={headerRef} sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
 
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 3 }}>
-            <Box>
-              <Typography sx={{
-                fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-                fontSize: { xs: '2.5rem', md: '3.75rem' },
-                color: T.ink, letterSpacing: '-0.035em', lineHeight: 0.96, mb: 0.5,
-              }}>
-                Finance services that
-              </Typography>
-              <Typography sx={{
-                fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-                fontSize: { xs: '2.5rem', md: '3.75rem' },
-                letterSpacing: '-0.035em', lineHeight: 0.96,
-                background: `linear-gradient(115deg,${T.goldLight},${T.gold})`,
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-              }}>
-                move the needle.
-              </Typography>
-            </Box>
-            <Typography sx={{
-              fontFamily: SANS, fontSize: '0.9375rem', color: T.inkMuted,
-              lineHeight: 1.78, maxWidth: 320, mb: 0.5,
-            }}>
-              Scroll through each service. Your mouse wheel drives the reveal — the page won't move until you're done.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* ── Stage ── */}
-        <Box sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', lg: 'row' },
-          gap: { xs: 5, lg: 8 },
-          alignItems: 'center',
-        }}>
-
-          {/* ─ Left sidebar nav ─ */}
-          <Box sx={{
-            display: 'flex',
-            flexDirection: { xs: 'row', lg: 'column' },
-            alignItems: { xs: 'center', lg: 'flex-start' },
-            gap: { xs: 1.5, lg: 2 },
-            flexShrink: 0,
-          }}>
-            {SERVICES.map((s, i) => {
-              const isActive = i === cardIndex;
-              const isDone   = i < cardIndex || (i === cardIndex && !isFront);
-              return (
-                <Box
-                  key={s.title}
-                  onClick={() => jumpTo(i)}
-                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
-                >
-                  <motion.div
-                    animate={{
-                      width: isActive ? 28 : 6,
-                      background: isDone
-                        ? T.goldMid
-                        : isActive
-                          ? `linear-gradient(90deg,${T.goldLight},${T.gold})`
-                          : T.borderMd,
-                    }}
-                    transition={{ duration: 0.28, ease: EASE }}
-                    style={{ height: 6, borderRadius: 3 }}
-                  />
-                  <Typography sx={{
-                    fontFamily: MONO, fontSize: '0.48rem', letterSpacing: '0.14em',
-                    color: isActive ? T.ink : isDone ? T.goldMid : T.inkGhost,
-                    textTransform: 'uppercase', whiteSpace: 'nowrap',
-                    display: { xs: 'none', lg: 'block' },
-                    transition: 'color 0.2s',
-                  }}>
-                    {s.title}
-                  </Typography>
-                </Box>
-              );
-            })}
-
-            {/* Counter */}
-            <Box sx={{
-              mt: { lg: 2 }, pt: { lg: 2 },
-              borderTop: { lg: `1px solid ${T.border}` },
-              display: { xs: 'none', lg: 'block' },
-            }}>
-              <Typography sx={{
-                fontFamily: SERIF, fontStyle: 'italic',
-                fontSize: '1.5rem', color: T.ink,
-                letterSpacing: '-0.02em', lineHeight: 1,
-              }}>
-                {String(cardIndex + 1).padStart(2, '0')}
-              </Typography>
-              <Typography sx={{
-                fontFamily: MONO, fontSize: '0.46rem',
-                letterSpacing: '0.14em', color: T.inkGhost, textTransform: 'uppercase',
-              }}>
-                / {String(TOTAL).padStart(2, '0')}
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* ─ Card stage ─ */}
-          <Box sx={{
-            flex: 1,
-            maxWidth: 800,
-            height: { xs: 460, sm: 500, md: 560 },
-            position: 'relative',
-            perspective: '1400px',
-          }}>
-            <AnimatePresence mode="wait">
+          {/* Eyebrow */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={headerView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.55, ease: EASE }}
+          >
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <motion.div
-                key={step}
-                style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}
-                initial={{
-                  rotateY: step % 2 === 0 ?  88 : -88,
-                  opacity: 0,
-                  scale: 0.94,
-                }}
-                animate={{ rotateY: 0, opacity: 1, scale: 1 }}
-                exit={{
-                  rotateY: step % 2 === 0 ? -88 :  88,
-                  opacity: 0,
-                  scale: 0.94,
-                }}
-                transition={{ duration: 0.46, ease: EASE }}
+                initial={{ scaleX: 0 }} animate={headerView ? { scaleX: 1 } : {}}
+                transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
+                style={{ transformOrigin: 'right' }}
               >
-                <CardFace service={service} face={isFront ? 'front' : 'back'} />
+                <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
               </motion.div>
-            </AnimatePresence>
-          </Box>
-
-          {/* ─ Right: up-next peek ─ */}
-          <Box sx={{
-            display: { xs: 'none', lg: 'flex' },
-            flexDirection: 'column', gap: 1.5,
-            flexShrink: 0, width: 200,
-          }}>
-            <Typography sx={{
-              fontFamily: MONO, fontSize: '0.5rem', letterSpacing: '0.16em',
-              color: T.inkGhost, textTransform: 'uppercase', mb: 0.5,
-            }}>
-              Up next
-            </Typography>
-
-            {SERVICES.slice(cardIndex + 1, cardIndex + 3).map((s, i) => (
-              <motion.div
-                key={s.title}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1 - i * 0.35, x: i * 8 }}
-                transition={{ duration: 0.35, ease: EASE }}
-              >
-                <Box
-                  onClick={() => jumpTo(cardIndex + 1 + i)}
-                  sx={{
-                    px: 2, py: '12px',
-                    background: T.white, borderRadius: '12px',
-                    border: `1px solid ${T.border}`,
-                    boxShadow: '0 2px 8px rgba(12,14,18,0.05)',
-                    display: 'flex', alignItems: 'center', gap: 1.5,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s',
-                    '&:hover': { borderColor: `${s.accent}40` },
-                  }}
-                >
-                  <Typography sx={{ fontFamily: MONO, fontSize: '0.75rem', color: s.accent, lineHeight: 1 }}>
-                    {s.icon}
-                  </Typography>
-                  <Typography sx={{
-                    fontFamily: SERIF, fontStyle: 'italic',
-                    fontSize: '0.875rem', color: T.ink,
-                    letterSpacing: '-0.01em', lineHeight: 1.2,
-                  }}>
-                    {s.title}
-                  </Typography>
-                </Box>
-              </motion.div>
-            ))}
-
-            {cardIndex >= TOTAL - 1 && (
-              <Box sx={{
-                px: 2, py: '12px', borderRadius: '12px',
-                border: `1px solid ${T.border}`, background: T.offwhite,
+              <Typography sx={{
+                fontFamily: MONO, fontSize: '0.52rem',
+                letterSpacing: '0.22em', color: T.blue, textTransform: 'uppercase',
               }}>
-                <Typography sx={{
-                  fontFamily: MONO, fontSize: '0.5rem',
-                  letterSpacing: '0.14em', color: T.inkGhost, textTransform: 'uppercase',
-                }}>
-                  All services explored
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
+                What We Do
+              </Typography>
+              <motion.div
+                initial={{ scaleX: 0 }} animate={headerView ? { scaleX: 1 } : {}}
+                transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
+                style={{ transformOrigin: 'left' }}
+              >
+                <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
+              </motion.div>
+            </Box>
+          </motion.div>
 
-        {/* ─ Bottom hint ─ */}
-        <Box sx={{
-          mt: { xs: 5, md: 7 },
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
-        }}>
-          <Box sx={{ flex: 1, maxWidth: 180, height: '1px', background: `linear-gradient(90deg,transparent,${T.border})` }} />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Typography sx={{
-              fontFamily: MONO, fontSize: '0.5rem',
-              letterSpacing: '0.16em', color: T.inkGhost, textTransform: 'uppercase',
-            }}>
-              {isFront
-                ? 'Scroll to reveal details'
-                : cardIndex < TOTAL - 1
-                  ? 'Scroll for next service'
-                  : 'Scroll to continue'}
-            </Typography>
+          {/* Headline */}
+          <Box sx={{ overflow: 'hidden', mb: 0.5 }}>
             <motion.div
-              animate={{ y: [0, 4, 0] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              initial={{ y: '110%' }}
+              animate={headerView ? { y: '0%' } : {}}
+              transition={{ duration: 0.75, delay: 0.08, ease: EASE }}
             >
-              <Typography sx={{ fontFamily: MONO, fontSize: '0.7rem', color: T.goldMid, lineHeight: 1 }}>↓</Typography>
+              <Typography sx={{
+                fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
+                fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+                color: T.ink, letterSpacing: '-0.035em', lineHeight: 1.0,
+              }}>
+                Finance services
+              </Typography>
             </motion.div>
           </Box>
-          <Box sx={{ flex: 1, maxWidth: 180, height: '1px', background: `linear-gradient(90deg,${T.border},transparent)` }} />
+          <Box sx={{ overflow: 'hidden', mb: 3 }}>
+            <motion.div
+              initial={{ y: '110%' }}
+              animate={headerView ? { y: '0%' } : {}}
+              transition={{ duration: 0.75, delay: 0.16, ease: EASE }}
+            >
+              <Typography sx={{
+                fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
+                fontSize: { xs: '2.25rem', sm: '3rem', md: '4rem' },
+                letterSpacing: '-0.035em', lineHeight: 1.0,
+                background: T.blueGrad,
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+              }}>
+                built to scale.
+              </Typography>
+            </motion.div>
+          </Box>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={headerView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 0.28, ease: EASE }}
+          >
+            <Typography sx={{
+              fontFamily: SANS, fontSize: '0.9375rem',
+              color: T.inkMuted, lineHeight: 1.75, maxWidth: 440, mx: 'auto',
+            }}>
+              Every tool we build, every model we ship, every dashboard we design — it exists to make your decisions faster and your growth clearer.
+            </Typography>
+          </motion.div>
         </Box>
+
+        {/* ── Card grid ── */}
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
+          gap: { xs: 2.5, md: 3 },
+        }}>
+          {SERVICES.map((service, i) => (
+            <ServiceCard key={service.title} service={service} index={i} inView={inView} />
+          ))}
+        </Box>
+
+        {/* ── Bottom CTA strip ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.8, ease: EASE }}
+        >
+          <Box sx={{
+            mt: { xs: 8, md: 10 }, pt: 5,
+            borderTop: `1px solid ${T.border}`,
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', flexWrap: 'wrap', gap: 3,
+          }}>
+            <Box>
+              <Typography sx={{
+                fontFamily: SERIF, fontStyle: 'italic',
+                fontSize: { xs: '1.25rem', md: '1.5rem' },
+                color: T.ink, letterSpacing: '-0.025em', mb: 0.5,
+              }}>
+                Not sure where to start?
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: '0.875rem', color: T.inkMuted }}>
+                Book a free 30-minute call and we'll map the right services for your stage.
+              </Typography>
+            </Box>
+            <Link href="/book-consultation" style={{ textDecoration: 'none' }}>
+              <motion.div whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Box sx={{
+                  display: 'inline-flex', alignItems: 'center', gap: 1,
+                  px: '24px', py: '13px', borderRadius: '12px',
+                  background: T.blueGrad,
+                  boxShadow: `0 4px 20px ${T.blueGlow}`,
+                  transition: 'box-shadow 0.25s ease',
+                  '&:hover': { boxShadow: `0 8px 32px ${T.blueGlow}` },
+                }}>
+                  <Typography sx={{
+                    fontFamily: SANS, fontWeight: 700,
+                    fontSize: '0.9375rem', color: '#fff',
+                    letterSpacing: '-0.01em', whiteSpace: 'nowrap',
+                  }}>
+                    Book Free Consultation →
+                  </Typography>
+                </Box>
+              </motion.div>
+            </Link>
+          </Box>
+        </motion.div>
 
       </Container>
     </Box>

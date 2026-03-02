@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Box, Container, Typography, TextField, CircularProgress,
-  Collapse, Grid,
+  Box, Container, Typography, CircularProgress, Grid,
 } from "@mui/material";
 import {
   LockOutlined as LockIcon,
@@ -14,10 +13,9 @@ import {
   Person as PersonIcon,
   Home as HomeIcon,
   Payment as PayIcon,
-  ContentCopy as CopyIcon,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useCart } from "@/lib/hooks/useCart";
@@ -25,31 +23,38 @@ import { useCurrency } from "@/lib/hooks/useCurrency";
 import { useCheckout } from "@/lib/hooks/useCheckout";
 import { checkoutSchema, type CheckoutFormValues } from "@/lib/schemas/checkout.schema";
 
-/* ══ TOKENS ══════════════════════════════════════════════ */
+/* ══ TOKENS — pure white + black + ice-blue ══════════════ */
 const T = {
-  bg:          "#F5F4F1",
-  bgCard:      "#FAFAF7",
+  bg:          "#F0F5FF",
+  bgCard:      "#FFFFFF",
   bgInput:     "#FFFFFF",
-  ink:         "#0C0B08",
-  inkMid:      "#2E2C26",
-  inkMuted:    "#6E6C64",
-  inkFaint:    "#9E9C94",
-  inkGhost:    "#C8C4BB",
-  border:      "#E8E4DC",
-  borderMid:   "#D4CFC6",
-  borderFocus: "rgba(184,146,42,0.55)",
-  gold:        "#B8922A",
-  goldMid:     "#C9A84C",
-  goldLight:   "#DDB96A",
-  goldPale:    "#F0D898",
-  goldGlow:    "rgba(184,146,42,0.18)",
-  goldDim:     "rgba(184,146,42,0.08)",
-  green:       "#2D7A4E",
-  greenBg:     "rgba(45,122,78,0.08)",
-  greenBorder: "rgba(45,122,78,0.2)",
-  red:         "#A83232",
-  redBg:       "rgba(168,50,50,0.06)",
-  redBorder:   "rgba(168,50,50,0.2)",
+  bgSection:   "#F5F7FB",
+
+  ink:         "#0A0A0F",
+  inkMid:      "#1E1E2A",
+  inkMuted:    "#5A5A72",
+  inkFaint:    "#9898AE",
+  inkGhost:    "#C8D0E8",
+
+  border:      "rgba(10,10,20,0.08)",
+  borderMid:   "rgba(10,10,20,0.14)",
+  borderFocus: "rgba(59,123,246,0.5)",
+
+  blue:        "#3B7BF6",
+  blueMid:     "#5A92F8",
+  blueLight:   "#7AABFF",
+  bluePale:    "#EDF3FF",
+  blueGlow:    "rgba(59,123,246,0.18)",
+  blueDim:     "rgba(59,123,246,0.07)",
+  blueGrad:    "linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)",
+
+  green:       "#059669",
+  greenBg:     "rgba(5,150,105,0.07)",
+  greenBorder: "rgba(5,150,105,0.22)",
+
+  red:         "#DC2626",
+  redBg:       "rgba(220,38,38,0.06)",
+  redBorder:   "rgba(220,38,38,0.22)",
 };
 
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
@@ -57,46 +62,39 @@ const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 const EASE  = [0.16, 1, 0.3, 1] as const;
 
-/* ══ STEP CONFIG ═════════════════════════════════════════ */
+/* ══ STEPS ═══════════════════════════════════════════════ */
 const STEPS = [
-  { id: "contact",  label: "Contact",  icon: PersonIcon },
-  { id: "address",  label: "Address",  icon: HomeIcon   },
-  { id: "payment",  label: "Payment",  icon: PayIcon    },
+  { id: "contact", label: "Contact", icon: PersonIcon },
+  { id: "address", label: "Address", icon: HomeIcon   },
+  { id: "payment", label: "Payment", icon: PayIcon    },
 ] as const;
 
-type StepId = typeof STEPS[number]["id"];
-
-/* ══ LUXURY INPUT ════════════════════════════════════════ */
+/* ══ LUX INPUT ═══════════════════════════════════════════ */
 function LuxInput({
-  label, error, hint, disabled, type = "text", placeholder,
-  ...rest
+  label, error, hint, disabled, type = "text", placeholder, ...rest
 }: {
   label: string; error?: string; hint?: string;
   disabled?: boolean; type?: string; placeholder?: string;
   [key: string]: any;
 }) {
   const [focused, setFocused] = useState(false);
-
   return (
-    <Box sx={{ position: "relative" }}>
-      {/* Floating label */}
+    <Box>
       <Typography sx={{
         fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.16em",
-        color: error ? T.red : focused ? T.gold : T.inkMuted,
+        color: error ? T.red : focused ? T.blue : T.inkMuted,
         textTransform: "uppercase", mb: 0.75,
         transition: "color 0.2s ease",
       }}>
         {label}
       </Typography>
-
       <Box sx={{
-        position: "relative",
         background: T.bgInput,
         border: `1px solid ${error ? T.redBorder : focused ? T.borderFocus : T.border}`,
         borderRadius: "12px",
         transition: "border-color 0.22s ease, box-shadow 0.22s ease",
         boxShadow: focused
-          ? `0 0 0 3px ${error ? "rgba(168,50,50,0.08)" : T.goldDim}`
+          ? `0 0 0 3px ${error ? T.redBg : T.blueDim}`
           : "none",
       }}>
         <input
@@ -106,21 +104,14 @@ function LuxInput({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={{
-            width: "100%",
-            padding: "13px 16px",
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            fontFamily: SANS,
-            fontSize: "0.9rem",
-            color: T.ink,
-            borderRadius: "12px",
-            boxSizing: "border-box",
+            width: "100%", padding: "13px 16px",
+            border: "none", outline: "none", background: "transparent",
+            fontFamily: SANS, fontSize: "0.9rem", color: T.ink,
+            borderRadius: "12px", boxSizing: "border-box",
           }}
           {...rest}
         />
       </Box>
-
       {(error || hint) && (
         <Typography sx={{
           fontFamily: SANS, fontSize: "0.75rem",
@@ -139,49 +130,38 @@ function StepIndicator({ current, completed }: { current: number; completed: Set
   return (
     <Box sx={{ display: "flex", alignItems: "center", mb: { xs: 5, md: 7 }, justifyContent: "center" }}>
       {STEPS.map((step, i) => {
-        const isDone    = completed.has(i);
-        const isActive  = i === current;
-        const isPending = i > current && !isDone;
+        const isDone   = completed.has(i);
+        const isActive = i === current;
 
         return (
           <Box key={step.id} sx={{ display: "flex", alignItems: "center" }}>
-            {/* Circle */}
             <motion.div
-              animate={{
-                scale: isActive ? 1.08 : 1,
-              }}
+              animate={{ scale: isActive ? 1.08 : 1 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
             >
               <Box sx={{
-                width: 36, height: 36, borderRadius: "50%",
+                width: 38, height: 38, borderRadius: "50%",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 background: isDone
-                  ? `linear-gradient(135deg,${T.green},#3E9E64)`
+                  ? `linear-gradient(135deg,${T.green},#10B981)`
                   : isActive
-                    ? `linear-gradient(135deg,${T.gold},${T.goldLight})`
+                    ? T.blueGrad
                     : T.bgCard,
-                border: `1.5px solid ${isDone ? T.greenBorder : isActive ? T.goldLight : T.border}`,
-                boxShadow: isActive ? `0 4px 16px ${T.goldGlow}` : "none",
+                border: `1.5px solid ${isDone ? T.greenBorder : isActive ? "rgba(59,123,246,0.5)" : T.border}`,
+                boxShadow: isActive ? `0 4px 16px ${T.blueGlow}` : "none",
                 transition: "all 0.3s ease",
-                cursor: isDone ? "pointer" : "default",
-                position: "relative", zIndex: 1,
               }}>
-                {isDone ? (
-                  <CheckIcon sx={{ fontSize: "0.9rem", color: "#fff" }} />
-                ) : (
-                  <step.icon sx={{
-                    fontSize: "0.85rem",
-                    color: isActive ? T.ink : T.inkGhost,
-                  }} />
-                )}
+                {isDone
+                  ? <CheckIcon sx={{ fontSize: "0.9rem", color: "#fff" }} />
+                  : <step.icon sx={{ fontSize: "0.85rem", color: isActive ? "#fff" : T.inkGhost }} />
+                }
               </Box>
             </motion.div>
 
-            {/* Label */}
             <Typography sx={{
               fontFamily: MONO, fontSize: "0.48rem",
               letterSpacing: "0.16em", textTransform: "uppercase",
-              color: isActive ? T.gold : isDone ? T.green : T.inkGhost,
+              color: isActive ? T.blue : isDone ? T.green : T.inkGhost,
               ml: 0.875, mr: 0.5,
               display: { xs: "none", sm: "block" },
               transition: "color 0.3s ease",
@@ -189,16 +169,12 @@ function StepIndicator({ current, completed }: { current: number; completed: Set
               {step.label}
             </Typography>
 
-            {/* Connector */}
             {i < STEPS.length - 1 && (
               <Box sx={{
-                width: { xs: 28, sm: 48, md: 64 }, height: 1,
-                mx: { xs: 0.5, sm: 1 },
-                background: isDone
-                  ? `linear-gradient(90deg,${T.green},${T.greenBg})`
-                  : T.border,
+                width: { xs: 28, sm: 48, md: 64 }, height: 1.5,
+                mx: { xs: 0.5, sm: 1 }, borderRadius: 1,
+                background: isDone ? T.blueGrad : T.border,
                 transition: "background 0.4s ease",
-                position: "relative", zIndex: 0,
               }} />
             )}
           </Box>
@@ -208,10 +184,8 @@ function StepIndicator({ current, completed }: { current: number; completed: Set
   );
 }
 
-/* ══ ORDER SUMMARY (sticky sidebar) ═════════════════════ */
-function OrderSummary({
-  items, subtotalRaw, format, discount, promoValid,
-}: {
+/* ══ ORDER SUMMARY ═══════════════════════════════════════ */
+function OrderSummary({ items, subtotalRaw, format, discount, promoValid }: {
   items: any[]; subtotalRaw: number; format: Function;
   discount: number; promoValid: boolean | null;
 }) {
@@ -232,17 +206,19 @@ function OrderSummary({
         overflow: "hidden",
         position: "sticky",
         top: 96,
-        boxShadow: "0 4px 24px rgba(14,12,9,0.06)",
+        boxShadow: `0 4px 32px ${T.blueDim}`,
       }}>
         {/* Header */}
         <Box sx={{
           px: 3, py: 2.5,
           borderBottom: `1px solid ${T.border}`,
-          background: "rgba(255,255,255,0.6)",
           display: "flex", alignItems: "center", gap: 1.25,
         }}>
-          <Box sx={{ width: 16, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
-          <Typography sx={{ fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.2em", color: T.goldMid, textTransform: "uppercase" }}>
+          <Box sx={{ width: 16, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
+          <Typography sx={{
+            fontFamily: MONO, fontSize: "0.5rem",
+            letterSpacing: "0.2em", color: T.blue, textTransform: "uppercase",
+          }}>
             Order Summary
           </Typography>
         </Box>
@@ -251,14 +227,12 @@ function OrderSummary({
         <Box sx={{ px: 3, py: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
           {items.map((item: any) => (
             <Box key={item.templateId} sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
-              {/* Thumbnail */}
               <Box sx={{
                 width: 48, height: 48, borderRadius: "10px", flexShrink: 0,
-                background: T.goldDim,
-                border: `1px solid rgba(184,146,42,0.15)`,
+                background: T.bluePale, border: `1px solid rgba(59,123,246,0.14)`,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <Typography sx={{ fontFamily: MONO, fontSize: "0.9rem", color: T.gold }}>◈</Typography>
+                <Typography sx={{ fontSize: "0.9rem", color: T.blue }}>◈</Typography>
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{
@@ -268,13 +242,16 @@ function OrderSummary({
                 }}>
                   {item.template.title}
                 </Typography>
-                <Typography sx={{ fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase" }}>
+                <Typography sx={{
+                  fontFamily: MONO, fontSize: "0.48rem",
+                  letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase",
+                }}>
                   Qty {item.quantity}
                 </Typography>
               </Box>
               <Typography sx={{
-                fontFamily: SERIF, fontStyle: "italic", fontSize: "0.95rem",
-                color: T.inkMid, letterSpacing: "-0.02em", flexShrink: 0,
+                fontFamily: MONO, fontWeight: 600, fontSize: "0.875rem",
+                color: T.inkMid, flexShrink: 0,
               }}>
                 {format((item.template.price_inr / 100) * item.quantity, "INR")}
               </Typography>
@@ -283,7 +260,7 @@ function OrderSummary({
         </Box>
 
         {/* Totals */}
-        <Box sx={{ px: 3, pt: 0, pb: 3, borderTop: `1px solid ${T.border}` }}>
+        <Box sx={{ px: 3, pb: 3, borderTop: `1px solid ${T.border}` }}>
           <Box sx={{ pt: 2.5, display: "flex", flexDirection: "column", gap: 1.25 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography sx={{ fontFamily: SANS, fontSize: "0.82rem", color: T.inkMuted }}>Subtotal</Typography>
@@ -310,7 +287,6 @@ function OrderSummary({
               <Typography sx={{ fontFamily: SANS, fontSize: "0.82rem", color: T.inkFaint }}>Included</Typography>
             </Box>
 
-            {/* Divider */}
             <Box sx={{ height: 1, background: T.border, my: 0.5 }} />
 
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
@@ -331,17 +307,19 @@ function OrderSummary({
         <Box sx={{
           px: 3, py: 2,
           borderTop: `1px solid ${T.border}`,
-          background: T.goldDim,
+          background: T.blueDim,
           display: "flex", flexDirection: "column", gap: 0.875,
         }}>
           {[
             { icon: "🔒", text: "256-bit SSL encryption" },
             { icon: "⚡", text: "Instant delivery to email" },
-            { icon: "↩️", text: "7-day refund guarantee" },
+            { icon: "↩️", text: "7-day refund guarantee"  },
           ].map((b) => (
             <Box key={b.text} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Typography sx={{ fontSize: "0.7rem", lineHeight: 1 }}>{b.icon}</Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.72rem", color: T.inkMuted }}>{b.text}</Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: "0.72rem", color: T.inkMuted }}>
+                {b.text}
+              </Typography>
             </Box>
           ))}
         </Box>
@@ -350,21 +328,16 @@ function OrderSummary({
   );
 }
 
-/* ══ PROMO CODE BOX ══════════════════════════════════════ */
-function PromoBox({
-  onApply,
-}: {
-  onApply: (code: string, discount: number, valid: boolean) => void;
-}) {
-  const [code,    setCode]    = useState("");
-  const [status,  setStatus]  = useState<"idle" | "checking" | "valid" | "invalid">("idle");
-  const [open,    setOpen]    = useState(false);
+/* ══ PROMO CODE ══════════════════════════════════════════ */
+function PromoBox({ onApply }: { onApply: (code: string, discount: number, valid: boolean) => void }) {
+  const [code,   setCode]   = useState("");
+  const [status, setStatus] = useState<"idle"|"checking"|"valid"|"invalid">("idle");
+  const [open,   setOpen]   = useState(false);
 
   const handleApply = async () => {
     if (!code.trim()) return;
     setStatus("checking");
     await new Promise(r => setTimeout(r, 900));
-    // Mock: MERRAKI20 = 20% off
     const isValid = code.toUpperCase() === "MERRAKI20";
     setStatus(isValid ? "valid" : "invalid");
     onApply(code, isValid ? 20 : 0, isValid);
@@ -374,20 +347,14 @@ function PromoBox({
     <Box sx={{ mt: 2 }}>
       <Box
         onClick={() => setOpen(v => !v)}
-        sx={{
-          display: "inline-flex", alignItems: "center", gap: 0.75,
-          cursor: "pointer",
-          "&:hover .promo-label": { color: T.gold },
+        sx={{ display: "inline-flex", alignItems: "center", gap: 0.75, cursor: "pointer",
+          "&:hover .promo-label": { color: T.blue },
         }}
       >
-        <PromoIcon sx={{ fontSize: "0.85rem", color: T.goldMid }} />
-        <Typography
-          className="promo-label"
-          sx={{
-            fontFamily: SANS, fontSize: "0.8rem",
-            color: T.inkMuted, transition: "color 0.18s",
-          }}
-        >
+        <PromoIcon sx={{ fontSize: "0.85rem", color: T.blue }} />
+        <Typography className="promo-label" sx={{
+          fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted, transition: "color 0.18s",
+        }}>
           Have a promo code?
         </Typography>
         <motion.span
@@ -410,15 +377,9 @@ function PromoBox({
           >
             <Box sx={{ mt: 1.75, display: "flex", gap: 1.25 }}>
               <Box sx={{
-                flex: 1,
-                background: T.bgInput,
-                border: `1px solid ${
-                  status === "valid" ? T.greenBorder :
-                  status === "invalid" ? T.redBorder : T.border
-                }`,
-                borderRadius: "11px",
-                overflow: "hidden",
-                transition: "border-color 0.2s",
+                flex: 1, background: T.bgInput,
+                border: `1px solid ${status === "valid" ? T.greenBorder : status === "invalid" ? T.redBorder : T.border}`,
+                borderRadius: "11px", overflow: "hidden", transition: "border-color 0.2s",
               }}>
                 <input
                   value={code}
@@ -426,11 +387,9 @@ function PromoBox({
                   placeholder="e.g. MERRAKI20"
                   style={{
                     width: "100%", padding: "11px 14px",
-                    border: "none", outline: "none",
-                    background: "transparent",
+                    border: "none", outline: "none", background: "transparent",
                     fontFamily: MONO, fontSize: "0.82rem",
-                    letterSpacing: "0.08em", color: T.ink,
-                    boxSizing: "border-box",
+                    letterSpacing: "0.08em", color: T.ink, boxSizing: "border-box",
                   }}
                 />
               </Box>
@@ -440,14 +399,12 @@ function PromoBox({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 style={{
-                  padding: "11px 18px",
-                  borderRadius: "11px",
-                  border: "none",
-                  background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
-                  color: T.ink, fontFamily: SANS,
+                  padding: "11px 18px", borderRadius: "11px", border: "none",
+                  background: T.blueGrad,
+                  color: "#FFFFFF", fontFamily: SANS,
                   fontWeight: 700, fontSize: "0.82rem",
                   cursor: status === "checking" ? "wait" : "pointer",
-                  boxShadow: `0 4px 14px ${T.goldGlow}`,
+                  boxShadow: `0 4px 14px ${T.blueGlow}`,
                   whiteSpace: "nowrap",
                   opacity: !code.trim() ? 0.5 : 1,
                   transition: "opacity 0.2s",
@@ -459,14 +416,14 @@ function PromoBox({
 
             <AnimatePresence mode="wait">
               {status === "valid" && (
-                <motion.div key="valid" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <motion.div key="v" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.green, mt: 0.75, display: "flex", alignItems: "center", gap: 0.5 }}>
                     <CheckIcon sx={{ fontSize: "0.85rem" }} /> 20% discount applied!
                   </Typography>
                 </motion.div>
               )}
               {status === "invalid" && (
-                <motion.div key="invalid" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <motion.div key="i" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                   <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.red, mt: 0.75 }}>
                     Invalid code. Try MERRAKI20 for 20% off.
                   </Typography>
@@ -480,31 +437,27 @@ function PromoBox({
   );
 }
 
-/* ══ STEP CARD WRAPPER ═══════════════════════════════════ */
-function StepCard({
-  title, subtitle, children,
-}: {
+/* ══ STEP CARD ═══════════════════════════════════════════ */
+function StepCard({ title, subtitle, children }: {
   title: string; subtitle?: string; children: React.ReactNode;
 }) {
   return (
     <Box sx={{
-      background: T.bgCard,
-      borderRadius: "22px",
-      border: `1px solid ${T.border}`,
-      overflow: "hidden",
-      boxShadow: "0 4px 32px rgba(14,12,9,0.06)",
+      background: T.bgCard, borderRadius: "22px",
+      border: `1px solid ${T.border}`, overflow: "hidden",
+      boxShadow: `0 4px 32px ${T.blueDim}`,
     }}>
-      {/* Card header */}
+      {/* Header */}
       <Box sx={{
         px: { xs: 3, md: 4 }, py: 3,
         borderBottom: `1px solid ${T.border}`,
-        background: "rgba(255,255,255,0.55)",
+        background: T.bgSection,
       }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.5 }}>
-          <Box sx={{ width: 20, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.75 }}>
+          <Box sx={{ width: 18, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
           <Typography sx={{
-            fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.2em",
-            color: T.goldMid, textTransform: "uppercase",
+            fontFamily: MONO, fontSize: "0.5rem",
+            letterSpacing: "0.2em", color: T.blue, textTransform: "uppercase",
           }}>
             {subtitle}
           </Typography>
@@ -518,7 +471,7 @@ function StepCard({
         </Typography>
       </Box>
 
-      {/* Card body */}
+      {/* Body */}
       <Box sx={{ px: { xs: 3, md: 4 }, py: { xs: 3, md: 4 } }}>
         {children}
       </Box>
@@ -526,62 +479,29 @@ function StepCard({
   );
 }
 
-/* ══ STEP 1 — CONTACT ════════════════════════════════════ */
-function StepContact({ register, errors, control, onNext, isProcessing }: any) {
+/* ══ STEPS ═══════════════════════════════════════════════ */
+function StepContact({ register, errors, onNext, isProcessing }: any) {
   return (
     <StepCard title="Your Details" subtitle="Step 1 of 3 — Contact">
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <LuxInput
-              label="Full Name *"
-              placeholder="Arjun Mehta"
-              error={errors.name?.message}
-              disabled={isProcessing}
-              {...register("name")}
-            />
+            <LuxInput label="Full Name *" placeholder="Arjun Mehta" error={errors.name?.message} disabled={isProcessing} {...register("name")} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <LuxInput
-              label="Email Address *"
-              type="email"
-              placeholder="you@company.com"
-              hint="Order & download link sent here"
-              error={errors.email?.message}
-              disabled={isProcessing}
-              {...register("email")}
-            />
+            <LuxInput label="Email Address *" type="email" placeholder="you@company.com" hint="Download link sent here" error={errors.email?.message} disabled={isProcessing} {...register("email")} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <LuxInput
-              label="Phone Number"
-              type="tel"
-              placeholder="+91 98765 43210"
-              error={errors.phone?.message}
-              disabled={isProcessing}
-              {...register("phone")}
-            />
+            <LuxInput label="Phone Number" type="tel" placeholder="+91 98765 43210" error={errors.phone?.message} disabled={isProcessing} {...register("phone")} />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <LuxInput
-              label="Company (optional)"
-              placeholder="Merraki Solutions"
-              disabled={isProcessing}
-              {...register("company")}
-            />
+            <LuxInput label="Company (optional)" placeholder="Merraki Solutions" disabled={isProcessing} {...register("company")} />
           </Grid>
           <Grid size={{ xs: 12 }}>
-            <LuxInput
-              label="GST Number (optional)"
-              placeholder="22AAAAA0000A1Z5"
-              hint="Required for B2B GST invoice"
-              disabled={isProcessing}
-              {...register("gstNumber")}
-            />
+            <LuxInput label="GST Number (optional)" placeholder="22AAAAA0000A1Z5" hint="Required for B2B GST invoice" disabled={isProcessing} {...register("gstNumber")} />
           </Grid>
         </Grid>
       </Box>
-
       <Box sx={{ mt: 4 }}>
         <NextButton onClick={onNext} label="Continue to Address" />
       </Box>
@@ -589,18 +509,13 @@ function StepContact({ register, errors, control, onNext, isProcessing }: any) {
   );
 }
 
-/* ══ STEP 2 — ADDRESS ════════════════════════════════════ */
-function StepAddress({ register, errors, onNext, onBack, isProcessing, watch, setValue }: any) {
+function StepAddress({ register, errors, onNext, onBack, isProcessing }: any) {
   const [sameAsBilling, setSameAsBilling] = useState(true);
 
   return (
     <StepCard title="Billing & Shipping" subtitle="Step 2 of 3 — Address">
-      {/* Billing */}
       <Box sx={{ mb: 3.5 }}>
-        <Typography sx={{
-          fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.16em",
-          color: T.inkMuted, textTransform: "uppercase", mb: 2,
-        }}>
+        <Typography sx={{ fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.16em", color: T.inkMuted, textTransform: "uppercase", mb: 2 }}>
           Billing Address
         </Typography>
         <Grid container spacing={2}>
@@ -632,27 +547,25 @@ function StepAddress({ register, errors, onNext, onBack, isProcessing, watch, se
           display: "flex", alignItems: "center", gap: 1.5, mb: 3,
           cursor: "pointer", userSelect: "none",
           p: "12px 16px", borderRadius: "12px",
-          background: sameAsBilling ? T.goldDim : T.bgInput,
-          border: `1px solid ${sameAsBilling ? "rgba(184,146,42,0.2)" : T.border}`,
+          background: sameAsBilling ? T.blueDim : T.bgInput,
+          border: `1px solid ${sameAsBilling ? "rgba(59,123,246,0.22)" : T.border}`,
           transition: "all 0.22s ease",
         }}
       >
-        {/* Custom checkbox */}
         <Box sx={{
           width: 18, height: 18, borderRadius: "5px",
-          border: `1.5px solid ${sameAsBilling ? T.gold : T.borderMid}`,
-          background: sameAsBilling ? `linear-gradient(135deg,${T.gold},${T.goldLight})` : "transparent",
+          border: `1.5px solid ${sameAsBilling ? T.blue : T.borderMid}`,
+          background: sameAsBilling ? T.blueGrad : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "all 0.2s ease", flexShrink: 0,
         }}>
-          {sameAsBilling && <CheckIcon sx={{ fontSize: "0.65rem", color: T.ink }} />}
+          {sameAsBilling && <CheckIcon sx={{ fontSize: "0.65rem", color: "#fff" }} />}
         </Box>
         <Typography sx={{ fontFamily: SANS, fontSize: "0.83rem", color: T.inkMid }}>
           Shipping address same as billing
         </Typography>
       </Box>
 
-      {/* Shipping address (conditional) */}
       <AnimatePresence>
         {!sameAsBilling && (
           <motion.div
@@ -663,18 +576,12 @@ function StepAddress({ register, errors, onNext, onBack, isProcessing, watch, se
             style={{ overflow: "hidden" }}
           >
             <Box sx={{ mb: 3.5 }}>
-              <Typography sx={{
-                fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.16em",
-                color: T.inkMuted, textTransform: "uppercase", mb: 2,
-              }}>
+              <Typography sx={{ fontFamily: MONO, fontSize: "0.5rem", letterSpacing: "0.16em", color: T.inkMuted, textTransform: "uppercase", mb: 2 }}>
                 Shipping Address
               </Typography>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12 }}>
                   <LuxInput label="Address Line 1 *" placeholder="456, Linking Road" disabled={isProcessing} {...register("shippingAddressLine1")} />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <LuxInput label="Address Line 2" placeholder="Apt / Suite / Floor" disabled={isProcessing} {...register("shippingAddressLine2")} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <LuxInput label="City *" placeholder="Mumbai" disabled={isProcessing} {...register("shippingCity")} />
@@ -694,7 +601,6 @@ function StepAddress({ register, errors, onNext, onBack, isProcessing, watch, se
         )}
       </AnimatePresence>
 
-      {/* Nav */}
       <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
         <BackButton onClick={onBack} />
         <Box sx={{ flex: 1 }}>
@@ -705,45 +611,35 @@ function StepAddress({ register, errors, onNext, onBack, isProcessing, watch, se
   );
 }
 
-/* ══ STEP 3 — PAYMENT ════════════════════════════════════ */
-function StepPayment({
-  register, errors, handleSubmit, onSubmit, onBack,
-  isProcessing, subtotalRaw, format, discount, promoValid, onPromo,
-}: any) {
+function StepPayment({ handleSubmit, onSubmit, onBack, isProcessing, subtotalRaw, format, discount, promoValid, onPromo }: any) {
   return (
     <StepCard title="Review & Pay" subtitle="Step 3 of 3 — Payment">
-
-      {/* Promo code */}
       <PromoBox onApply={onPromo} />
 
       {/* Security note */}
       <Box sx={{
         mt: 3, p: "14px 18px",
-        background: T.goldDim,
-        border: `1px solid rgba(184,146,42,0.15)`,
-        borderRadius: "12px",
-        display: "flex", alignItems: "center", gap: 1.5,
+        background: T.blueDim, border: `1px solid rgba(59,123,246,0.14)`,
+        borderRadius: "12px", display: "flex", alignItems: "center", gap: 1.5,
       }}>
-        <LockIcon sx={{ fontSize: "0.95rem", color: T.gold }} />
+        <LockIcon sx={{ fontSize: "0.95rem", color: T.blue }} />
         <Typography sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted, lineHeight: 1.6 }}>
           Payments powered by{" "}
-          <Typography component="span" sx={{ fontWeight: 700, color: T.inkMid, fontSize: "inherit" }}>
-            Razorpay
-          </Typography>
+          <Typography component="span" sx={{ fontWeight: 700, color: T.inkMid, fontSize: "inherit" }}>Razorpay</Typography>
           . We never store card details. All transactions are 256-bit encrypted.
         </Typography>
       </Box>
 
-      {/* What you get */}
+      {/* What happens next */}
       <Box sx={{ mt: 3 }}>
         <Typography sx={{ fontFamily: MONO, fontSize: "0.48rem", letterSpacing: "0.16em", color: T.inkMuted, textTransform: "uppercase", mb: 1.5 }}>
           What happens next
         </Typography>
         {[
-          { icon: "⚡", text: "Razorpay payment screen opens securely" },
-          { icon: "📧", text: "Instant confirmation email with download link" },
-          { icon: "🔓", text: "Lifetime access — download anytime" },
-          { icon: "↩️", text: "7-day no-questions refund if unsatisfied" },
+          { icon: "⚡", text: "Razorpay payment screen opens securely"         },
+          { icon: "📧", text: "Instant confirmation email with download link"  },
+          { icon: "🔓", text: "Lifetime access — download anytime"             },
+          { icon: "↩️", text: "7-day no-questions refund if unsatisfied"       },
         ].map((item) => (
           <Box key={item.text} sx={{ display: "flex", alignItems: "flex-start", gap: 1.25, mb: 1 }}>
             <Typography sx={{ fontSize: "0.78rem", lineHeight: 1.6, flexShrink: 0 }}>{item.icon}</Typography>
@@ -752,7 +648,6 @@ function StepPayment({
         ))}
       </Box>
 
-      {/* Nav */}
       <Box sx={{ display: "flex", gap: 1.5, mt: 3.5 }}>
         <BackButton onClick={onBack} />
         <Box sx={{ flex: 1 }}>
@@ -764,8 +659,10 @@ function StepPayment({
         </Box>
       </Box>
 
-      {/* Legal micro-copy */}
-      <Typography sx={{ fontFamily: MONO, fontSize: "0.44rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase", mt: 2, textAlign: "center" }}>
+      <Typography sx={{
+        fontFamily: MONO, fontSize: "0.44rem", letterSpacing: "0.1em",
+        color: T.inkFaint, textTransform: "uppercase", mt: 2, textAlign: "center",
+      }}>
         By paying you agree to our Terms of Service & Refund Policy
       </Typography>
     </StepCard>
@@ -782,11 +679,11 @@ function NextButton({ onClick, label }: { onClick: () => void; label: string }) 
       style={{
         width: "100%", padding: "14px 28px",
         borderRadius: "13px", border: "none", cursor: "pointer",
-        background: `linear-gradient(135deg,${T.gold},${T.goldLight})`,
-        color: T.ink, fontFamily: SANS, fontWeight: 700,
+        background: T.blueGrad,
+        color: "#FFFFFF", fontFamily: SANS, fontWeight: 700,
         fontSize: "0.9rem", letterSpacing: "-0.01em",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        boxShadow: `0 6px 24px ${T.goldGlow}`,
+        boxShadow: `0 6px 24px ${T.blueGlow}`,
         transition: "box-shadow 0.2s ease",
       }}
     >
@@ -803,8 +700,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
       whileHover={{ x: -2 }}
       whileTap={{ scale: 0.97 }}
       style={{
-        padding: "14px 20px",
-        borderRadius: "13px",
+        padding: "14px 20px", borderRadius: "13px",
         border: `1.5px solid ${T.border}`,
         background: "transparent", cursor: "pointer",
         color: T.inkMuted, fontFamily: SANS,
@@ -830,71 +726,45 @@ function PayButton({ onClick, isProcessing, label }: { onClick: () => void; isPr
         width: "100%", padding: "15px 28px",
         borderRadius: "13px", border: "none",
         cursor: isProcessing ? "wait" : "pointer",
-        background: isProcessing
-          ? T.border
-          : `linear-gradient(135deg,${T.gold},${T.goldLight})`,
-        color: isProcessing ? T.inkFaint : T.ink,
+        background: isProcessing ? T.border : T.blueGrad,
+        color: isProcessing ? T.inkFaint : "#FFFFFF",
         fontFamily: SANS, fontWeight: 700,
         fontSize: "0.9rem", letterSpacing: "-0.01em",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-        boxShadow: isProcessing ? "none" : `0 8px 28px ${T.goldGlow}`,
+        boxShadow: isProcessing ? "none" : `0 8px 28px ${T.blueGlow}`,
         transition: "all 0.25s ease",
       }}
     >
       {isProcessing ? (
-        <>
-          <CircularProgress size={16} sx={{ color: T.inkFaint }} />
-          Processing...
-        </>
+        <><CircularProgress size={16} sx={{ color: T.inkFaint }} /> Processing...</>
       ) : (
-        <>
-          <LockIcon style={{ fontSize: "0.95rem" }} />
-          {label}
-        </>
+        <><LockIcon style={{ fontSize: "0.95rem" }} /> {label}</>
       )}
     </motion.button>
   );
 }
 
-/* ══ SLIDE ANIMATION VARIANTS ════════════════════════════ */
-const slideVariants = {
-  enter: (dir: number) => ({
-    x: dir > 0 ? "100%" : "-100%",
-    opacity: 0,
-    scale: 0.96,
-    filter: "blur(4px)",
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    scale: 1,
-    filter: "blur(0px)",
-  },
-  exit: (dir: number) => ({
-    x: dir > 0 ? "-100%" : "100%",
-    opacity: 0,
-    scale: 0.96,
-    filter: "blur(4px)",
-  }),
+/* ══ SLIDE VARIANTS ══════════════════════════════════════ */
+const slide = {
+  enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0, scale: 0.96, filter: "blur(4px)" }),
+  center: { x: 0, opacity: 1, scale: 1, filter: "blur(0px)" },
+  exit:  (dir: number) => ({ x: dir > 0 ? "-100%" : "100%", opacity: 0, scale: 0.96, filter: "blur(4px)" }),
 };
 
 /* ══ MAIN PAGE ═══════════════════════════════════════════ */
 export function CheckoutPageClient() {
-  const router   = useRouter();
+  const router = useRouter();
   const { items, itemCount, subtotalRaw } = useCart();
   const { format }   = useCurrency();
   const { initiateCheckout, isProcessing } = useCheckout();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [direction,   setDirection]   = useState(1);
-  const [completed,   setCompleted]   = useState<Set<number>>(new Set());
+  const [currentStep,   setCurrentStep]   = useState(0);
+  const [direction,     setDirection]     = useState(1);
+  const [completed,     setCompleted]     = useState<Set<number>>(new Set());
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoValid,    setPromoValid]    = useState<boolean | null>(null);
 
-  const {
-    register, handleSubmit, control,
-    formState: { errors }, watch, setValue,
-  } = useForm<CheckoutFormValues>({
+  const { register, handleSubmit, control, formState: { errors }, watch, setValue } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: { country: "India", shippingCountry: "India" },
   });
@@ -910,27 +780,21 @@ export function CheckoutPageClient() {
     setDirection(1);
     setCurrentStep(s => Math.min(s + 1, STEPS.length - 1));
   };
-
   const goBack = () => {
     setDirection(-1);
     setCurrentStep(s => Math.max(s - 1, 0));
   };
-
   const handlePromo = (code: string, discount: number, valid: boolean) => {
     setPromoDiscount(discount);
-    setPromoValid(valid ? true : false);
+    setPromoValid(valid || false);
   };
-
-  const onSubmit = (data: CheckoutFormValues) => {
-    initiateCheckout(data);
-  };
+  const onSubmit = (data: CheckoutFormValues) => initiateCheckout(data);
 
   const stepProps = {
     register, errors, control, handleSubmit, onSubmit,
     isProcessing, watch, setValue,
     subtotalRaw, format,
-    discount: promoDiscount,
-    promoValid,
+    discount: promoDiscount, promoValid,
     onPromo: handlePromo,
   };
 
@@ -942,18 +806,18 @@ export function CheckoutPageClient() {
       position: "relative",
       overflow: "hidden",
     }}>
-      {/* Background warm grid */}
+      {/* Blue dot grid */}
       <Box sx={{
         position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: `linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-        backgroundSize: "72px 72px", opacity: 0.4,
+        backgroundImage: `radial-gradient(circle, rgba(59,123,246,0.07) 1px, transparent 1px)`,
+        backgroundSize: "28px 28px",
       }} />
 
-      {/* Gold bloom */}
+      {/* Blue ambient glow top */}
       <Box sx={{
-        position: "absolute", width: "60vw", height: "50vw",
-        top: "-15vw", right: "-10vw", borderRadius: "50%",
-        background: `radial-gradient(ellipse,${T.goldDim} 0%,transparent 65%)`,
+        position: "absolute", width: "70vw", height: "40vw",
+        top: "-12vw", left: "15vw", borderRadius: "50%",
+        background: "radial-gradient(ellipse, rgba(59,123,246,0.08) 0%, transparent 65%)",
         pointerEvents: "none",
       }} />
 
@@ -967,11 +831,14 @@ export function CheckoutPageClient() {
         >
           <Box sx={{ mb: { xs: 5, md: 7 }, textAlign: "center" }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, mb: 1.5 }}>
-              <Box sx={{ width: 28, height: 1, background: `linear-gradient(270deg,${T.gold},${T.goldLight})` }} />
-              <Typography sx={{ fontFamily: MONO, fontSize: "0.52rem", letterSpacing: "0.22em", color: T.goldMid, textTransform: "uppercase" }}>
+              <Box sx={{ width: 20, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
+              <Typography sx={{
+                fontFamily: MONO, fontSize: "0.52rem",
+                letterSpacing: "0.22em", color: T.blue, textTransform: "uppercase",
+              }}>
                 Secure Checkout
               </Typography>
-              <Box sx={{ width: 28, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
+              <Box sx={{ width: 20, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
             </Box>
             <Box sx={{ overflow: "hidden" }}>
               <motion.div
@@ -994,39 +861,31 @@ export function CheckoutPageClient() {
         {/* Step indicator */}
         <StepIndicator current={currentStep} completed={completed} />
 
-        {/* Main layout */}
+        {/* Layout */}
         <Grid container spacing={{ xs: 3, md: 4 }} alignItems="flex-start">
-
-          {/* Left — step form */}
+          {/* Left — form */}
           <Grid size={{ xs: 12, md: 7 }}>
-            {/* Swiper container */}
             <Box sx={{ position: "relative", overflow: "hidden", minHeight: 400 }}>
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={currentStep}
                   custom={direction}
-                  variants={slideVariants}
+                  variants={slide}
                   initial="enter"
                   animate="center"
                   exit="exit"
                   transition={{ duration: 0.42, ease: EASE }}
                   style={{ width: "100%" }}
                 >
-                  {currentStep === 0 && (
-                    <StepContact {...stepProps} onNext={goNext} />
-                  )}
-                  {currentStep === 1 && (
-                    <StepAddress {...stepProps} onNext={goNext} onBack={goBack} />
-                  )}
-                  {currentStep === 2 && (
-                    <StepPayment {...stepProps} onBack={goBack} />
-                  )}
+                  {currentStep === 0 && <StepContact {...stepProps} onNext={goNext} />}
+                  {currentStep === 1 && <StepAddress {...stepProps} onNext={goNext} onBack={goBack} />}
+                  {currentStep === 2 && <StepPayment {...stepProps} onBack={goBack} />}
                 </motion.div>
               </AnimatePresence>
             </Box>
           </Grid>
 
-          {/* Right — order summary */}
+          {/* Right — summary */}
           <Grid size={{ xs: 12, md: 5 }}>
             <OrderSummary
               items={items}

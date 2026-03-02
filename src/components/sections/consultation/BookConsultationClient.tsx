@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Box, Container, Typography } from "@mui/material";
 import {
   CheckCircle as CheckIcon,
@@ -25,55 +25,76 @@ import {
 } from "@/lib/schemas/contact.schema";
 
 /* ══════════════════════════════════════════════════════════════════════
-   TOKENS — warm white / ink / gold. No dark blues.
+   TOKENS — pure white / deep black / ice blue accent
 ══════════════════════════════════════════════════════════════════════ */
 const T = {
-  white: "#FFFFFF",
-  offwhite: "#F9F8F5",
-  cream: "#F0EDE6",
-  parchment: "#E8E4DA",
-  ink: "#0C0E12",
-  inkMid: "#2E3440",
-  inkMuted: "#64748B",
-  inkFaint: "#94A3B8",
-  inkGhost: "#CBD5E1",
-  border: "#E2DED5",
-  borderMd: "#C8C3B8",
-  gold: "#B8922A",
-  goldMid: "#C9A84C",
-  goldLight: "#DDB96A",
-  goldGlow: "rgba(184,146,42,0.08)",
-  goldBdr: "rgba(184,146,42,0.20)",
-  sage: "#5C7A5C",
-  sageLight: "rgba(92,122,92,0.08)",
+  // Backgrounds
+  bg: "#FFFFFF",
+  bgSub: "#FAFAFA",
+  bgMuted: "#F4F4F5",
+  bgBlue: "#EEF2FF",
+  bgBlueMd: "#E0E7FF",
+  bgBlueSm: "#F0F4FF",
+
+  // Text
+  ink: "#09090B",
+  inkMid: "#18181B",
+  inkBody: "#3F3F46",
+  inkMuted: "#71717A",
+  inkFaint: "#A1A1AA",
+  inkGhost: "#D4D4D8",
+
+  // Borders
+  border: "#E4E4E7",
+  borderMd: "#D4D4D8",
+  borderBlue: "#C7D7FD",
+
+  // Blue accent system
+  blue: "#3B5BDB",
+  blueMid: "#4C6EF5",
+  blueLight: "#748FFC",
+  bluePale: "#BAC8FF",
+  blueGlow: "rgba(59,91,219,0.10)",
+  blueGlowSm: "rgba(59,91,219,0.06)",
+
+  // Semantic
+  sage: "#16A34A",
+  sageLight: "rgba(22,163,74,0.07)",
+  sageBdr: "rgba(22,163,74,0.20)",
+  error: "#DC2626",
+  errorLight: "rgba(220,38,38,0.07)",
 };
 
-const FONT_SERIF = '"Instrument Serif", "Playfair Display", Georgia, serif';
-const FONT_SANS = '"DM Sans", "Mona Sans", system-ui, sans-serif';
-const FONT_MONO = '"DM Mono", "JetBrains Mono", ui-monospace, monospace';
+const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
+const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
+const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-/* ── Data ────────────────────────────────────────────────────────────── */
+/* ── Data ──────────────────────────────────────────────────────────── */
 const OUTCOMES = [
   {
     glyph: "01",
     title: "A clear diagnosis",
     body: "We'll pinpoint exactly which financial lever — pricing, burn, or margins — is holding your growth back.",
+    accent: "#3B5BDB",
   },
   {
     glyph: "02",
     title: "Your 90-day roadmap",
     body: "Leave with a concrete, prioritised action plan you can hand to a CFO or execute yourself.",
+    accent: "#0891B2",
   },
   {
     glyph: "03",
     title: "Model recommendations",
     body: "We'll tell you precisely which templates or models would give you the most leverage — no upsell pressure.",
+    accent: "#7C3AED",
   },
   {
     glyph: "04",
     title: "An honest conversation",
     body: "We only take on clients when we know we can move the needle. This session is about fit, not sales.",
+    accent: "#0D7A5F",
   },
 ];
 
@@ -83,34 +104,7 @@ const SERVICE_OPTIONS = [
   { value: "templates", label: "Custom Templates" },
   { value: "other", label: "Other / Not Sure Yet" },
 ];
-
-const FOUNDERS = [
-  {
-    name: "Parag Bhutani",
-    role: "Co-Founder",
-    tagline: "Financial modelling & Excel expert",
-    initials: "PB",
-    accent: "#B8922A",
-    linkedin: "https://www.linkedin.com/in/parag-bhutani-83a980198/",
-  },
-  {
-    name: "Khyati Gupta",
-    role: "Co-Founder",
-    tagline: "Power BI & forecasting systems",
-    initials: "KG",
-    accent: "#8B6F3E",
-    linkedin: "https://www.linkedin.com/in/khyati-gupta14/",
-  },
-];
-
-const SOCIAL_PROOF = [
-  { val: "300+", label: "Founders advised" },
-  { val: "₹50Cr+", label: "Revenue modelled" },
-  { val: "24 hrs", label: "Response time" },
-  { val: "Free", label: "No obligation" },
-];
-
-/* ── Custom field component ─────────────────────────────────────────── */
+/* ── Field ─────────────────────────────────────────────────────────── */
 function Field({
   label,
   error,
@@ -127,18 +121,24 @@ function Field({
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.75 }}>
         <Typography
           sx={{
-            fontFamily: FONT_SANS,
+            fontFamily: MONO,
             fontWeight: 500,
-            fontSize: "0.8125rem",
-            color: T.inkMid,
-            letterSpacing: "-0.01em",
+            fontSize: "0.5rem",
+            letterSpacing: "0.15em",
+            color: error ? T.error : T.inkMuted,
+            textTransform: "uppercase",
           }}
         >
           {label}
         </Typography>
         {required && (
           <Typography
-            sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", color: T.goldMid }}
+            sx={{
+              fontFamily: MONO,
+              fontSize: "0.55rem",
+              color: T.blueMid,
+              lineHeight: 1,
+            }}
           >
             *
           </Typography>
@@ -155,9 +155,9 @@ function Field({
           >
             <Typography
               sx={{
-                fontFamily: FONT_SANS,
+                fontFamily: SANS,
                 fontSize: "0.72rem",
-                color: "#DC2626",
+                color: T.error,
                 mt: 0.5,
               }}
             >
@@ -170,14 +170,13 @@ function Field({
   );
 }
 
-/* Input styling shared */
 const inputSx = (hasError?: boolean) => ({
   width: "100%",
-  fontFamily: FONT_SANS,
+  fontFamily: SANS,
   fontSize: "0.9rem",
   color: T.ink,
-  background: T.white,
-  border: `1px solid ${hasError ? "#DC2626" : T.border}`,
+  background: T.bg,
+  border: `1.5px solid ${hasError ? T.error : T.border}`,
   borderRadius: "10px",
   px: "14px",
   py: "11px",
@@ -187,61 +186,150 @@ const inputSx = (hasError?: boolean) => ({
   resize: "none" as const,
   "&::placeholder": { color: T.inkGhost },
   "&:focus": {
-    borderColor: hasError ? "#DC2626" : T.borderMd,
-    boxShadow: `0 0 0 3px ${hasError ? "rgba(220,38,38,0.07)" : "rgba(12,14,18,0.05)"}`,
+    borderColor: hasError ? T.error : T.borderBlue,
+    boxShadow: `0 0 0 3px ${hasError ? T.errorLight : T.blueGlowSm}`,
   },
-  "&:disabled": { opacity: 0.5, cursor: "not-allowed", background: T.offwhite },
+  "&:disabled": { opacity: 0.5, cursor: "not-allowed", background: T.bgMuted },
 });
 
-/* ── Animated availability dots ─────────────────────────────────────── */
-function AvailabilityBadge() {
+/* ── CountUp — RAF quartic ease ────────────────────────────────────── */
+function CountUp({
+  to,
+  suffix = "",
+  prefix = "",
+}: {
+  to: number;
+  suffix?: string;
+  prefix?: string;
+}) {
+  const [count, setCount] = useState(0);
+  const [active, setActive] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const raf = useRef<number | null>(null);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setActive(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.5 },
+    );
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    const dur = 1400,
+      t0 = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - t0) / dur, 1);
+      setCount(Math.round((1 - Math.pow(1 - t, 4)) * to));
+      if (t < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => {
+      if (raf.current) cancelAnimationFrame(raf.current);
+    };
+  }, [active, to]);
+
   return (
-    <Box
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 1,
-        px: 1.75,
-        py: 0.75,
-        borderRadius: "100px",
-        background: T.sageLight,
-        border: `1px solid rgba(92,122,92,0.2)`,
-      }}
-    >
-      <Box sx={{ display: "flex", gap: 0.5 }}>
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            animate={{ opacity: i < 2 ? [1, 0.3, 1] : [0.3, 0.3, 0.3] }}
-            transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
-          >
-            <Box
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: i < 2 ? T.sage : T.inkGhost,
-              }}
-            />
-          </motion.div>
-        ))}
-      </Box>
-      <Typography
-        sx={{
-          fontFamily: FONT_MONO,
-          fontSize: "0.58rem",
-          letterSpacing: "0.1em",
-          color: T.sage,
-          textTransform: "uppercase",
-        }}
-      >
-        2 spots available this week
-      </Typography>
-    </Box>
+    <span ref={ref}>
+      {prefix}
+      {count}
+      {suffix}
+    </span>
   );
 }
 
-/* ── Floating cursor glow ────────────────────────────────────────────── */
+/* ── 3D Tilt card ──────────────────────────────────────────────────── */
+function TiltCard({
+  children,
+  intensity = 5,
+}: {
+  children: React.ReactNode;
+  intensity?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const sx = useSpring(mx, { stiffness: 280, damping: 26 });
+  const sy = useSpring(my, { stiffness: 280, damping: 26 });
+  const rotX = useTransform(
+    sy,
+    [-0.5, 0.5],
+    [`${intensity}deg`, `-${intensity}deg`],
+  );
+  const rotY = useTransform(
+    sx,
+    [-0.5, 0.5],
+    [`-${intensity}deg`, `${intensity}deg`],
+  );
+  const glX = useTransform(sx, [-0.5, 0.5], ["12%", "88%"]);
+  const glY = useTransform(sy, [-0.5, 0.5], ["12%", "88%"]);
+  const shadow = useTransform(
+    sx,
+    (v) =>
+      `0 ${8 + Math.abs(v) * 18}px ${20 + Math.abs(v) * 28}px rgba(9,9,11,${0.05 + Math.abs(v) * 0.04})`,
+  );
+  const onMove = useCallback(
+    (e: React.MouseEvent) => {
+      const r = ref.current?.getBoundingClientRect();
+      if (!r) return;
+      mx.set((e.clientX - r.left) / r.width - 0.5);
+      my.set((e.clientY - r.top) / r.height - 0.5);
+    },
+    [mx, my],
+  );
+  const onLeave = useCallback(() => {
+    mx.set(0);
+    my.set(0);
+  }, [mx, my]);
+  return (
+    <motion.div style={{ perspective: 900 }}>
+      <motion.div
+        ref={ref}
+        style={{
+          rotateX: rotX,
+          rotateY: rotY,
+          transformStyle: "preserve-3d",
+          boxShadow: shadow,
+        }}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        whileHover={{
+          z: 10,
+          transition: { type: "spring", stiffness: 300, damping: 28 },
+        }}
+      >
+        <Box
+          sx={{
+            position: "relative",
+            overflow: "hidden",
+            borderRadius: "inherit",
+          }}
+        >
+          <motion.div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              borderRadius: "inherit",
+              background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.72) 0%, transparent 56%)`,
+              zIndex: 2,
+            }}
+          />
+          {children}
+        </Box>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ── Cursor glow ───────────────────────────────────────────────────── */
 function CursorGlow({
   containerRef,
 }: {
@@ -249,30 +337,28 @@ function CursorGlow({
 }) {
   const x = useMotionValue(-200);
   const y = useMotionValue(-200);
-
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const move = (e: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      x.set(e.clientX - rect.left);
-      y.set(e.clientY - rect.top);
+      const r = el.getBoundingClientRect();
+      x.set(e.clientX - r.left);
+      y.set(e.clientY - r.top);
     };
     el.addEventListener("mousemove", move);
     return () => el.removeEventListener("mousemove", move);
   }, [containerRef, x, y]);
-
   return (
     <motion.div
       style={{
         x,
         y,
         position: "absolute",
-        width: 300,
-        height: 300,
+        width: 320,
+        height: 320,
         borderRadius: "50%",
-        background: `radial-gradient(circle, ${T.goldGlow} 0%, transparent 70%)`,
-        transform: "translate(-50%, -50%)",
+        background: `radial-gradient(circle,${T.blueGlowSm} 0%,transparent 70%)`,
+        transform: "translate(-50%,-50%)",
         pointerEvents: "none",
         zIndex: 0,
       }}
@@ -280,7 +366,7 @@ function CursorGlow({
   );
 }
 
-/* ── Step progress bar ───────────────────────────────────────────────── */
+/* ── Step bar ──────────────────────────────────────────────────────── */
 function StepBar({ current, total }: { current: number; total: number }) {
   return (
     <Box sx={{ display: "flex", gap: 0.75, mb: 4 }}>
@@ -291,7 +377,7 @@ function StepBar({ current, total }: { current: number; total: number }) {
             flex: 1,
             height: "2px",
             borderRadius: "2px",
-            background: i < current ? T.gold : T.border,
+            background: i < current ? T.blue : T.border,
             transition: "background 0.3s ease",
             position: "relative",
             overflow: "hidden",
@@ -305,7 +391,7 @@ function StepBar({ current, total }: { current: number; total: number }) {
               style={{
                 position: "absolute",
                 inset: 0,
-                background: T.gold,
+                background: T.blue,
                 borderRadius: "2px",
               }}
             />
@@ -321,7 +407,7 @@ function StepBar({ current, total }: { current: number; total: number }) {
 ══════════════════════════════════════════════════════════════════════ */
 export function BookConsultationClient() {
   const contactMutation = useContact();
-  const [formStep, setFormStep] = useState(1); // 1 = about you, 2 = your challenge, 3 = confirm
+  const [formStep, setFormStep] = useState(1);
   const heroRef = useRef<HTMLDivElement>(null);
   const formCardRef = useRef<HTMLDivElement>(null);
 
@@ -348,7 +434,6 @@ export function BookConsultationClient() {
     });
   };
 
-  /* Parallax */
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
@@ -361,7 +446,6 @@ export function BookConsultationClient() {
   const isPending = contactMutation.isPending;
   const isSuccess = contactMutation.isSuccess;
 
-  /* Step navigation */
   const goNext = async () => {
     let valid = false;
     if (formStep === 1)
@@ -372,16 +456,12 @@ export function BookConsultationClient() {
   };
 
   return (
-    <Box
-      sx={{ minHeight: "100vh", background: T.offwhite, fontFamily: FONT_SANS }}
-    >
-      {/* ════════════════════════════════════════════════════════
-          HERO — full-screen editorial
-      ════════════════════════════════════════════════════════ */}
+    <Box sx={{ minHeight: "100vh", background: T.bg, fontFamily: SANS }}>
+      {/* ══ HERO ═══════════════════════════════════════════════════════ */}
       <Box
         ref={heroRef}
         sx={{
-          background: T.white,
+          background: T.bg,
           borderBottom: `1px solid ${T.border}`,
           pt: { xs: 14, md: 20 },
           pb: { xs: 10, md: 16 },
@@ -389,81 +469,19 @@ export function BookConsultationClient() {
           overflow: "hidden",
         }}
       >
-        {/* Warm grid */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            backgroundImage: `linear-gradient(${T.border} 1px, transparent 1px), linear-gradient(90deg, ${T.border} 1px, transparent 1px)`,
-            backgroundSize: "64px 64px",
-            opacity: 0.4,
-          }}
-        />
-
-        {/* Gold glow */}
-        <Box
-          sx={{
-            position: "absolute",
-            width: "60vw",
-            height: "40vw",
-            top: "-20vw",
-            left: "20vw",
-            borderRadius: "50%",
-            background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`,
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Grain */}
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            opacity: 0.025,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-            backgroundSize: "160px",
-          }}
-        />
-
-        {/* Ghost text */}
-        <Box
-          sx={{
-            position: "absolute",
-            right: -40,
-            bottom: -60,
-            fontFamily: FONT_SERIF,
-            fontStyle: "italic",
-            fontSize: { xs: "35vw", md: "24vw" },
-            fontWeight: 400,
-            color: "rgba(12,14,18,0.025)",
-            lineHeight: 1,
-            pointerEvents: "none",
-            userSelect: "none",
-            letterSpacing: "-0.06em",
-          }}
-        >
-          Grow.
-        </Box>
-
         <Container
           maxWidth="lg"
           sx={{ position: "relative", zIndex: 1, textAlign: "center" }}
         >
           <motion.div style={{ y: sY, opacity: sO }}>
-            {/* Eyebrow */}
             <motion.div
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: EASE }}
             >
-              <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-                <AvailabilityBadge />
-              </Box>
+            
             </motion.div>
 
-            {/* Headline */}
             <motion.div
               initial={{ opacity: 0, y: 36 }}
               animate={{ opacity: 1, y: 0 }}
@@ -471,7 +489,7 @@ export function BookConsultationClient() {
             >
               <Typography
                 sx={{
-                  fontFamily: FONT_SERIF,
+                  fontFamily: SERIF,
                   fontStyle: "italic",
                   fontWeight: 400,
                   fontSize: {
@@ -490,7 +508,7 @@ export function BookConsultationClient() {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: FONT_SERIF,
+                  fontFamily: SERIF,
                   fontStyle: "italic",
                   fontWeight: 400,
                   fontSize: {
@@ -501,7 +519,7 @@ export function BookConsultationClient() {
                   },
                   lineHeight: 0.93,
                   letterSpacing: "-0.035em",
-                  background: `linear-gradient(115deg, ${T.goldLight} 0%, ${T.gold} 55%)`,
+                  background: `linear-gradient(115deg,${T.blueLight},${T.blue})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
@@ -512,7 +530,6 @@ export function BookConsultationClient() {
               </Typography>
             </motion.div>
 
-            {/* Subheadline — psychological hook */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -520,7 +537,7 @@ export function BookConsultationClient() {
             >
               <Typography
                 sx={{
-                  fontFamily: FONT_SANS,
+                  fontFamily: SANS,
                   fontSize: { xs: "1rem", md: "1.125rem" },
                   color: T.inkMuted,
                   lineHeight: 1.8,
@@ -531,11 +548,11 @@ export function BookConsultationClient() {
               >
                 Most founders feel like their numbers are working against them.
                 One 30-minute conversation with Parag or Khyati will show you
-                exactly what to fix and in what order.
+                exactly what to fix — and in what order.
               </Typography>
             </motion.div>
 
-            {/* CTA buttons */}
+            {/* CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -550,7 +567,7 @@ export function BookConsultationClient() {
                   mb: 8,
                 }}
               >
-                {/* Primary — smooth scroll to form */}
+                {/* Primary — blue-white */}
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -571,15 +588,21 @@ export function BookConsultationClient() {
                       px: 3.5,
                       py: 1.625,
                       borderRadius: "10px",
-                      background: `linear-gradient(115deg, ${T.goldLight}, ${T.gold})`,
-                      color: T.ink,
-                      fontFamily: FONT_SANS,
+                      background: `linear-gradient(115deg,${T.bgBlueMd},${T.bgBlue})`,
+                      color: T.blue,
+                      fontFamily: SANS,
                       fontWeight: 600,
                       fontSize: "0.9375rem",
+                      border: `1.5px solid ${T.borderBlue}`,
                       letterSpacing: "-0.01em",
                       textDecoration: "none",
-                      transition: "box-shadow 0.2s",
-                      "&:hover": { boxShadow: `0 8px 28px ${T.goldGlow}` },
+                      boxShadow: `0 2px 12px ${T.blueGlowSm}`,
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        background: `linear-gradient(115deg,${T.bluePale}55,${T.bgBlueMd})`,
+                        boxShadow: `0 6px 24px ${T.blueGlow}`,
+                        borderColor: T.bluePale,
+                      },
                     }}
                   >
                     <CalIcon sx={{ fontSize: "1rem" }} />
@@ -587,7 +610,7 @@ export function BookConsultationClient() {
                   </Box>
                 </motion.div>
 
-                {/* Secondary — Calendly */}
+                {/* Secondary — ghost */}
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
@@ -606,21 +629,21 @@ export function BookConsultationClient() {
                       borderRadius: "10px",
                       border: `1.5px solid ${T.border}`,
                       color: T.inkMuted,
-                      fontFamily: FONT_SANS,
+                      fontFamily: SANS,
                       fontWeight: 500,
                       fontSize: "0.9375rem",
                       letterSpacing: "-0.01em",
                       textDecoration: "none",
-                      background: T.white,
+                      background: T.bg,
                       transition: "all 0.2s",
                       "&:hover": {
-                        borderColor: T.borderMd,
-                        color: T.ink,
-                        background: T.offwhite,
+                        borderColor: T.borderBlue,
+                        color: T.blue,
+                        background: T.bgBlueSm,
                       },
                     }}
                   >
-                    Open Calendly directly
+                    Open Calendly directly{" "}
                     <ArrowIcon sx={{ fontSize: "0.875rem" }} />
                   </Box>
                 </motion.div>
@@ -642,7 +665,17 @@ export function BookConsultationClient() {
                   pt: 4,
                 }}
               >
-                {SOCIAL_PROOF.map((s, i) => (
+                {[
+                  { raw: 300, suffix: "+", label: "Founders advised" },
+                  {
+                    raw: 50,
+                    prefix: "₹",
+                    suffix: "Cr+",
+                    label: "Revenue modelled",
+                  },
+                  { raw: 24, suffix: " hrs", label: "Response time" },
+                  { raw: 0, display: "Free", label: "No obligation" },
+                ].map((s, i) => (
                   <Box
                     key={s.label}
                     sx={{
@@ -654,19 +687,27 @@ export function BookConsultationClient() {
                   >
                     <Typography
                       sx={{
-                        fontFamily: FONT_MONO,
-                        fontSize: { xs: "1.1rem", md: "1.375rem" },
-                        fontWeight: 600,
+                        fontFamily: SERIF,
+                        fontStyle: "italic",
+                        fontSize: { xs: "1.5rem", md: "2rem" },
                         color: T.ink,
-                        letterSpacing: "-0.02em",
+                        letterSpacing: "-0.03em",
                         lineHeight: 1,
                       }}
                     >
-                      {s.val}
+                      {s.display ? (
+                        s.display
+                      ) : (
+                        <CountUp
+                          to={s.raw}
+                          prefix={(s as any).prefix}
+                          suffix={s.suffix}
+                        />
+                      )}
                     </Typography>
                     <Typography
                       sx={{
-                        fontFamily: FONT_MONO,
+                        fontFamily: MONO,
                         fontSize: "0.52rem",
                         letterSpacing: "0.14em",
                         color: T.inkFaint,
@@ -684,13 +725,11 @@ export function BookConsultationClient() {
         </Container>
       </Box>
 
-      {/* ════════════════════════════════════════════════════════
-          WHAT YOU'LL WALK AWAY WITH — outcomes section
-      ════════════════════════════════════════════════════════ */}
+      {/* ══ OUTCOMES ════════════════════════════════════════════════════ */}
       <Box
         sx={{
           py: { xs: 10, md: 16 },
-          background: T.cream,
+          background: T.bgSub,
           borderBottom: `1px solid ${T.border}`,
         }}
       >
@@ -705,32 +744,80 @@ export function BookConsultationClient() {
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}
               >
-                <Box sx={{ width: 28, height: "1px", background: T.gold }} />
+                <Box
+                  sx={{
+                    width: 26,
+                    height: "1px",
+                    background: `linear-gradient(90deg,${T.blue},${T.blueLight})`,
+                  }}
+                />
                 <Typography
                   sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: "0.58rem",
+                    fontFamily: MONO,
+                    fontSize: "0.54rem",
                     letterSpacing: "0.22em",
-                    color: T.goldMid,
+                    color: T.blueMid,
                     textTransform: "uppercase",
                   }}
                 >
                   The Session
                 </Typography>
               </Box>
-              <Typography
+              <Box
                 sx={{
-                  fontFamily: FONT_SERIF,
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  fontSize: { xs: "2.25rem", md: "3.5rem" },
-                  color: T.ink,
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1.05,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 3,
                 }}
               >
-                What you'll walk away with.
-              </Typography>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontStyle: "italic",
+                      fontWeight: 400,
+                      fontSize: { xs: "2.25rem", md: "3.5rem" },
+                      color: T.ink,
+                      letterSpacing: "-0.025em",
+                      lineHeight: 0.96,
+                      mb: 0.5,
+                    }}
+                  >
+                    What you'll
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: SERIF,
+                      fontStyle: "italic",
+                      fontWeight: 400,
+                      fontSize: { xs: "2.25rem", md: "3.5rem" },
+                      letterSpacing: "-0.025em",
+                      lineHeight: 0.96,
+                      background: `linear-gradient(115deg,${T.blueLight},${T.blue})`,
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    walk away with.
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontSize: "0.9375rem",
+                    color: T.inkMuted,
+                    lineHeight: 1.78,
+                    maxWidth: 300,
+                    mb: 0.5,
+                  }}
+                >
+                  Every session is structured. Every session delivers real
+                  outputs.
+                </Typography>
+              </Box>
             </Box>
           </motion.div>
 
@@ -748,293 +835,113 @@ export function BookConsultationClient() {
             {OUTCOMES.map((item, i) => (
               <motion.div
                 key={item.glyph}
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 28, filter: "blur(5px)" }}
+                whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ duration: 0.55, delay: i * 0.1, ease: EASE }}
-                whileHover={{ y: -5 }}
               >
-                <Box
-                  sx={{
-                    p: 3.5,
-                    borderRadius: "16px",
-                    background: T.white,
-                    border: `1px solid ${T.border}`,
-                    height: "100%",
-                    position: "relative",
-                    overflow: "hidden",
-                    transition: "border-color 0.2s, box-shadow 0.2s",
-                    "&:hover": {
-                      borderColor: T.goldBdr,
-                      boxShadow: `0 8px 32px ${T.goldGlow}`,
-                    },
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: "2px",
-                      background: `linear-gradient(90deg, ${T.gold}, transparent)`,
-                      opacity: 0,
-                      transition: "opacity 0.25s",
-                    },
-                    "&:hover::before": { opacity: 1 },
-                  }}
-                >
-                  <Typography
+                <TiltCard intensity={4}>
+                  <Box
                     sx={{
-                      fontFamily: FONT_MONO,
-                      fontSize: "0.52rem",
-                      letterSpacing: "0.18em",
-                      color: T.goldMid,
-                      mb: 2.5,
-                      textTransform: "uppercase",
+                      p: 3.5,
+                      borderRadius: "16px",
+                      background: T.bg,
+                      border: `1px solid ${T.border}`,
+                      height: "100%",
+                      position: "relative",
+                      overflow: "hidden",
+                      transition: "border-color 0.2s",
+                      "&:hover": { borderColor: `${item.accent}35` },
                     }}
                   >
-                    {item.glyph}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_SERIF,
-                      fontStyle: "italic",
-                      fontSize: "1.375rem",
-                      fontWeight: 400,
-                      color: T.ink,
-                      mb: 1.25,
-                      letterSpacing: "-0.01em",
-                      lineHeight: 1.15,
-                    }}
-                  >
-                    {item.title}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_SANS,
-                      fontSize: "0.875rem",
-                      color: T.inkMuted,
-                      lineHeight: 1.75,
-                    }}
-                  >
-                    {item.body}
-                  </Typography>
-                </Box>
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: "1.5px",
+                        background: `linear-gradient(90deg,${item.accent}66,transparent)`,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        right: -8,
+                        bottom: -16,
+                        fontFamily: SERIF,
+                        fontStyle: "italic",
+                        fontSize: "6rem",
+                        color: "rgba(9,9,11,0.025)",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                        letterSpacing: "-0.04em",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {item.glyph}
+                    </Box>
+                    <Box sx={{ position: "relative", zIndex: 1 }}>
+                      <Box
+                        sx={{
+                          width: 38,
+                          height: 38,
+                          borderRadius: "10px",
+                          mb: 2.5,
+                          background: `${item.accent}0d`,
+                          border: `1px solid ${item.accent}22`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontFamily: MONO,
+                            fontSize: "0.52rem",
+                            letterSpacing: "0.18em",
+                            color: item.accent,
+                            textTransform: "uppercase",
+                          }}
+                        >
+                          {item.glyph}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        sx={{
+                          fontFamily: SERIF,
+                          fontStyle: "italic",
+                          fontSize: "1.375rem",
+                          fontWeight: 400,
+                          color: T.ink,
+                          mb: 1.25,
+                          letterSpacing: "-0.01em",
+                          lineHeight: 1.15,
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "0.875rem",
+                          color: T.inkMuted,
+                          lineHeight: 1.75,
+                        }}
+                      >
+                        {item.body}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </TiltCard>
               </motion.div>
             ))}
           </Box>
         </Container>
       </Box>
 
-      {/* ════════════════════════════════════════════════════════
-          FOUNDERS — relationship building
-      ════════════════════════════════════════════════════════ */}
-      <Box
-        sx={{
-          py: { xs: 10, md: 16 },
-          background: T.white,
-          borderBottom: `1px solid ${T.border}`,
-        }}
-      >
-        <Container maxWidth="xl">
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
-              gap: { xs: 8, lg: 12 },
-              alignItems: "center",
-            }}
-          >
-            {/* Left: editorial copy */}
-            <motion.div
-              initial={{ opacity: 0, x: -32 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.65, ease: EASE }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  mb: 2.5,
-                }}
-              >
-                <Box sx={{ width: 28, height: "1px", background: T.gold }} />
-                <Typography
-                  sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: "0.58rem",
-                    letterSpacing: "0.22em",
-                    color: T.goldMid,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Who You'll Speak With
-                </Typography>
-              </Box>
-              <Typography
-                sx={{
-                  fontFamily: FONT_SERIF,
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  fontSize: { xs: "2rem", md: "3rem" },
-                  color: T.ink,
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1.1,
-                  mb: 2.5,
-                }}
-              >
-                Real experts.
-                <br />
-                Not a sales team.
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_SANS,
-                  fontSize: "1rem",
-                  color: T.inkMuted,
-                  lineHeight: 1.8,
-                  mb: 1.5,
-                }}
-              >
-                When you book with us, you speak directly with Parag or Khyati —
-                the people who have personally built 150+ financial models for
-                founders across India.
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_SANS,
-                  fontSize: "1rem",
-                  color: T.inkMuted,
-                  lineHeight: 1.8,
-                }}
-              >
-                No junior analysts. No templated advice. Just two people who
-                genuinely care about making your numbers work.
-              </Typography>
-            </motion.div>
-
-            {/* Right: founder cards side by side */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {FOUNDERS.map((f, i) => (
-                <motion.div
-                  key={f.name}
-                  initial={{ opacity: 0, x: 32 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.2 }}
-                  transition={{ duration: 0.6, delay: i * 0.12, ease: EASE }}
-                  whileHover={{ y: -3 }}
-                >
-                  <Box
-                    sx={{
-                      p: 3,
-                      borderRadius: "16px",
-                      background: T.offwhite,
-                      border: `1px solid ${T.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2.5,
-                      transition: "border-color 0.2s, box-shadow 0.2s",
-                      "&:hover": {
-                        borderColor: f.accent + "44",
-                        boxShadow: `0 6px 24px ${f.accent}10`,
-                      },
-                    }}
-                  >
-                    {/* Avatar */}
-                    <Box
-                      sx={{
-                        width: 58,
-                        height: 58,
-                        borderRadius: "14px",
-                        flexShrink: 0,
-                        background: `linear-gradient(135deg, ${f.accent}22, ${f.accent}10)`,
-                        border: `1px solid ${f.accent}22`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_SERIF,
-                          fontStyle: "italic",
-                          fontSize: "1.375rem",
-                          color: f.accent,
-                          letterSpacing: "-0.03em",
-                        }}
-                      >
-                        {f.initials}
-                      </Typography>
-                    </Box>
-                    {/* Info */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          mb: 0.25,
-                        }}
-                      >
-                        <Typography
-                          sx={{
-                            fontFamily: FONT_SERIF,
-                            fontStyle: "italic",
-                            fontSize: "1.125rem",
-                            fontWeight: 400,
-                            color: T.ink,
-                            letterSpacing: "-0.01em",
-                          }}
-                        >
-                          {f.name}
-                        </Typography>
-                        <motion.a
-                          href={f.linkedin}
-                          target="_blank"
-                          whileHover={{ scale: 1.15, color: T.gold }}
-                          style={{ color: T.inkGhost, display: "flex" }}
-                        >
-                          <LinkedInIcon sx={{ fontSize: "1.125rem" }} />
-                        </motion.a>
-                      </Box>
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_MONO,
-                          fontSize: "0.58rem",
-                          letterSpacing: "0.1em",
-                          color: f.accent,
-                          textTransform: "uppercase",
-                          mb: 0.5,
-                        }}
-                      >
-                        {f.role}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_SANS,
-                          fontSize: "0.8rem",
-                          color: T.inkMuted,
-                        }}
-                      >
-                        {f.tagline}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </motion.div>
-              ))}
-            </Box>
-          </Box>
-        </Container>
-      </Box>
-
-      {/* ════════════════════════════════════════════════════════
-          FORM — multi-step conversation
-      ════════════════════════════════════════════════════════ */}
-      <Box
-        id="book-form"
-        sx={{ py: { xs: 10, md: 16 }, background: T.offwhite }}
-      >
+      {/* ══ FORM ════════════════════════════════════════════════════════ */}
+      <Box id="book-form" sx={{ py: { xs: 10, md: 16 }, background: T.bgSub }}>
         <Container maxWidth="lg">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -1052,23 +959,35 @@ export function BookConsultationClient() {
                   justifyContent: "center",
                 }}
               >
-                <Box sx={{ width: 28, height: "1px", background: T.gold }} />
+                <Box
+                  sx={{
+                    width: 26,
+                    height: "1px",
+                    background: `linear-gradient(90deg,${T.blue},${T.blueLight})`,
+                  }}
+                />
                 <Typography
                   sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: "0.58rem",
+                    fontFamily: MONO,
+                    fontSize: "0.54rem",
                     letterSpacing: "0.22em",
-                    color: T.goldMid,
+                    color: T.blueMid,
                     textTransform: "uppercase",
                   }}
                 >
                   Free Strategy Session
                 </Typography>
-                <Box sx={{ width: 28, height: "1px", background: T.gold }} />
+                <Box
+                  sx={{
+                    width: 26,
+                    height: "1px",
+                    background: `linear-gradient(90deg,${T.blueLight},${T.blue})`,
+                  }}
+                />
               </Box>
               <Typography
                 sx={{
-                  fontFamily: FONT_SERIF,
+                  fontFamily: SERIF,
                   fontStyle: "italic",
                   fontWeight: 400,
                   fontSize: { xs: "2.25rem", md: "3.25rem" },
@@ -1082,7 +1001,7 @@ export function BookConsultationClient() {
               </Typography>
               <Typography
                 sx={{
-                  fontFamily: FONT_SANS,
+                  fontFamily: SANS,
                   fontSize: "1rem",
                   color: T.inkMuted,
                   lineHeight: 1.75,
@@ -1096,7 +1015,6 @@ export function BookConsultationClient() {
             </Box>
           </motion.div>
 
-          {/* Card with cursor glow */}
           <Box
             ref={formCardRef}
             sx={{ position: "relative", maxWidth: 680, mx: "auto" }}
@@ -1107,16 +1025,16 @@ export function BookConsultationClient() {
               sx={{
                 position: "relative",
                 zIndex: 1,
-                background: T.white,
+                background: T.bg,
                 borderRadius: "20px",
                 border: `1px solid ${T.border}`,
                 p: { xs: 3, md: 5 },
                 boxShadow:
-                  "0 4px 40px rgba(12,14,18,0.06), 0 1px 2px rgba(12,14,18,0.04)",
+                  "0 4px 40px rgba(9,9,11,0.06), 0 1px 2px rgba(9,9,11,0.03)",
               }}
             >
               <AnimatePresence mode="wait">
-                {/* ── SUCCESS STATE ── */}
+                {/* ── SUCCESS ── */}
                 {isSuccess ? (
                   <motion.div
                     key="success"
@@ -1135,8 +1053,8 @@ export function BookConsultationClient() {
                       }}
                     >
                       <motion.div
-                        initial={{ scale: 0, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
                         transition={{
                           type: "spring",
                           stiffness: 240,
@@ -1144,27 +1062,65 @@ export function BookConsultationClient() {
                           delay: 0.1,
                         }}
                       >
-                        <Box
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: "50%",
-                            background: T.sageLight,
-                            border: `1px solid rgba(92,122,92,0.2)`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <CheckIcon
-                            sx={{ fontSize: "2.25rem", color: T.sage }}
+                        <Box sx={{ position: "relative" }}>
+                          <motion.div
+                            animate={{
+                              scale: [1, 1.2, 1],
+                              opacity: [0.18, 0, 0.18],
+                            }}
+                            transition={{
+                              duration: 2.4,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                            style={{
+                              position: "absolute",
+                              inset: -12,
+                              borderRadius: "50%",
+                              border: `1.5px solid ${T.blue}`,
+                              pointerEvents: "none",
+                            }}
                           />
+                          <Box
+                            sx={{
+                              width: 80,
+                              height: 80,
+                              borderRadius: "50%",
+                              background: T.bgBlueSm,
+                              border: `1.5px solid ${T.borderBlue}`,
+                              boxShadow: `0 6px 28px ${T.blueGlowSm}`,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <svg
+                              width="32"
+                              height="32"
+                              viewBox="0 0 32 32"
+                              fill="none"
+                            >
+                              <motion.path
+                                d="M7 16L13 22L25 10"
+                                stroke={T.blue}
+                                strokeWidth="2.6"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{
+                                  delay: 0.3,
+                                  duration: 0.5,
+                                  ease: EASE,
+                                }}
+                              />
+                            </svg>
+                          </Box>
                         </Box>
                       </motion.div>
-
                       <Typography
                         sx={{
-                          fontFamily: FONT_SERIF,
+                          fontFamily: SERIF,
                           fontStyle: "italic",
                           fontSize: "2rem",
                           color: T.ink,
@@ -1176,7 +1132,7 @@ export function BookConsultationClient() {
                       </Typography>
                       <Typography
                         sx={{
-                          fontFamily: FONT_SANS,
+                          fontFamily: SANS,
                           fontSize: "1rem",
                           color: T.inkMuted,
                           lineHeight: 1.75,
@@ -1186,8 +1142,6 @@ export function BookConsultationClient() {
                         Parag or Khyati will personally review your submission
                         and reach out within 24 hours to schedule your session.
                       </Typography>
-
-                      {/* Calendly nudge */}
                       <motion.div
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
@@ -1205,17 +1159,17 @@ export function BookConsultationClient() {
                             px: 3,
                             py: 1.5,
                             borderRadius: "10px",
-                            border: `1.5px solid ${T.border}`,
-                            color: T.inkMuted,
-                            fontFamily: FONT_SANS,
+                            border: `1.5px solid ${T.borderBlue}`,
+                            color: T.blue,
+                            fontFamily: SANS,
                             fontWeight: 500,
                             fontSize: "0.875rem",
                             textDecoration: "none",
-                            background: T.offwhite,
+                            background: T.bgBlueSm,
                             transition: "all 0.2s",
                             "&:hover": {
-                              borderColor: T.borderMd,
-                              color: T.ink,
+                              background: T.bgBlueMd,
+                              borderColor: T.bluePale,
                             },
                           }}
                         >
@@ -1227,17 +1181,14 @@ export function BookConsultationClient() {
                     </Box>
                   </motion.div>
                 ) : (
-                  /* ── FORM ── */
                   <motion.div key="form">
                     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-                      {/* Step progress */}
                       <StepBar current={formStep} total={3} />
 
-                      {/* Step label */}
                       <Box sx={{ mb: 4 }}>
                         <Typography
                           sx={{
-                            fontFamily: FONT_MONO,
+                            fontFamily: MONO,
                             fontSize: "0.54rem",
                             letterSpacing: "0.18em",
                             color: T.inkFaint,
@@ -1249,7 +1200,7 @@ export function BookConsultationClient() {
                         </Typography>
                         <Typography
                           sx={{
-                            fontFamily: FONT_SERIF,
+                            fontFamily: SERIF,
                             fontStyle: "italic",
                             fontSize: "1.5rem",
                             color: T.ink,
@@ -1263,8 +1214,8 @@ export function BookConsultationClient() {
                         </Typography>
                       </Box>
 
-                      {/* ── Step 1: Identity ── */}
                       <AnimatePresence mode="wait">
+                        {/* Step 1 */}
                         {formStep === 1 && (
                           <motion.div
                             key="step1"
@@ -1334,7 +1285,7 @@ export function BookConsultationClient() {
                                     sx={inputSx(!!errors.phone)}
                                   />
                                 </Field>
-                                <Field label="Company name" error={undefined}>
+                                <Field label="Company name">
                                   <Box
                                     component="input"
                                     {...register("company")}
@@ -1348,7 +1299,7 @@ export function BookConsultationClient() {
                           </motion.div>
                         )}
 
-                        {/* ── Step 2: Challenge ── */}
+                        {/* Step 2 */}
                         {formStep === 2 && (
                           <motion.div
                             key="step2"
@@ -1364,7 +1315,6 @@ export function BookConsultationClient() {
                                 gap: 2.5,
                               }}
                             >
-                              {/* Service type — custom segmented control */}
                               <Field label="What do you need most?" required>
                                 <Controller
                                   name="serviceType"
@@ -1389,20 +1339,24 @@ export function BookConsultationClient() {
                                             px: 2,
                                             py: 1.25,
                                             borderRadius: "9px",
-                                            border: `1.5px solid ${field.value === opt.value ? T.gold : T.border}`,
+                                            border: `1.5px solid ${field.value === opt.value ? T.borderBlue : T.border}`,
                                             background:
                                               field.value === opt.value
-                                                ? `linear-gradient(115deg, ${T.goldLight}18, ${T.gold}10)`
-                                                : T.white,
+                                                ? T.bgBlueSm
+                                                : T.bg,
                                             cursor: "pointer",
                                             textAlign: "left",
-                                            transition: "all 0.15s ease",
+                                            transition: "all 0.15s",
                                             outline: "none",
+                                            "&:hover": {
+                                              borderColor: T.borderBlue,
+                                              background: T.bgBlueSm,
+                                            },
                                           }}
                                         >
                                           <Typography
                                             sx={{
-                                              fontFamily: FONT_SANS,
+                                              fontFamily: SANS,
                                               fontSize: "0.8125rem",
                                               fontWeight:
                                                 field.value === opt.value
@@ -1410,7 +1364,7 @@ export function BookConsultationClient() {
                                                   : 400,
                                               color:
                                                 field.value === opt.value
-                                                  ? T.gold
+                                                  ? T.blue
                                                   : T.inkMuted,
                                               letterSpacing: "-0.01em",
                                               transition: "all 0.15s",
@@ -1424,7 +1378,6 @@ export function BookConsultationClient() {
                                   )}
                                 />
                               </Field>
-
                               <Field
                                 label="What's this about?"
                                 error={errors.subject?.message}
@@ -1438,7 +1391,6 @@ export function BookConsultationClient() {
                                   sx={inputSx(!!errors.subject)}
                                 />
                               </Field>
-
                               <Field
                                 label="Tell us more — the more context, the better your session"
                                 error={errors.message?.message}
@@ -1460,7 +1412,7 @@ export function BookConsultationClient() {
                           </motion.div>
                         )}
 
-                        {/* ── Step 3: Confirm ── */}
+                        {/* Step 3 */}
                         {formStep === 3 && (
                           <motion.div
                             key="step3"
@@ -1481,7 +1433,7 @@ export function BookConsultationClient() {
                                 sx={{
                                   borderRadius: "12px",
                                   border: `1px solid ${T.border}`,
-                                  background: T.offwhite,
+                                  background: T.bgSub,
                                   overflow: "hidden",
                                   mb: 3,
                                 }}
@@ -1517,7 +1469,7 @@ export function BookConsultationClient() {
                                   >
                                     <Typography
                                       sx={{
-                                        fontFamily: FONT_MONO,
+                                        fontFamily: MONO,
                                         fontSize: "0.6rem",
                                         letterSpacing: "0.1em",
                                         color: T.inkFaint,
@@ -1530,7 +1482,7 @@ export function BookConsultationClient() {
                                     </Typography>
                                     <Typography
                                       sx={{
-                                        fontFamily: FONT_SANS,
+                                        fontFamily: SANS,
                                         fontSize: "0.875rem",
                                         color: T.ink,
                                         lineHeight: 1.4,
@@ -1551,7 +1503,7 @@ export function BookConsultationClient() {
                                   py: 1.5,
                                   borderRadius: "10px",
                                   background: T.sageLight,
-                                  border: `1px solid rgba(92,122,92,0.18)`,
+                                  border: `1px solid ${T.sageBdr}`,
                                   mb: 3,
                                 }}
                               >
@@ -1565,7 +1517,7 @@ export function BookConsultationClient() {
                                 />
                                 <Typography
                                   sx={{
-                                    fontFamily: FONT_SANS,
+                                    fontFamily: SANS,
                                     fontSize: "0.8rem",
                                     color: T.sage,
                                     lineHeight: 1.6,
@@ -1582,16 +1534,16 @@ export function BookConsultationClient() {
                                   sx={{
                                     p: 2,
                                     borderRadius: "10px",
-                                    background: "rgba(220,38,38,0.05)",
-                                    border: "1px solid rgba(220,38,38,0.15)",
+                                    background: T.errorLight,
+                                    border: `1px solid rgba(220,38,38,0.15)`,
                                     mb: 2.5,
                                   }}
                                 >
                                   <Typography
                                     sx={{
-                                      fontFamily: FONT_SANS,
+                                      fontFamily: SANS,
                                       fontSize: "0.8rem",
-                                      color: "#DC2626",
+                                      color: T.error,
                                     }}
                                   >
                                     Failed to send. Please try again or email us
@@ -1616,19 +1568,23 @@ export function BookConsultationClient() {
                                     justifyContent: "center",
                                     gap: 1.5,
                                     px: 3,
-                                    py: 1.625,
+                                    py: 1.75,
                                     borderRadius: "10px",
                                     background: isPending
-                                      ? T.parchment
-                                      : `linear-gradient(115deg, ${T.goldLight}, ${T.gold})`,
-                                    border: "none",
+                                      ? T.bgMuted
+                                      : `linear-gradient(115deg,${T.bgBlueMd},${T.bgBlue})`,
+                                    border: `1.5px solid ${isPending ? T.border : T.borderBlue}`,
                                     cursor: isPending
                                       ? "not-allowed"
                                       : "pointer",
                                     transition: "all 0.2s",
                                     boxShadow: isPending
                                       ? "none"
-                                      : `0 6px 24px ${T.goldGlow}`,
+                                      : `0 4px 18px ${T.blueGlowSm}`,
+                                    "&:hover:not(:disabled)": {
+                                      background: `linear-gradient(115deg,${T.bluePale}55,${T.bgBlueMd})`,
+                                      boxShadow: `0 6px 24px ${T.blueGlow}`,
+                                    },
                                   }}
                                 >
                                   {isPending ? (
@@ -1651,15 +1607,15 @@ export function BookConsultationClient() {
                                           sx={{
                                             width: 16,
                                             height: 16,
-                                            border: `2px solid ${T.borderMd}`,
-                                            borderTopColor: T.gold,
+                                            border: `2px solid ${T.borderBlue}`,
+                                            borderTopColor: T.blue,
                                             borderRadius: "50%",
                                           }}
                                         />
                                       </motion.div>
                                       <Typography
                                         sx={{
-                                          fontFamily: FONT_SANS,
+                                          fontFamily: SANS,
                                           fontWeight: 600,
                                           fontSize: "0.9375rem",
                                           color: T.inkMuted,
@@ -1671,10 +1627,10 @@ export function BookConsultationClient() {
                                   ) : (
                                     <Typography
                                       sx={{
-                                        fontFamily: FONT_SANS,
+                                        fontFamily: SANS,
                                         fontWeight: 600,
                                         fontSize: "0.9375rem",
-                                        color: T.ink,
+                                        color: T.blue,
                                         letterSpacing: "-0.01em",
                                       }}
                                     >
@@ -1688,7 +1644,7 @@ export function BookConsultationClient() {
                         )}
                       </AnimatePresence>
 
-                      {/* ── Navigation buttons ── */}
+                      {/* Nav buttons */}
                       {!isSuccess && (
                         <Box
                           sx={{
@@ -1711,13 +1667,14 @@ export function BookConsultationClient() {
                                 border: `1px solid ${T.border}`,
                                 background: "transparent",
                                 cursor: "pointer",
-                                fontFamily: FONT_SANS,
+                                fontFamily: SANS,
                                 fontSize: "0.875rem",
                                 color: T.inkMuted,
                                 transition: "all 0.15s",
                                 "&:hover": {
-                                  borderColor: T.borderMd,
-                                  color: T.ink,
+                                  borderColor: T.borderBlue,
+                                  color: T.blue,
+                                  background: T.bgBlueSm,
                                 },
                               }}
                             >
@@ -1733,18 +1690,22 @@ export function BookConsultationClient() {
                                 px: 2.5,
                                 py: 1.125,
                                 borderRadius: "9px",
-                                background: T.ink,
-                                border: "none",
+                                background: `linear-gradient(115deg,${T.bgBlueMd},${T.bgBlue})`,
+                                border: `1.5px solid ${T.borderBlue}`,
                                 cursor: "pointer",
-                                fontFamily: FONT_SANS,
+                                fontFamily: SANS,
                                 fontWeight: 600,
                                 fontSize: "0.875rem",
-                                color: T.white,
+                                color: T.blue,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 0.75,
-                                transition: "opacity 0.15s",
-                                "&:hover": { opacity: 0.85 },
+                                transition: "all 0.15s",
+                                boxShadow: `0 2px 10px ${T.blueGlowSm}`,
+                                "&:hover": {
+                                  background: `linear-gradient(115deg,${T.bluePale}55,${T.bgBlueMd})`,
+                                  boxShadow: `0 4px 16px ${T.blueGlow}`,
+                                },
                               }}
                             >
                               Continue <ArrowIcon sx={{ fontSize: "0.8rem" }} />

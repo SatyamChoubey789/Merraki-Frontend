@@ -5,12 +5,18 @@ import { keyframes } from "@mui/system";
 
 const T = {
   white: "#FFFFFF",
-  offwhite: "#F9F8F5",
-  border: "#E2DED5",
-  ink: "#0C0E12",
-  gold: "#B8922A",
-  goldLight: "#DDB96A",
-  goldGlow: "rgba(184,146,42,0.05)",
+  offwhite: "#F5F7FB",
+  cream: "#EDF3FF",
+  parchment: "rgba(59,123,246,0.06)",
+  border: "rgba(10,10,20,0.08)",
+
+  ink: "#0A0A0F",
+  inkFaint: "#9898AE",
+
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
 
 const shimmer = keyframes`
@@ -22,7 +28,7 @@ const goldShimmer = {
   background: `linear-gradient(
     90deg,
     rgba(0,0,0,0.03) 0%,
-    rgba(184,146,42,0.08) 50%,
+    rgba(59,123,246,0.08) 50%,
     rgba(0,0,0,0.03) 100%
   )`,
   backgroundSize: "200% 100%",
@@ -64,7 +70,7 @@ export default function ShopLoading() {
           top: "-25vw",
           left: "15vw",
           borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`,
+          background: `radial-gradient(ellipse, ${T.blueGlow} 0%, transparent 70%)`,
         }}
       />
 
@@ -87,8 +93,24 @@ export default function ShopLoading() {
 
       <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
         {/* Headline skeleton */}
-        <Box sx={{ mb: 2, height: 64, width: "45%", borderRadius: 2, ...goldShimmer }} />
-        <Box sx={{ mb: 5, height: 24, width: "60%", borderRadius: 1, background: "rgba(0,0,0,0.05)" }} />
+        <Box
+          sx={{
+            mb: 2,
+            height: 64,
+            width: "45%",
+            borderRadius: 2,
+            ...goldShimmer,
+          }}
+        />
+        <Box
+          sx={{
+            mb: 5,
+            height: 24,
+            width: "60%",
+            borderRadius: 1,
+            background: "rgba(0,0,0,0.05)",
+          }}
+        />
 
         {/* Filter pills */}
         <Box sx={{ display: "flex", gap: 2, mb: 6 }}>
@@ -130,10 +152,25 @@ export default function ShopLoading() {
                 />
 
                 {/* Title */}
-                <Box sx={{ height: 22, width: "70%", mb: 2, borderRadius: 1, ...goldShimmer }} />
+                <Box
+                  sx={{
+                    height: 22,
+                    width: "70%",
+                    mb: 2,
+                    borderRadius: 1,
+                    ...goldShimmer,
+                  }}
+                />
 
                 {/* Price */}
-                <Box sx={{ height: 18, width: "40%", borderRadius: 1, background: "rgba(0,0,0,0.05)" }} />
+                <Box
+                  sx={{
+                    height: 18,
+                    width: "40%",
+                    borderRadius: 1,
+                    background: "rgba(0,0,0,0.05)",
+                  }}
+                />
               </Box>
             </Grid>
           ))}

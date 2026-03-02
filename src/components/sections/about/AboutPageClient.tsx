@@ -17,34 +17,29 @@ import { FinalCTA } from "@/components/sections/home/FinalCTA";
 ══════════════════════════════════════════════════════════════════════ */
 const T = {
   /* surfaces */
-  black: "#080A0C",
-  charcoal: "#111318",
-  ash: "#1C1F26",
   white: "#FFFFFF",
-  offwhite: "#F7F6F3" /* warm off-white */,
-  paper: "#EFEDE8" /* warm cream */,
+  offwhite: "#F5F7FB",              // soft section background
+  paper: "#EDF3FF",                 // subtle blue tint surface
+  surface: "#F8FAFF",               // very light elevated surface
 
   /* text */
-  ink: "#0F1117",
-  inkMid: "#374151",
-  inkMuted: "#6B7280",
-  inkFaint: "#9CA3AF",
+  ink: "#0A0A0F",
+  inkMid: "#1E1E2A",
+  inkMuted: "#5A5A72",
+  inkFaint: "#9898AE",
 
-  /* light-mode borders */
-  border: "#E4E2DC" /* warm-tinted */,
-  borderMid: "#C9C6BE",
+  /* borders */
+  border: "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.14)",
 
-  /* dark-mode borders */
-  bdDark: "rgba(255,255,255,0.07)",
-  bdDarkMid: "rgba(255,255,255,0.13)",
-
-  /* THE ONE accent — warm gold */
-  gold: "#C9A84C",
-  goldLight: "#E4C46A",
-  goldDim: "rgba(201,168,76,0.15)",
-  goldBdr: "rgba(201,168,76,0.25)",
+  /* accent — brand blue */
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale: "#EDF3FF",
+  blueDim: "rgba(59,123,246,0.06)",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
-
 const FONT_DISPLAY = `"Instrument Serif", "Playfair Display", Georgia, serif`;
 const FONT_BODY = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
 const FONT_MONO = `"DM Mono", "JetBrains Mono", monospace`;
@@ -56,7 +51,7 @@ const MISSION_ITEMS = [
     glyph: "01",
     title: "Our Mission",
     text: "To simplify finance so every business owner can make confident, data-backed decisions — regardless of their financial background.",
-    accent: T.gold,
+    accent: T.blue,
   },
   {
     glyph: "02",
@@ -149,7 +144,7 @@ function HorizontalScrollSection() {
           <ValuesPanel progress={smooth} />
         </motion.div>
 
-        {/* Bottom progress bar — gold */}
+        {/* Bottom progress bar — blue */}
         <motion.div
           style={{
             scaleX: smooth,
@@ -158,7 +153,7 @@ function HorizontalScrollSection() {
             left: 0,
             right: 0,
             height: 1.5,
-            background: `linear-gradient(90deg, ${T.gold}, ${T.goldLight})`,
+            background: `linear-gradient(90deg, ${T.blue}, ${T.blueLight})`,
             transformOrigin: "left",
             zIndex: 20,
           }}
@@ -211,8 +206,8 @@ function PanelDots({ progress }: { progress: MotionValue<number> }) {
               width: 5,
               height: 5,
               borderRadius: "50%",
-              background: T.bdDarkMid,
-              border: `1px solid ${T.bdDark}`,
+              background: T.blueMid,
+              border: `1px solid ${T.blue}`,
             }}
           />
           <Typography
@@ -290,7 +285,7 @@ function ScrollCue({ progress }: { progress: MotionValue<number> }) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   PANEL 1 — HERO  (pure charcoal/black, gold accent)
+   PANEL 1 — HERO  (premium white with subtle editorial textures)
 ══════════════════════════════════════════════════════════════════════ */
 function HeroPanel({ progress }: { progress: MotionValue<number> }) {
   const contentX = useTransform(progress, [0, 0.25], ["0%", "-6%"]);
@@ -321,14 +316,14 @@ function HeroPanel({ progress }: { progress: MotionValue<number> }) {
         }}
       />
 
-      {/* Soft gold radial */}
+      {/* Soft blue radial */}
       <Box
         sx={{
           position: "absolute",
           width: 500,
           height: 500,
           borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)`,
+          background: `radial-gradient(circle, rgba(59,123,246,0.12) 0%, transparent 70%)`,
           top: -150,
           left: -100,
           pointerEvents: "none",
@@ -362,13 +357,13 @@ function HeroPanel({ progress }: { progress: MotionValue<number> }) {
             <Box
               sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3.5 }}
             >
-              <Box sx={{ width: 24, height: "1px", background: T.gold }} />
+              <Box sx={{ width: 24, height: "1px", background: T.blue }} />
               <Typography
                 sx={{
                   fontFamily: FONT_MONO,
                   fontSize: "0.65rem",
                   letterSpacing: "0.22em",
-                  color: "#C9A84C", // warm gold
+                  color: T.blue,
                   textTransform: "uppercase",
                 }}
               >
@@ -415,7 +410,7 @@ function HeroPanel({ progress }: { progress: MotionValue<number> }) {
                 },
                 lineHeight: 0.95,
                 letterSpacing: "-0.035em",
-                background: `linear-gradient(120deg, #E4C46A 0%, #C9A84C 60%)`,
+                background: `linear-gradient(120deg, ${T.blue} 0%, ${T.blueLight} 60%)`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
@@ -615,13 +610,13 @@ function MissionPanel({ progress }: { progress: MotionValue<number> }) {
             <Box
               sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2.5 }}
             >
-              <Box sx={{ width: 24, height: "1px", background: T.gold }} />
+              <Box sx={{ width: 24, height: "1px", background: T.blue }} />
               <Typography
                 sx={{
                   fontFamily: FONT_MONO,
                   fontSize: "0.6rem",
                   letterSpacing: "0.2em",
-                  color: T.gold,
+                  color: T.blue,
                   textTransform: "uppercase",
                 }}
               >
@@ -684,7 +679,7 @@ function MissionPanel({ progress }: { progress: MotionValue<number> }) {
                       left: 0,
                       right: 0,
                       height: "2px",
-                      background: `linear-gradient(90deg, ${T.gold}, ${T.goldLight})`,
+                      background: `linear-gradient(90deg, ${T.blue}, ${T.blueLight})`,
                       opacity: 0,
                       transition: "opacity 0.25s",
                     },
@@ -696,7 +691,7 @@ function MissionPanel({ progress }: { progress: MotionValue<number> }) {
                       fontFamily: FONT_MONO,
                       fontSize: "0.6rem",
                       letterSpacing: "0.18em",
-                      color: T.gold,
+                      color: T.blue,
                       mb: 2.5,
                       textTransform: "uppercase",
                     }}
@@ -798,13 +793,13 @@ function StoryPanel({ progress }: { progress: MotionValue<number> }) {
                   mb: 2.5,
                 }}
               >
-                <Box sx={{ width: 24, height: "1px", background: T.gold }} />
+                <Box sx={{ width: 24, height: "1px", background: T.blue }} />
                 <Typography
                   sx={{
                     fontFamily: FONT_MONO,
                     fontSize: "0.6rem",
                     letterSpacing: "0.2em",
-                    color: T.gold,
+                    color: T.blue,
                     textTransform: "uppercase",
                   }}
                 >
@@ -864,7 +859,7 @@ function StoryPanel({ progress }: { progress: MotionValue<number> }) {
                   top: 6,
                   bottom: 6,
                   width: "1px",
-                  background: `linear-gradient(180deg, ${T.gold}, rgba(201,168,76,0.08))`,
+                  background: `linear-gradient(180deg, ${T.blue}, rgba(59,123,246,0.08))`,
                 }}
               />
 
@@ -895,9 +890,9 @@ function StoryPanel({ progress }: { progress: MotionValue<number> }) {
                         width: 10,
                         height: 10,
                         borderRadius: "50%",
-                        background: T.gold,
+                        background: T.blue,
                         border: `2px solid ${T.paper}`,
-                        boxShadow: `0 0 0 2px ${T.goldBdr}`,
+                        boxShadow: `0 0 0 2px ${T.blueDim}`,
                       }}
                     />
                     <Typography
@@ -905,7 +900,7 @@ function StoryPanel({ progress }: { progress: MotionValue<number> }) {
                         fontFamily: FONT_MONO,
                         fontSize: "0.6rem",
                         letterSpacing: "0.14em",
-                        color: T.gold,
+                        color: T.blue,
                         mb: 0.5,
                         textTransform: "uppercase",
                       }}

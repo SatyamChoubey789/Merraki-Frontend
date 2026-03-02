@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography } from '@mui/material';
-import { T, FONT_MONO, FONT_SANS } from './CalcLayout';
+import { FONT_MONO, FONT_SANS } from './CalcLayout';
 
 interface CalcInputProps {
   label: string;
@@ -16,6 +16,32 @@ interface CalcInputProps {
   disabled?: boolean;
 }
 
+/* ── BLUISH-WHITE LIGHT MODE TOKENS ─────────────────────────────── */
+
+const T = {
+  /* surfaces */
+  white: "#FFFFFF",
+  offwhite: "#F6F9FF",
+
+  /* text */
+  ink: "#0B1220",
+  inkMid: "#1E293B",
+  inkMuted: "#475569",
+  inkFaint: "#94A3B8",
+
+  /* borders */
+  border: "#E2E8F0",
+  borderMd: "#CBD5E1",
+
+  /* blue system */
+  blue: "#2563EB",
+  blueMid: "#3B82F6",
+  blueLight: "#93C5FD",
+  blueGlow: "rgba(37,99,235,0.08)",
+};
+
+/* ───────────────────────────────────────────────────────────────── */
+
 export function CalcInput({
   label,
   value,
@@ -29,41 +55,62 @@ export function CalcInput({
 }: CalcInputProps) {
   return (
     <Box sx={{ mb: 2.75 }}>
-      <Typography sx={{
-        fontFamily: FONT_SANS, fontWeight: 500, fontSize: '0.8125rem',
-        color: T.inkMid, mb: 0.75, letterSpacing: '-0.01em',
-      }}>
+      {/* Label */}
+      <Typography
+        sx={{
+          fontFamily: FONT_SANS,
+          fontWeight: 500,
+          fontSize: '0.8125rem',
+          color: T.inkMid,
+          mb: 0.75,
+          letterSpacing: '-0.01em',
+        }}
+      >
         {label}
       </Typography>
 
-      <Box sx={{
-        display: 'flex', alignItems: 'center',
-        background: disabled ? T.offwhite : T.white,
-        border: `1px solid ${T.border}`,
-        borderRadius: '9px',
-        overflow: 'hidden',
-        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-        '&:focus-within': {
-          borderColor: T.borderMd,
-          boxShadow: `0 0 0 3px rgba(12,14,18,0.05)`,
-        },
-      }}>
+      {/* Input wrapper */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          background: disabled ? T.offwhite : T.white,
+          border: `1px solid ${T.border}`,
+          borderRadius: '10px',
+          overflow: 'hidden',
+          transition: 'all 0.15s ease',
+
+          '&:focus-within': {
+            borderColor: T.blueMid,
+            boxShadow: `0 0 0 3px ${T.blueGlow}`,
+          },
+        }}
+      >
         {/* Prefix */}
         {prefix && (
-          <Box sx={{
-            px: 1.5, height: '100%',
-            borderRight: `1px solid ${T.border}`,
-            background: T.offwhite,
-            display: 'flex', alignItems: 'center',
-            flexShrink: 0,
-          }}>
-            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', color: T.inkMuted, fontWeight: 500 }}>
+          <Box
+            sx={{
+              px: 1.75,
+              borderRight: `1px solid ${T.border}`,
+              background: T.offwhite,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONT_MONO,
+                fontSize: '0.75rem',
+                color: T.inkMuted,
+                fontWeight: 500,
+              }}
+            >
               {prefix}
             </Typography>
           </Box>
         )}
 
-        {/* Input */}
+        {/* Input field */}
         <Box
           component="input"
           type="number"
@@ -73,7 +120,6 @@ export function CalcInput({
             if (!isNaN(v)) onChange(v);
           }}
           disabled={disabled}
-          // @ts-ignore
           min={min}
           step={step}
           sx={{
@@ -81,42 +127,66 @@ export function CalcInput({
             border: 'none',
             outline: 'none',
             background: 'transparent',
-            px: 1.75, py: 1.25,
+            px: 1.75,
+            py: 1.3,
             fontFamily: FONT_MONO,
-            fontSize: '0.875rem',
+            fontSize: '0.9rem',
             fontWeight: 500,
             color: T.ink,
             letterSpacing: '-0.01em',
-            '&::-webkit-inner-spin-button, &::-webkit-outer-spin-button': {
-              opacity: 0.4,
-              height: 20,
+
+            '&::placeholder': {
+              color: T.inkFaint,
             },
-            '&:disabled': { opacity: 0.5, cursor: 'not-allowed' },
+
+            '&::-webkit-inner-spin-button, &::-webkit-outer-spin-button': {
+              opacity: 0.35,
+            },
+
+            '&:disabled': {
+              opacity: 0.5,
+              cursor: 'not-allowed',
+            },
           }}
         />
 
         {/* Suffix */}
         {suffix && (
-          <Box sx={{
-            px: 1.5,
-            borderLeft: `1px solid ${T.border}`,
-            background: T.offwhite,
-            display: 'flex', alignItems: 'center',
-            flexShrink: 0,
-            height: '100%',
-          }}>
-            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', color: T.inkMuted, fontWeight: 500 }}>
+          <Box
+            sx={{
+              px: 1.75,
+              borderLeft: `1px solid ${T.border}`,
+              background: T.offwhite,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONT_MONO,
+                fontSize: '0.75rem',
+                color: T.inkMuted,
+                fontWeight: 500,
+              }}
+            >
               {suffix}
             </Typography>
           </Box>
         )}
       </Box>
 
+      {/* Helper text */}
       {helperText && (
-        <Typography sx={{
-          fontFamily: FONT_SANS, fontSize: '0.7rem', color: T.inkFaint,
-          mt: 0.5, letterSpacing: '0.01em', lineHeight: 1.4,
-        }}>
+        <Typography
+          sx={{
+            fontFamily: FONT_SANS,
+            fontSize: '0.7rem',
+            color: T.inkFaint,
+            mt: 0.6,
+            letterSpacing: '0.01em',
+            lineHeight: 1.4,
+          }}
+        >
           {helperText}
         </Typography>
       )}

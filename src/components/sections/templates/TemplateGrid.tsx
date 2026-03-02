@@ -7,10 +7,32 @@ import { TemplateCard } from './TemplateCard';
 import type { useSearchFilter } from '@/lib/hooks/useSearchFilter';
 
 const T = {
-  white:'#FFFFFF', cream:'#F0EDE6', parchment:'#E8E4DA',
-  ink:'#0C0E12', inkMuted:'#64748B', inkFaint:'#94A3B8', inkGhost:'#CBD5E1',
-  border:'#E2DED5', gold:'#B8922A', goldMid:'#C9A84C',
+  /* surfaces */
+  white: "#FFFFFF",
+  offwhite: "#F5F7FB",              // soft section background
+  paper: "#EDF3FF",                 // subtle blue tint surface
+  surface: "#F8FAFF",               // very light elevated surface
+
+  /* text */
+  ink: "#0A0A0F",
+  inkMid: "#1E1E2A",
+  inkMuted: "#5A5A72",
+  inkFaint: "#9898AE",
+
+  /* borders */
+  border: "rgba(10,10,20,0.08)",
+  borderMid: "rgba(10,10,20,0.14)",
+
+  /* accent — brand blue */
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  bluePale: "#EDF3FF",
+  blueDim: "rgba(59,123,246,0.06)",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
+
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
@@ -26,12 +48,12 @@ function Skel() {
       borderRadius:'18px', border:`1px solid ${T.border}`,
       overflow:'hidden', background:T.white,
     }}>
-      <Box sx={{ height:208, background:T.parchment,
+      <Box sx={{ height:208, background:T.paper,
         '@keyframes skPulse':{ '0%,100%':{ opacity:1 },'50%':{ opacity:0.52 } },
         animation:'skPulse 1.7s ease-in-out infinite' }} />
       <Box sx={{ p:2.75 }}>
         {[48,80,100,90,65].map((w,i)=>(
-          <Box key={i} sx={{ height:i===0?8:i===1?18:i===2?14:i===3?14:28, background:T.cream, borderRadius:'4px', width:`${w}%`, mb:i<4?1.25:0, animation:'skPulse 1.7s ease-in-out infinite' }} />
+          <Box key={i} sx={{ height:i===0?8:i===1?18:i===2?14:i===3?14:28, background:T.bluePale, borderRadius:'4px', width:`${w}%`, mb:i<4?1.25:0, animation:'skPulse 1.7s ease-in-out infinite' }} />
         ))}
       </Box>
     </Box>
@@ -61,7 +83,7 @@ export function TemplateGrid({ filter }:Props) {
     <Box sx={{ textAlign:'center', py:14 }}>
       <Typography sx={{ fontFamily:SERIF, fontStyle:'italic', fontSize:'1.75rem', color:T.inkMuted, mb:2 }}>Something went wrong.</Typography>
       <Box component="button" onClick={()=>active.refetch()}
-        sx={{ fontFamily:SANS, fontSize:'0.875rem', color:T.gold, border:`1px solid ${T.gold}`, borderRadius:'8px', px:2.5, py:1, cursor:'pointer', background:'transparent', outline:'none' }}>
+        sx={{ fontFamily:SANS, fontSize:'0.875rem', color:T.blue, border:`1px solid ${T.blue}`, borderRadius:'8px', px:2.5, py:1, cursor:'pointer', background:'transparent', outline:'none' }}>
         Try again
       </Box>
     </Box>
@@ -74,7 +96,7 @@ export function TemplateGrid({ filter }:Props) {
         {isSearching ? `No results for "${debouncedQuery}"` : 'No templates found.'}
       </Typography>
       <Box component="button" onClick={()=>filter.clearFilters()}
-        sx={{ mt:2, fontFamily:SANS, fontSize:'0.875rem', color:T.gold, border:`1px solid ${T.gold}`, borderRadius:'8px', px:2.5, py:1, cursor:'pointer', background:'transparent', outline:'none' }}>
+        sx={{ mt:2, fontFamily:SANS, fontSize:'0.875rem', color:T.blue, border:`1px solid ${T.blue}`, borderRadius:'8px', px:2.5, py:1, cursor:'pointer', background:'transparent', outline:'none' }}>
         Clear filters
       </Box>
     </Box>
@@ -116,12 +138,12 @@ export function TemplateGrid({ filter }:Props) {
               whileTap={{ scale:0.94 }}
               style={{
                 width:38, height:38,
-                border:`1px solid ${page===i+1?T.gold:T.border}`,
+                border:`1px solid ${page===i+1?T.blue:T.border}`,
                 borderRadius:'9px',
-                background:page===i+1?`linear-gradient(115deg,rgba(221,185,106,0.18),rgba(184,146,42,0.10))`:'transparent',
+                background:page===i+1?`linear-gradient(115deg,rgba(59,123,246,0.18),rgba(90,146,248,0.10))`:'transparent',
                 cursor:'pointer',
                 fontFamily:MONO, fontSize:'0.72rem',
-                color:page===i+1?T.gold:T.inkFaint,
+                color:page===i+1?T.blue:T.inkFaint,
                 outline:'none',
                 transition:'border-color 0.15s, color 0.15s',
               }}

@@ -6,11 +6,44 @@ import {
   AreaChart, Area, ComposedChart, Bar, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
-import { CalcLayout, T, FONT_MONO, FONT_SANS } from './CalcLayout';
+import { CalcLayout,FONT_MONO, FONT_SANS } from './CalcLayout';
 import { CalcInput } from './CalcInput';
 import { MetricCard } from './MetricCard';
 
-const ACCENT = '#8B5E3C';
+const T = {
+  /* surfaces */
+  white:     "#FFFFFF",
+  offwhite:  "#F9F8F5",
+  cream:     "#F0EDE6",
+  parchment: "#E8E4DA",
+
+  /* text */
+  ink:       "#0C0E12",
+  inkMid:    "#2E3440",
+  inkMuted:  "#64748B",
+  inkFaint:  "#94A3B8",
+  inkGhost:  "#CBD5E1",
+
+  /* borders */
+  border:    "#E2DED5",
+  borderMd:  "#C8C3B8",
+
+  /* Blue and light shades */
+ 
+  blue:      "#3B82F6",             // main blue
+  blueMid:   "#60A5FA",             // lighter mid-tone
+  blueLight: "#93C5FD",             // soft/light blue
+  blueGlow:  "rgba(59,130,246,0.07)", // subtle glow effect
+  blueBdr:   "rgba(59,130,246,0.18)", // border/tint effect
+
+  /* neutral/cool accents for footer */
+  accents: [
+    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // soft blue
+    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
+    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // cool gray
+    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
+  ],
+};
 
 function fmtINR(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
@@ -65,7 +98,7 @@ export function RunwayCalculator() {
     <CalcLayout
       title="Runway Calculator"
       description="See exactly how long your cash will last, when you reach zero, and how revenue growth vs burn rate affect your survival timeline."
-      accent={ACCENT}
+      accent={T.accents[0].line}
       glyph="04"
       inputsPanel={
         <Box>
@@ -85,7 +118,7 @@ export function RunwayCalculator() {
             { label: 'Starting Cash', value: fmtINR(inputs.cashBalance), sub: 'current balance' },
           ].map((m, i) => (
             <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
-              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={ACCENT} highlight={m.highlight} index={i} />
+              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={T.accents[0].line} highlight={m.highlight} index={i} />
             </Grid>
           ))}
         </Grid>
@@ -97,8 +130,8 @@ export function RunwayCalculator() {
             <AreaChart data={r.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.18} />
-                  <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
+                  <stop offset="5%"  stopColor={T.accents[0].line} stopOpacity={0.18} />
+                  <stop offset="95%" stopColor={T.accents[0].line} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
@@ -109,7 +142,7 @@ export function RunwayCalculator() {
               {r.exhaustedMonth && (
                 <ReferenceLine x={r.exhaustedMonth} stroke="#DC2626" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: `M${r.exhaustedMonth}`, fill: '#DC2626', fontSize: 10, fontFamily: FONT_MONO, fontWeight: 700 }} />
               )}
-              <Area type="monotone" dataKey="cashBalance" name="Cash Balance" stroke={ACCENT} strokeWidth={2} fill="url(#cashGrad)" dot={false} activeDot={{ r: 4, fill: ACCENT, strokeWidth: 0 }} />
+              <Area type="monotone" dataKey="cashBalance" name="Cash Balance" stroke={T.accents[0].line} strokeWidth={2} fill="url(#cashGrad)" dot={false} activeDot={{ r: 4, fill: T.accents[0].line, strokeWidth: 0 }} />
             </AreaChart>
           </ResponsiveContainer>
 
@@ -120,7 +153,7 @@ export function RunwayCalculator() {
               <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
               <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Bar dataKey="revenue" name="Revenue" fill={ACCENT + '44'} radius={[3,3,0,0]} barSize={8} />
+              <Bar dataKey="revenue" name="Revenue" fill={T.accents[0].line + '44'} radius={[3,3,0,0]} barSize={8} />
               <Line type="monotone" dataKey="burn" name="Burn" stroke="#DC2626" strokeWidth={1.5} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>

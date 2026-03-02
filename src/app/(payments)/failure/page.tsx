@@ -5,28 +5,35 @@ import { Box, Typography, Container } from '@mui/material';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import Link from 'next/link';
 
-/* ══ TOKENS ══════════════════════════════════════════════ */
+/* ══ TOKENS — exact footer system ════════════════════════ */
 const T = {
-  white:    '#FFFFFF',
-  offwhite: '#F9F8F5',
-  bg:       '#F5F4F1',
-  ink:      '#0C0E12',
-  inkMid:   '#2E3440',
-  inkMuted: '#64748B',
-  inkFaint: '#94A3B8',
-  inkGhost: '#CBD5E1',
-  border:   '#E8E5DF',
-  borderMd: '#C8C3B8',
-  gold:     '#B8922A',
-  goldMid:  '#C9A84C',
-  goldLight:'#DDB96A',
-  goldGlow: 'rgba(184,146,42,0.09)',
-  red:      '#DC2626',
-  redMid:   '#EF4444',
-  redLight: 'rgba(220,38,38,0.07)',
-  redBdr:   'rgba(220,38,38,0.18)',
-  redGlow:  'rgba(220,38,38,0.08)',
+  bg:         '#FFFFFF',
+  bgSection:  '#F5F7FB',
+  ink:        '#0A0A0F',
+  inkDark:    '#1E1E2A',
+  inkMid:     '#3A3A52',
+  inkMuted:   '#5A5A72',
+  inkFaint:   '#9898AE',
+  border:     'rgba(10,10,20,0.08)',
+  borderMid:  'rgba(10,10,20,0.14)',
+  blue:       '#3B7BF6',
+  blueMid:    '#5A92F8',
+  blueLight:  '#7AABFF',
+  bluePale:   '#EDF3FF',
+  blueGlow:   'rgba(59,123,246,0.18)',
+  blueDim:    'rgba(59,123,246,0.06)',
+  blueGrad:   'linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)',
+  blueBdr:    'rgba(59,123,246,0.22)',
+  red:        '#DC2626',
+  redMid:     '#EF4444',
+  redLight:   'rgba(220,38,38,0.08)',
+  redBdr:     'rgba(220,38,38,0.2)',
+  amber:      '#B45309',
+  purple:     '#6D28D9',
+  teal:       '#0D7A5F',
+  white:      '#FFFFFF',
 };
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
@@ -34,23 +41,23 @@ const EASE  = [0.16, 1, 0.3, 1] as const;
 
 /* ══ DATA ════════════════════════════════════════════════ */
 const REASONS = [
-  { icon: '◈', label: 'Insufficient funds',      detail: 'Your account balance may be too low for this transaction.',          accent: '#DC2626' },
-  { icon: '△', label: 'Network interruption',    detail: 'A connection dropout occurred mid-payment. No charge was made.',     accent: '#A35400' },
-  { icon: '◆', label: 'Session timed out',       detail: 'The payment window expired. This is a Razorpay safety feature.',    accent: '#6D28D9' },
-  { icon: '○', label: 'Card declined by bank',   detail: 'Your issuing bank rejected the transaction. Try a different card.', accent: '#0D7A5F' },
+  { icon: '◈', label: 'Insufficient funds',    detail: 'Your account balance may be too low for this transaction.',          accent: T.red    },
+  { icon: '△', label: 'Network interruption',  detail: 'A connection dropout occurred mid-payment. No charge was made.',     accent: T.amber  },
+  { icon: '◆', label: 'Session timed out',     detail: 'The payment window expired. This is a Razorpay safety feature.',    accent: T.purple },
+  { icon: '○', label: 'Card declined by bank', detail: 'Your issuing bank rejected the transaction. Try a different card.', accent: T.teal   },
 ];
 
 /* ══ REASON CARD ═════════════════════════════════════════ */
 function ReasonCard({ reason, index }: { reason: typeof REASONS[0]; index: number }) {
-  const ref  = useRef<HTMLDivElement>(null);
-  const mx   = useMotionValue(0);
-  const my   = useMotionValue(0);
-  const sx   = useSpring(mx, { stiffness: 280, damping: 26 });
-  const sy   = useSpring(my, { stiffness: 280, damping: 26 });
+  const ref = useRef<HTMLDivElement>(null);
+  const mx  = useMotionValue(0);
+  const my  = useMotionValue(0);
+  const sx  = useSpring(mx, { stiffness: 280, damping: 26 });
+  const sy  = useSpring(my, { stiffness: 280, damping: 26 });
   const rotateX = useTransform(sy, [-0.5, 0.5], ['4deg', '-4deg']);
   const rotateY = useTransform(sx, [-0.5, 0.5], ['-4deg', '4deg']);
-  const glX  = useTransform(sx, [-0.5, 0.5], ['10%', '90%']);
-  const glY  = useTransform(sy, [-0.5, 0.5], ['10%', '90%']);
+  const glX = useTransform(sx, [-0.5, 0.5], ['10%', '90%']);
+  const glY = useTransform(sy, [-0.5, 0.5], ['10%', '90%']);
 
   const onMove  = useCallback((e: React.MouseEvent) => {
     const r = ref.current?.getBoundingClientRect();
@@ -74,26 +81,33 @@ function ReasonCard({ reason, index }: { reason: typeof REASONS[0]; index: numbe
         onMouseLeave={onLeave}
       >
         <Box sx={{
-          background: T.white, borderRadius: '14px',
-          border: `1px solid ${T.border}`,
-          p: '14px 18px',
-          display: 'flex', alignItems: 'flex-start', gap: 1.75,
-          position: 'relative', overflow: 'hidden',
-          transition: 'border-color 0.18s',
-          '&:hover': { borderColor: `${reason.accent}30` },
+          background:   T.bg,
+          borderRadius: '14px',
+          border:       `1px solid ${T.border}`,
+          p:            '14px 18px',
+          display:      'flex', alignItems: 'flex-start', gap: 1.75,
+          position:     'relative', overflow: 'hidden',
+          transition:   'border-color 0.18s, box-shadow 0.18s',
+          '&:hover': {
+            borderColor: T.blueBdr,
+            boxShadow:   `0 4px 20px ${T.blueDim}`,
+          },
         }}>
+          {/* Blue shimmer on hover — footer style */}
           <motion.div style={{
             position: 'absolute', inset: 0, borderRadius: '14px', pointerEvents: 'none',
-            background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.65) 0%, transparent 55%)`,
+            background: `radial-gradient(circle at ${glX} ${glY}, ${T.blueDim} 0%, transparent 58%)`,
           }} />
+          {/* Top accent line per-card colour */}
           <Box sx={{
-            position: 'absolute', top: 0, left: 16, right: 16, height: '1px',
-            background: `linear-gradient(90deg,transparent,${reason.accent}44,transparent)`,
+            position: 'absolute', top: 0, left: 16, right: 16, height: '1.5px',
+            background: `linear-gradient(90deg, transparent, ${reason.accent}55, transparent)`,
           }} />
 
+          {/* Icon box */}
           <Box sx={{
             width: 34, height: 34, borderRadius: '9px', flexShrink: 0,
-            background: `${reason.accent}0e`, border: `1px solid ${reason.accent}20`,
+            background: `${reason.accent}0e`, border: `1px solid ${reason.accent}25`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative', zIndex: 1,
           }}>
@@ -117,34 +131,31 @@ function ReasonCard({ reason, index }: { reason: typeof REASONS[0]; index: numbe
 }
 
 /* ══ ACTION BUTTON ═══════════════════════════════════════ */
-function ActionBtn({ href, variant, icon, label }: { href: string; variant: 'primary' | 'ghost'; icon: string; label: string }) {
+function ActionBtn({ href, variant, icon, label }: {
+  href: string; variant: 'primary' | 'ghost'; icon: string; label: string;
+}) {
   return (
     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={{ flex: 1 }}>
-      <Box
-        component={Link}
-        href={href}
-        sx={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.25,
-          px: 3, py: '13px', borderRadius: '11px', textDecoration: 'none',
-          border: variant === 'ghost' ? `1px solid ${T.border}` : 'none',
-          background: variant === 'primary'
-            ? `linear-gradient(115deg,${T.goldLight},${T.gold})`
-            : T.white,
+      <Box component={Link} href={href} sx={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.25,
+        px: 3, py: '13px', borderRadius: '100px', textDecoration: 'none',
+        border:     variant === 'ghost' ? `1px solid ${T.border}` : 'none',
+        background: variant === 'primary' ? T.blueGrad : T.bg,
+        boxShadow:  variant === 'primary'
+          ? `0 5px 18px ${T.blueGlow}`
+          : '0 2px 8px rgba(10,10,20,0.05)',
+        transition: 'box-shadow 0.18s',
+        '&:hover': {
           boxShadow: variant === 'primary'
-            ? `0 5px 18px rgba(184,146,42,0.26)`
-            : `0 2px 8px rgba(12,14,18,0.05)`,
-          transition: 'box-shadow 0.18s',
-          '&:hover': {
-            boxShadow: variant === 'primary'
-              ? `0 8px 24px rgba(184,146,42,0.33)`
-              : `0 4px 14px rgba(12,14,18,0.08)`,
-          },
-        }}
-      >
-        <Typography sx={{ fontFamily: MONO, fontSize: '0.6rem', color: variant === 'primary' ? T.ink : T.inkFaint, lineHeight: 1 }}>
+            ? `0 8px 28px ${T.blueGlow}`
+            : '0 4px 14px rgba(10,10,20,0.08)',
+          background: variant === 'ghost' ? T.bgSection : undefined,
+        },
+      }}>
+        <Typography sx={{ fontFamily: MONO, fontSize: '0.6rem', color: variant === 'primary' ? '#FFFFFF' : T.inkFaint, lineHeight: 1 }}>
           {icon}
         </Typography>
-        <Typography sx={{ fontFamily: SANS, fontWeight: variant === 'primary' ? 700 : 500, fontSize: '0.9rem', color: variant === 'primary' ? T.ink : T.inkMid }}>
+        <Typography sx={{ fontFamily: SANS, fontWeight: variant === 'primary' ? 700 : 500, fontSize: '0.9rem', color: variant === 'primary' ? '#FFFFFF' : T.inkMid }}>
           {label}
         </Typography>
       </Box>
@@ -155,36 +166,33 @@ function ActionBtn({ href, variant, icon, label }: { href: string; variant: 'pri
 /* ══ PAGE ════════════════════════════════════════════════ */
 export default function FailurePage() {
   return (
-    <Box sx={{ minHeight: '100vh', background: T.bg, py: { xs: 12, md: 16 }, position: 'relative', overflow: 'hidden' }}>
+    <Box sx={{
+      minHeight:  '100vh',
+      background: T.bgSection,
+      py: { xs: 12, md: 16 },
+      position:   'relative',
+      overflow:   'hidden',
+      /* dot grid — footer style */
+      backgroundImage: `radial-gradient(circle, rgba(10,10,20,0.055) 1px, transparent 1px)`,
+      backgroundSize:  '28px 28px',
+    }}>
 
-      {/* Warm grid */}
+      {/* Blue ambient bloom */}
       <Box sx={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        backgroundImage: `linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-        backgroundSize: '64px 64px', opacity: 0.45,
-      }} />
-      {/* Red glow */}
-      <Box sx={{
-        position: 'fixed', width: '70vw', height: '55vw', top: '-20vw', left: '15vw',
+        position: 'fixed', width: '72vw', height: '56vw', top: '-18vw', left: '14vw',
         borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
-        background: `radial-gradient(ellipse,${T.redGlow} 0%,transparent 68%)`,
+        background: `radial-gradient(ellipse, rgba(59,123,246,0.07) 0%, transparent 65%)`,
       }} />
-      {/* Gold corner glow */}
+      {/* Red accent bloom — keeps failure context, subtle */}
       <Box sx={{
-        position: 'fixed', width: '40vw', height: '40vw', bottom: '-10vw', right: '-8vw',
+        position: 'fixed', width: '50vw', height: '40vw', top: '-8vw', right: '-10vw',
         borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
-        background: `radial-gradient(ellipse,${T.goldGlow} 0%,transparent 70%)`,
-      }} />
-      {/* Grain */}
-      <Box sx={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', opacity: 0.022, zIndex: 0,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundSize: '160px',
+        background: `radial-gradient(ellipse, rgba(220,38,38,0.05) 0%, transparent 65%)`,
       }} />
 
       <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Animated X badge ── */}
+        {/* ── X badge ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -193,7 +201,7 @@ export default function FailurePage() {
         >
           <Box sx={{ position: 'relative' }}>
             <motion.div
-              animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0, 0.2] }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.18, 0, 0.18] }}
               transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
               style={{
                 position: 'absolute', inset: -14, borderRadius: '50%',
@@ -202,9 +210,9 @@ export default function FailurePage() {
             />
             <Box sx={{
               width: 88, height: 88, borderRadius: '50%',
-              background: T.white,
+              background: T.bg,
               border: `1.5px solid ${T.redBdr}`,
-              boxShadow: `0 8px 36px ${T.redGlow}, 0 0 0 4px ${T.redLight}`,
+              boxShadow: `0 8px 36px ${T.redLight}, 0 0 0 5px ${T.redLight}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -226,14 +234,16 @@ export default function FailurePage() {
           transition={{ delay: 0.18, duration: 0.55, ease: EASE }}
         >
           <Box sx={{ textAlign: 'center', mb: 5 }}>
+            {/* Eyebrow — footer mono label style */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mb: 2.5 }}>
-              <Box sx={{ width: 22, height: '1px', background: `linear-gradient(90deg,transparent,${T.redMid}66)` }} />
-              <Typography sx={{ fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.2em', color: T.redMid, textTransform: 'uppercase' }}>
+              <Box sx={{ width: 22, height: 2, borderRadius: '2px', background: `linear-gradient(90deg, ${T.red}, ${T.redMid})` }} />
+              <Typography sx={{ fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.2em', color: T.red, textTransform: 'uppercase' }}>
                 Payment Unsuccessful
               </Typography>
-              <Box sx={{ width: 22, height: '1px', background: `linear-gradient(90deg,${T.redMid}66,transparent)` }} />
+              <Box sx={{ width: 22, height: 2, borderRadius: '2px', background: `linear-gradient(90deg, ${T.redMid}, ${T.red})` }} />
             </Box>
 
+            {/* Headline — Instrument Serif italic like footer */}
             <Typography sx={{
               fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
               fontSize: { xs: '2.5rem', md: '3.25rem' },
@@ -245,20 +255,20 @@ export default function FailurePage() {
               fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
               fontSize: { xs: '2.5rem', md: '3.25rem' },
               letterSpacing: '-0.035em', lineHeight: 0.97, mb: 3,
-              background: `linear-gradient(115deg,${T.redMid},${T.red})`,
+              background: `linear-gradient(115deg, ${T.redMid}, ${T.red})`,
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             }}>
               wrong.
             </Typography>
 
-            {/* Reassurance pill */}
+            {/* Reassurance pill — footer card style */}
             <Box sx={{
               display: 'inline-flex', alignItems: 'center', gap: 1,
-              px: 2, py: '7px', borderRadius: '7px',
-              background: T.white, border: `1px solid ${T.border}`,
-              boxShadow: '0 2px 8px rgba(12,14,18,0.05)',
+              px: 2, py: '7px', borderRadius: '100px',
+              background: T.bg, border: `1px solid ${T.border}`,
+              boxShadow: '0 2px 8px rgba(10,10,20,0.05)',
             }}>
-              <Typography sx={{ fontFamily: MONO, fontSize: '0.55rem', color: '#0D7A5F', lineHeight: 1 }}>◎</Typography>
+              <Typography sx={{ fontFamily: MONO, fontSize: '0.55rem', color: T.teal, lineHeight: 1 }}>◎</Typography>
               <Typography sx={{ fontFamily: SANS, fontSize: '0.8125rem', color: T.inkMuted }}>
                 Cart saved · Zero charge made
               </Typography>
@@ -273,18 +283,22 @@ export default function FailurePage() {
           transition={{ delay: 0.28, duration: 0.5, ease: EASE }}
         >
           <Box sx={{
-            background: T.white, borderRadius: '20px',
-            border: `1px solid ${T.border}`,
-            overflow: 'hidden',
-            boxShadow: '0 4px 28px rgba(12,14,18,0.06)',
-            mb: 3,
+            background:   T.bg,
+            borderRadius: '20px',
+            border:       `1px solid ${T.border}`,
+            overflow:     'hidden',
+            boxShadow:    '0 4px 28px rgba(10,10,20,0.06)',
+            mb:           3,
           }}>
+            {/* Card header — bgSection like footer */}
             <Box sx={{
               px: 3, py: 2.25,
-              background: T.offwhite, borderBottom: `1px solid ${T.border}`,
-              display: 'flex', alignItems: 'center', gap: 1.5,
+              background:   T.bgSection,
+              borderBottom: `1px solid ${T.border}`,
+              display:      'flex', alignItems: 'center', gap: 1.5,
             }}>
-              <Box sx={{ width: 2, height: 13, borderRadius: '2px', background: `linear-gradient(180deg,${T.redMid},${T.red})` }} />
+              {/* Red rule on this card to signal error context */}
+              <Box sx={{ width: 2, height: 13, borderRadius: '2px', background: `linear-gradient(180deg, ${T.redMid}, ${T.red})` }} />
               <Typography sx={{ fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.16em', color: T.inkFaint, textTransform: 'uppercase' }}>
                 Possible Reasons
               </Typography>
@@ -302,20 +316,16 @@ export default function FailurePage() {
           transition={{ delay: 0.72, duration: 0.5, ease: EASE }}
         >
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <ActionBtn href="/checkout" variant="primary" icon="↺" label="Try Payment Again" />
+            <ActionBtn href="/checkout"          variant="primary" icon="↺" label="Try Payment Again" />
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <ActionBtn href="/templates" variant="ghost" icon="◈" label="Back to Cart" />
+              <ActionBtn href="/templates"         variant="ghost" icon="◈" label="Back to Cart" />
               <ActionBtn href="/book-consultation" variant="ghost" icon="△" label="Get Support" />
             </Box>
           </Box>
         </motion.div>
 
-        {/* ── Footer trust strip ── */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9, duration: 0.5 }}
-        >
+        {/* ── Trust strip ── */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.5 }}>
           <Box sx={{
             mt: 5, pt: 4, borderTop: `1px solid ${T.border}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -323,12 +333,13 @@ export default function FailurePage() {
           }}>
             {[
               { icon: '◈', label: 'Razorpay Secured' },
-              { icon: '△', label: 'Zero Data Stored' },
-              { icon: '◆', label: 'Instant Refund' },
+              { icon: '△', label: 'Zero Data Stored'  },
+              { icon: '◆', label: 'Instant Refund'    },
             ].map(b => (
               <Box key={b.label} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                <Typography sx={{ fontFamily: MONO, fontSize: '0.5rem', color: T.goldMid, lineHeight: 1 }}>{b.icon}</Typography>
-                <Typography sx={{ fontFamily: MONO, fontSize: '0.48rem', letterSpacing: '0.12em', color: T.inkGhost, textTransform: 'uppercase' }}>{b.label}</Typography>
+                {/* Blue icons — footer's accent colour */}
+                <Typography sx={{ fontFamily: MONO, fontSize: '0.5rem', color: T.blue, lineHeight: 1 }}>{b.icon}</Typography>
+                <Typography sx={{ fontFamily: MONO, fontSize: '0.48rem', letterSpacing: '0.12em', color: T.inkFaint, textTransform: 'uppercase' }}>{b.label}</Typography>
               </Box>
             ))}
           </Box>

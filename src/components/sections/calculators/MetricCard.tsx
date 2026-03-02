@@ -2,7 +2,18 @@
 
 import { Box, Typography } from '@mui/material';
 import { motion } from 'framer-motion';
-import { T, FONT_MONO, FONT_SANS, FONT_SERIF, EASE } from './CalcLayout';
+import { FONT_MONO, FONT_SANS, EASE } from './CalcLayout';
+
+/* Bluish-white tokens */
+const T = {
+  white: "#FFFFFF",
+  offwhite: "#F6F9FF",
+  border: "#E2E8F0",
+  ink: "#0B1220",
+  inkMuted: "#475569",
+  inkFaint: "#94A3B8",
+  blueGlow: "rgba(37,99,235,0.08)",
+};
 
 interface MetricCardProps {
   label: string;
@@ -13,62 +24,88 @@ interface MetricCardProps {
   index?: number;
 }
 
-export function MetricCard({ label, value, subValue, accent, highlight = false, index = 0 }: MetricCardProps) {
+export function MetricCard({
+  label,
+  value,
+  subValue,
+  accent,
+  highlight,
+  index = 0,
+}: MetricCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.07, ease: EASE }}
-      whileHover={{ y: -3 }}
+      transition={{ duration: 0.5, delay: 0.05 * index, ease: EASE }}
     >
-      <Box sx={{
-        p: { xs: 2, md: 2.75 },
-        borderRadius: '14px',
-        background: highlight
-          ? `linear-gradient(135deg, ${accent}18, ${accent}08)`
-          : T.offwhite,
-        border: `1px solid ${highlight ? accent + '28' : T.border}`,
-        height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          borderColor: accent + '44',
-          boxShadow: `0 6px 24px ${accent}10`,
-        },
-        /* Gold top line for highlight cards */
-        '&::before': highlight ? {
-          content: '""', position: 'absolute',
-          top: 0, left: 0, right: 0, height: '2px',
-          background: `linear-gradient(90deg, ${accent}, transparent)`,
-        } : {},
-      }}>
+      <Box
+        sx={{
+          background: T.white,
+          borderRadius: '14px',
+          border: `1px solid ${highlight ? accent : T.border}`,
+          p: 2.5,
+          height: '100%',
+          transition: 'all 0.2s ease',
+
+          boxShadow: highlight
+            ? `0 6px 22px ${T.blueGlow}`
+            : '0 2px 10px rgba(15,23,42,0.04)',
+
+          '&:hover': {
+            borderColor: accent,
+            boxShadow: `0 8px 28px ${T.blueGlow}`,
+            transform: 'translateY(-2px)',
+          },
+        }}
+      >
+        {/* Top accent line */}
+        <Box
+          sx={{
+            width: 28,
+            height: 2,
+            borderRadius: 2,
+            background: accent,
+            mb: 1.5,
+          }}
+        />
+
         {/* Label */}
-        <Typography sx={{
-          fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.16em',
-          color: highlight ? accent : T.inkFaint,
-          textTransform: 'uppercase', mb: 1.25, display: 'block',
-        }}>
+        <Typography
+          sx={{
+            fontFamily: FONT_MONO,
+            fontSize: '0.58rem',
+            letterSpacing: '0.16em',
+            color: T.inkFaint,
+            textTransform: 'uppercase',
+            mb: 1,
+          }}
+        >
           {label}
         </Typography>
 
         {/* Value */}
-        <Typography sx={{
-          fontFamily: FONT_SERIF, fontStyle: 'italic', fontWeight: 400,
-          fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
-          color: highlight ? accent : T.ink,
-          lineHeight: 1.05, letterSpacing: '-0.025em',
-          mb: subValue ? 0.5 : 0,
-        }}>
+        <Typography
+          sx={{
+            fontFamily: FONT_MONO,
+            fontSize: '1.25rem',
+            fontWeight: 700,
+            color: highlight ? accent : T.ink,
+            letterSpacing: '-0.02em',
+            mb: 0.5,
+          }}
+        >
           {value}
         </Typography>
 
-        {/* Sub value */}
+        {/* Subvalue */}
         {subValue && (
-          <Typography sx={{
-            fontFamily: FONT_SANS, fontSize: '0.72rem', color: T.inkFaint,
-            lineHeight: 1.4, mt: 0.25,
-          }}>
+          <Typography
+            sx={{
+              fontFamily: FONT_SANS,
+              fontSize: '0.75rem',
+              color: T.inkMuted,
+            }}
+          >
             {subValue}
           </Typography>
         )}

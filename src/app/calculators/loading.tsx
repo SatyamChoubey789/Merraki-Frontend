@@ -5,14 +5,18 @@ import { keyframes } from "@mui/system";
 
 const T = {
   white: "#FFFFFF",
-  offwhite: "#F9F8F5",
-  cream: "#F0EDE6",
-  parchment: "#E8E4DA",
-  border: "#E2DED5",
-  ink: "#0C0E12",
-  inkFaint: "#94A3B8",
-  gold: "#B8922A",
-  goldGlow: "rgba(184,146,42,0.06)",
+  offwhite: "#F5F7FB",                 // subtle cool section background
+  cream: "#EDF3FF",                    // soft blue pale (replaces warm cream)
+  parchment: "rgba(59,123,246,0.06)",   // very light blue tint layer
+  border: "rgba(10,10,20,0.08)",
+
+  ink: "#0A0A0F",
+  inkFaint: "#9898AE",
+
+  blue: "#3B7BF6",
+  blueMid: "#5A92F8",
+  blueLight: "#7AABFF",
+  blueGlow: "rgba(59,123,246,0.10)",
 };
 
 const fadeSlide = keyframes`
@@ -59,7 +63,7 @@ export default function CalculatorsLoading() {
             top: "-30vw",
             left: "15vw",
             borderRadius: "50%",
-            background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse, ${T.blueGlow} 0%, transparent 70%)`,
             pointerEvents: "none",
           }}
         />
@@ -174,7 +178,7 @@ export default function CalculatorsLoading() {
             top: 0,
             width: "2px",
             height: "100%",
-            background: T.gold,
+            background: T.blue,
             opacity: 0.55,
           }}
         />

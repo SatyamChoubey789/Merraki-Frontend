@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  useRef, useCallback, useEffect, useState,
+  useRef, useCallback,
 } from 'react';
 import { Box, Container, Typography } from '@mui/material';
 import {
@@ -10,26 +10,26 @@ import {
   useScroll, useAnimationFrame, useInView,
 } from 'framer-motion';
 
-/* ══ TOKENS ══════════════════════════════════════════════ */
+/* ══ TOKENS — matches footer blue/white theme ════════════ */
 const T = {
-  white:     '#FFFFFF',
-  offwhite:  '#F9F8F5',
-  cream:     '#F0EDE6',
-  bg:        '#F5F4F1',
-  ink:       '#0C0E12',
-  inkMid:    '#2E3440',
-  inkMuted:  '#64748B',
-  inkFaint:  '#94A3B8',
-  inkGhost:  '#CBD5E1',
-  border:    '#E8E5DF',
-  borderMd:  '#D4D0C8',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldPale:  '#F0D898',
-  goldGlow:  'rgba(184,146,42,0.10)',
-  goldDim:   'rgba(184,146,42,0.06)',
+  bg:        '#F5F7FB',   // bluish-white bg matching footer bgSection
+  bgCard:    '#FFFFFF',
+  ink:       '#0A0A0F',
+  inkMid:    '#1E1E2A',
+  inkMuted:  '#5A5A72',
+  inkFaint:  '#9898AE',
+  border:    'rgba(10,10,20,0.08)',
+  borderMid: 'rgba(10,10,20,0.12)',
+
+  blue:      '#3B7BF6',
+  blueMid:   '#5A92F8',
+  blueLight: '#7AABFF',
+  bluePale:  '#EDF3FF',
+  blueGlow:  'rgba(59,123,246,0.10)',
+  blueDim:   'rgba(59,123,246,0.06)',
+  blueGrad:  'linear-gradient(135deg, #3B7BF6 0%, #7AABFF 100%)',
 };
+
 const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS  = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO  = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
@@ -55,12 +55,12 @@ const TESTIMONIALS = [
   {
     quote: 'I used the Founder Test and booked a consultation the same day. Parag helped me see exactly where I was leaking cash. Absolute game changer.',
     name: 'Sneha Iyer', company: 'CraftHaus', role: 'Founder',
-    initials: 'SI', accent: '#A35400',
+    initials: 'SI', accent: '#0057CC',
   },
   {
     quote: 'The Excel templates are institutional quality. I use the valuation model for every client pitch. Saves me 6 hours per engagement.',
     name: 'Vikram Joshi', company: 'NovaMed', role: 'CFO',
-    initials: 'VJ', accent: '#9D174D',
+    initials: 'VJ', accent: '#3B7BF6',
   },
   {
     quote: 'Working with Merraki is like having a CFO on call. They understand the startup context, not just the numbers.',
@@ -75,12 +75,12 @@ const TESTIMONIALS = [
   {
     quote: "Presented Merraki's unit economics model to Sequoia. The partner said it was the most complete early-stage model he'd seen all year.",
     name: 'Meera Patel', company: 'HealthSync', role: 'Co-Founder',
-    initials: 'MP', accent: '#B45309',
+    initials: 'MP', accent: '#1E40AF',
   },
   {
     quote: 'Onboarded in one afternoon. The runway calculator is now open on my screen every single day.',
     name: 'Rohan Das', company: 'NexaAI', role: 'CEO',
-    initials: 'RD', accent: '#6D28D9',
+    initials: 'RD', accent: '#5A92F8',
   },
   {
     quote: 'Incredible depth on the DCF model. We used it for our Series B and investors barely had a follow-up question on the numbers.',
@@ -95,53 +95,32 @@ const TESTIMONIALS = [
   {
     quote: 'The P&L templates cut our month-end close from 5 days to 1. Our investors notice the difference immediately.',
     name: 'Tanvi Shah', company: 'UrbanFarm', role: 'Founder',
-    initials: 'TS', accent: '#9D174D',
+    initials: 'TS', accent: '#3B7BF6',
   },
 ];
 
-/* ── Column splits ─────────────────────────────────────── */
 const COL_A = [TESTIMONIALS[0],  TESTIMONIALS[3], TESTIMONIALS[6], TESTIMONIALS[9]];
 const COL_B = [TESTIMONIALS[1],  TESTIMONIALS[4], TESTIMONIALS[7], TESTIMONIALS[10]];
 const COL_C = [TESTIMONIALS[2],  TESTIMONIALS[5], TESTIMONIALS[8], TESTIMONIALS[11]];
 const COLUMNS = [
-  { cards: COL_A, speed: 26,  dir: 1,  initialOffset: 0    },   // slow ↓
-  { cards: COL_B, speed: 38,  dir: -1, initialOffset: -200 },   // medium ↑
-  { cards: COL_C, speed: 20,  dir: 1,  initialOffset: -80  },   // slow ↓
+  { cards: COL_A, speed: 22,  dir: 1,  initialOffset: 0    },
+  { cards: COL_B, speed: 32,  dir: -1, initialOffset: -180 },
+  { cards: COL_C, speed: 18,  dir: 1,  initialOffset: -60  },
 ];
 
-/* ══ FLOATING GOLD ORB ═══════════════════════════════════ */
-function GoldOrb({ style, delay, duration }: {
-  style: React.CSSProperties;
-  delay: number;
-  duration: number;
-}) {
-  return (
-    <motion.div
-      style={{ position: 'absolute', pointerEvents: 'none', ...style }}
-      initial={{ opacity: 0, scale: 0.6 }}
-      animate={{
-        opacity:  [0, 1, 0.7, 1, 0],
-        scale:    [0.6, 1, 0.92, 1.04, 0.96],
-        y:        [0, -30, -14, -36, 0],
-      }}
-      transition={{ duration, delay, repeat: Infinity, ease: 'easeInOut' }}
-    />
-  );
-}
-
-/* ══ SINGLE TESTIMONIAL CARD ═════════════════════════════ */
-function TestimonialCard({ t, index }: { t: typeof TESTIMONIALS[0]; index: number }) {
+/* ══ TESTIMONIAL CARD ════════════════════════════════════ */
+function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const sx = useSpring(mx, { stiffness: 260, damping: 24 });
   const sy = useSpring(my, { stiffness: 260, damping: 24 });
-  const rotX = useTransform(sy, [-0.5, 0.5], ['6deg', '-6deg']);
-  const rotY = useTransform(sx, [-0.5, 0.5], ['-6deg', '6deg']);
+  const rotX = useTransform(sy, [-0.5, 0.5], ['5deg', '-5deg']);
+  const rotY = useTransform(sx, [-0.5, 0.5], ['-5deg', '5deg']);
   const glX  = useTransform(sx, [-0.5, 0.5], ['10%', '90%']);
   const glY  = useTransform(sy, [-0.5, 0.5], ['10%', '90%']);
   const lift = useTransform(
-    sx, v => `0 ${8 + Math.abs(v) * 22}px ${24 + Math.abs(v) * 36}px rgba(12,14,18,${0.055 + Math.abs(v) * 0.07})`
+    sx, v => `0 ${6 + Math.abs(v) * 16}px ${20 + Math.abs(v) * 28}px rgba(59,123,246,${0.07 + Math.abs(v) * 0.09})`
   );
 
   const onMove  = useCallback((e: React.MouseEvent) => {
@@ -153,93 +132,91 @@ function TestimonialCard({ t, index }: { t: typeof TESTIMONIALS[0]; index: numbe
   const onLeave = useCallback(() => { mx.set(0); my.set(0); }, [mx, my]);
 
   return (
-    <motion.div style={{ perspective: 1000, marginBottom: 14 }}>
+    <motion.div style={{ perspective: 1000, marginBottom: 12 }}>
       <motion.div
         ref={cardRef}
         style={{ rotateX: rotX, rotateY: rotY, transformStyle: 'preserve-3d', boxShadow: lift }}
         onMouseMove={onMove}
         onMouseLeave={onLeave}
-        whileHover={{ z: 16, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
+        whileHover={{ z: 12, transition: { type: 'spring', stiffness: 380, damping: 28 } }}
       >
         <Box sx={{
-          background: T.white,
-          borderRadius: '18px',
+          background: T.bgCard,
+          borderRadius: '14px',
           border: `1px solid ${T.border}`,
-          p: '22px 24px',
+          p: '14px 16px',
           position: 'relative',
           overflow: 'hidden',
           transition: 'border-color 0.25s ease',
-          '&:hover': { borderColor: `${t.accent}32` },
+          '&:hover': { borderColor: `rgba(59,123,246,0.22)` },
         }}>
           {/* Moving specular */}
           <motion.div style={{
-            position: 'absolute', inset: 0, borderRadius: '18px', pointerEvents: 'none',
-            background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.68) 0%, transparent 56%)`,
+            position: 'absolute', inset: 0, borderRadius: '16px', pointerEvents: 'none',
+            background: `radial-gradient(circle at ${glX} ${glY}, rgba(255,255,255,0.72) 0%, transparent 55%)`,
           }} />
 
-          {/* Accent top line */}
+          {/* Blue top accent line */}
           <Box sx={{
             position: 'absolute', top: 0, left: 20, right: 20, height: '1.5px',
-            background: `linear-gradient(90deg, transparent, ${t.accent}50, transparent)`,
+            background: `linear-gradient(90deg, transparent, ${t.accent}60, transparent)`,
           }} />
 
-          {/* Content */}
           <Box sx={{ position: 'relative', zIndex: 1 }}>
-            {/* Gold quote mark */}
+            {/* Quote mark — blue tinted */}
             <Typography sx={{
-              fontFamily: SERIF, fontSize: '2.5rem', lineHeight: 0.8,
-              color: T.goldLight, mb: 1, display: 'block',
-              opacity: 0.6,
+              fontFamily: SERIF, fontSize: '1.6rem', lineHeight: 0.8,
+              color: T.blueLight, mb: 0.5, display: 'block', opacity: 0.7,
             }}>"</Typography>
 
             <Typography sx={{
               fontFamily: SANS, fontWeight: 400,
-              fontSize: '0.875rem', color: T.inkMid,
-              lineHeight: 1.8, mb: 2.5,
+              fontSize: '0.775rem', color: T.inkMid,
+              lineHeight: 1.7, mb: 1.5,
             }}>
               {t.quote}
             </Typography>
 
             <Box sx={{
-              display: 'flex', alignItems: 'center', gap: 1.5,
-              pt: '14px', borderTop: `1px solid ${T.border}`,
+              display: 'flex', alignItems: 'center', gap: 1,
+              pt: '10px', borderTop: `1px solid ${T.border}`,
             }}>
               {/* Avatar */}
               <Box sx={{
-                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: `linear-gradient(135deg, ${t.accent}dd, ${t.accent})`,
+                width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                background: `linear-gradient(135deg, ${t.accent}cc, ${t.accent})`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 2px 10px ${t.accent}30`,
+                boxShadow: `0 2px 8px ${t.accent}28`,
               }}>
                 <Typography sx={{
                   fontFamily: MONO, fontWeight: 700,
-                  fontSize: '0.6rem', color: '#fff', letterSpacing: '0.04em',
+                  fontSize: '0.5rem', color: '#fff', letterSpacing: '0.04em',
                 }}>
                   {t.initials}
                 </Typography>
               </Box>
-              <Box>
+
+              <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography sx={{
                   fontFamily: SANS, fontWeight: 600,
-                  fontSize: '0.8125rem', color: T.ink, lineHeight: 1.25,
+                  fontSize: '0.75rem', color: T.ink, lineHeight: 1.2,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
                   {t.name}
                 </Typography>
                 <Typography sx={{
-                  fontFamily: SANS, fontSize: '0.725rem',
+                  fontFamily: SANS, fontSize: '0.65rem',
                   color: T.inkMuted, lineHeight: 1.3,
                 }}>
                   {t.role} · {t.company}
                 </Typography>
               </Box>
 
-              {/* Accent dot */}
-              <Box sx={{ ml: 'auto' }}>
-                <Box sx={{
-                  width: 6, height: 6, borderRadius: '50%',
-                  background: t.accent, opacity: 0.5,
-                }} />
-              </Box>
+              {/* Blue accent dot */}
+              <Box sx={{
+                width: 5, height: 5, borderRadius: '50%',
+                background: T.blueGrad, opacity: 0.6, flexShrink: 0,
+              }} />
             </Box>
           </Box>
         </Box>
@@ -250,12 +227,7 @@ function TestimonialCard({ t, index }: { t: typeof TESTIMONIALS[0]; index: numbe
 
 /* ══ INFINITE SCROLL COLUMN ══════════════════════════════ */
 function InfiniteColumn({
-  cards,
-  speed,
-  dir,
-  initialOffset,
-  parallaxProgress,
-  parallaxAmount,
+  cards, speed, dir, initialOffset, parallaxProgress, parallaxAmount,
 }: {
   cards: typeof TESTIMONIALS;
   speed: number;
@@ -265,24 +237,17 @@ function InfiniteColumn({
   parallaxAmount: number;
 }) {
   const autoY = useMotionValue(initialOffset);
-
-  /* Gentle page parallax */
   const rawParallax = useTransform(parallaxProgress, [0, 1], [0, parallaxAmount]);
   const smoothParallax = useSpring(rawParallax, { stiffness: 50, damping: 20 });
-
-  /* Quadruple for seamless loop with no visible seam */
   const looped = [...cards, ...cards, ...cards, ...cards];
 
   useAnimationFrame((_, delta) => {
     const pxPerFrame = (speed / 1000) * delta * dir;
     autoY.set(autoY.get() + pxPerFrame);
-
-    /* Reset position — each card is ~170px, 4 cards = 680px,
-       so wrap at every 680px block to keep it seamless */
-    const wrapHeight = cards.length * 184; // approximate card height + gap
+    const wrapHeight = cards.length * 176;
     const current = autoY.get();
-    if (dir === 1 && current > 0)           autoY.set(current - wrapHeight);
-    if (dir === -1 && current < -wrapHeight) autoY.set(current + wrapHeight);
+    if (dir === 1  && current > 0)            autoY.set(current - wrapHeight);
+    if (dir === -1 && current < -wrapHeight)  autoY.set(current + wrapHeight);
   });
 
   return (
@@ -290,7 +255,7 @@ function InfiniteColumn({
       <motion.div style={{ y: smoothParallax }}>
         <motion.div style={{ y: autoY }}>
           {looped.map((t, i) => (
-            <TestimonialCard key={`${t.name}-${i}`} t={t} index={i} />
+            <TestimonialCard key={`${t.name}-${i}`} t={t} />
           ))}
         </motion.div>
       </motion.div>
@@ -298,12 +263,12 @@ function InfiniteColumn({
   );
 }
 
-/* ══ HEADER COMPONENT ════════════════════════════════════ */
+/* ══ SECTION HEADER ══════════════════════════════════════ */
 function SectionHeader({ inView }: { inView: boolean }) {
   return (
-    <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 14 } }}>
+    <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
 
-      {/* Eyebrow */}
+      {/* Eyebrow — matches footer style */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -315,11 +280,11 @@ function SectionHeader({ inView }: { inView: boolean }) {
             transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
             style={{ transformOrigin: 'right' }}
           >
-            <Box sx={{ width: 28, height: 1, background: `linear-gradient(270deg,${T.gold},${T.goldLight})` }} />
+            <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
           </motion.div>
           <Typography sx={{
-            fontFamily: MONO, fontSize: '0.54rem',
-            letterSpacing: '0.22em', color: T.goldMid, textTransform: 'uppercase',
+            fontFamily: MONO, fontSize: '0.52rem',
+            letterSpacing: '0.22em', color: T.blue, textTransform: 'uppercase',
           }}>
             Client Stories
           </Typography>
@@ -328,7 +293,7 @@ function SectionHeader({ inView }: { inView: boolean }) {
             transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
             style={{ transformOrigin: 'left' }}
           >
-            <Box sx={{ width: 28, height: 1, background: `linear-gradient(90deg,${T.gold},${T.goldLight})` }} />
+            <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
           </motion.div>
         </Box>
       </motion.div>
@@ -342,7 +307,7 @@ function SectionHeader({ inView }: { inView: boolean }) {
         >
           <Typography sx={{
             fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-            fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.75rem' },
+            fontSize: { xs: '2.25rem', sm: '3rem', md: '4.25rem' },
             color: T.ink, letterSpacing: '-0.034em', lineHeight: 1.0,
           }}>
             Trusted by founders
@@ -350,7 +315,7 @@ function SectionHeader({ inView }: { inView: boolean }) {
         </motion.div>
       </Box>
 
-      <Box sx={{ overflow: 'hidden', mb: 3.5 }}>
+      <Box sx={{ overflow: 'hidden', mb: 3 }}>
         <motion.div
           initial={{ y: '108%' }}
           animate={inView ? { y: '0%' } : {}}
@@ -358,15 +323,28 @@ function SectionHeader({ inView }: { inView: boolean }) {
         >
           <Typography sx={{
             fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-            fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.75rem' },
+            fontSize: { xs: '2.25rem', sm: '3rem', md: '4.25rem' },
             letterSpacing: '-0.034em', lineHeight: 1.0,
-            background: `linear-gradient(115deg, ${T.goldLight} 0%, ${T.gold} 55%)`,
+            background: T.blueGrad,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
           }}>
             across India.
           </Typography>
         </motion.div>
       </Box>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={inView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.5, delay: 0.28, ease: EASE }}
+      >
+        <Typography sx={{
+          fontFamily: SANS, fontSize: '0.9375rem',
+          color: T.inkMuted, lineHeight: 1.75, maxWidth: 420, mx: 'auto',
+        }}>
+          300+ founders rely on Merraki for models that close rounds and dashboards that drive decisions.
+        </Typography>
+      </motion.div>
     </Box>
   );
 }
@@ -387,13 +365,11 @@ function FooterStats({ inView }: { inView: boolean }) {
       transition={{ delay: 0.55, duration: 0.6, ease: EASE }}
     >
       <Box sx={{
-        mt: { xs: 8, md: 12 }, pt: 5,
+        mt: { xs: 8, md: 10 }, pt: 5,
         borderTop: `1px solid ${T.border}`,
-        display: 'flex',
-        alignItems: 'center',
+        display: 'flex', alignItems: 'center',
         justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: 0,
+        flexWrap: 'wrap', gap: 0,
       }}>
         {stats.map((s, i) => (
           <motion.div
@@ -409,7 +385,7 @@ function FooterStats({ inView }: { inView: boolean }) {
             }}>
               <Typography sx={{
                 fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-                fontSize: { xs: '1.35rem', md: '1.75rem' },
+                fontSize: { xs: '1.25rem', md: '1.6rem' },
                 color: T.ink, letterSpacing: '-0.025em',
                 lineHeight: 1, mb: 0.5,
               }}>
@@ -417,7 +393,7 @@ function FooterStats({ inView }: { inView: boolean }) {
               </Typography>
               <Typography sx={{
                 fontFamily: MONO, fontSize: '0.48rem',
-                letterSpacing: '0.15em', color: T.inkGhost,
+                letterSpacing: '0.15em', color: T.inkFaint,
                 textTransform: 'uppercase',
               }}>
                 {s.label}
@@ -445,142 +421,84 @@ export function TestimonialsSection() {
     <Box
       ref={sectionRef}
       sx={{
-        py: { xs: 14, md: 20 },
+        py: { xs: 12, md: 18 },
         background: T.bg,
         position: 'relative',
         overflow: 'hidden',
+        borderTop: `1px solid ${T.border}`,
       }}
     >
-
-      {/* ── Layered Background ── */}
-
-      {/* Warm grid */}
+      {/* Blue radial ambient top-center */}
       <Box sx={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        backgroundImage: `
-          linear-gradient(${T.border} 1px, transparent 1px),
-          linear-gradient(90deg, ${T.border} 1px, transparent 1px)
-        `,
-        backgroundSize: '72px 72px',
-        opacity: 0.45,
-      }} />
-
-      {/* Large centre bloom */}
-      <Box sx={{
-        position: 'absolute', width: '80vw', height: '70vw',
-        top: '5%', left: '10%', borderRadius: '50%',
-        background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 65%)`,
+        position: 'absolute', width: '80vw', height: '50vw',
+        top: '-10vw', left: '10vw', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(59,123,246,0.07) 0%, transparent 65%)',
         pointerEvents: 'none',
       }} />
 
-      {/* Secondary bottom-left bloom */}
+      {/* Blue radial ambient bottom-right */}
       <Box sx={{
         position: 'absolute', width: '40vw', height: '35vw',
-        bottom: '-5%', left: '-8%', borderRadius: '50%',
-        background: `radial-gradient(ellipse, rgba(45,91,227,0.05) 0%, transparent 70%)`,
+        bottom: '-5%', right: '-5%', borderRadius: '50%',
+        background: 'radial-gradient(ellipse, rgba(59,123,246,0.05) 0%, transparent 70%)',
         pointerEvents: 'none',
       }} />
 
-      {/* Bottom-right bloom */}
+      {/* Dot grid — matches footer */}
       <Box sx={{
-        position: 'absolute', width: '35vw', height: '30vw',
-        bottom: '-8%', right: '-5%', borderRadius: '50%',
-        background: `radial-gradient(ellipse, rgba(109,40,217,0.05) 0%, transparent 70%)`,
-        pointerEvents: 'none',
-      }} />
-
-      {/* Animated floating orbs */}
-      <GoldOrb
-        style={{
-          width: 240, height: 240, top: '12%', left: '3%',
-          background: `radial-gradient(circle, ${T.goldGlow} 0%, transparent 70%)`,
-        }}
-        delay={0} duration={14}
-      />
-      <GoldOrb
-        style={{
-          width: 180, height: 180, top: '55%', right: '4%',
-          background: `radial-gradient(circle, rgba(45,91,227,0.07) 0%, transparent 70%)`,
-        }}
-        delay={3.5} duration={11}
-      />
-      <GoldOrb
-        style={{
-          width: 140, height: 140, bottom: '18%', left: '18%',
-          background: `radial-gradient(circle, rgba(109,40,217,0.06) 0%, transparent 70%)`,
-        }}
-        delay={6} duration={16}
-      />
-      <GoldOrb
-        style={{
-          width: 100, height: 100, top: '30%', right: '22%',
-          background: `radial-gradient(circle, rgba(184,146,42,0.08) 0%, transparent 70%)`,
-        }}
-        delay={1.8} duration={9}
-      />
-      <GoldOrb
-        style={{
-          width: 160, height: 160, top: '72%', left: '48%',
-          background: `radial-gradient(circle, rgba(13,122,95,0.06) 0%, transparent 70%)`,
-        }}
-        delay={4.5} duration={12}
-      />
-
-      {/* Grain */}
-      <Box sx={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.022,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-        backgroundSize: '160px',
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: `radial-gradient(circle, rgba(59,123,246,0.07) 1px, transparent 1px)`,
+        backgroundSize: '28px 28px',
       }} />
 
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div ref={headerRef}>
           <SectionHeader inView={inView} />
         </div>
 
-        {/* ── Card Wall ── */}
+        {/* Card wall */}
         <Box sx={{ position: 'relative' }}>
 
-          {/* TOP fade — cards dissolve into background */}
+          {/* Top fade */}
           <Box sx={{
             position: 'absolute', top: 0, left: 0, right: 0,
-            height: { xs: 80, md: 120 }, zIndex: 2, pointerEvents: 'none',
+            height: { xs: 70, md: 100 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to bottom, ${T.bg} 0%, ${T.bg}00 100%)`,
           }} />
 
-          {/* BOTTOM fade */}
+          {/* Bottom fade */}
           <Box sx={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: { xs: 100, md: 160 }, zIndex: 2, pointerEvents: 'none',
+            height: { xs: 90, md: 130 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to top, ${T.bg} 0%, ${T.bg}00 100%)`,
           }} />
 
-          {/* LEFT fade — for edge bleed effect */}
+          {/* Left fade */}
           <Box sx={{
             position: 'absolute', top: 0, bottom: 0, left: 0,
-            width: { xs: 20, md: 40 }, zIndex: 2, pointerEvents: 'none',
+            width: { xs: 16, md: 32 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to right, ${T.bg} 0%, transparent 100%)`,
           }} />
 
-          {/* RIGHT fade */}
+          {/* Right fade */}
           <Box sx={{
             position: 'absolute', top: 0, bottom: 0, right: 0,
-            width: { xs: 20, md: 40 }, zIndex: 2, pointerEvents: 'none',
+            width: { xs: 16, md: 32 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to left, ${T.bg} 0%, transparent 100%)`,
           }} />
 
-          {/* 3 columns */}
+          {/* 3 columns — horizontally narrow / compact */}
           <Box sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: '1fr 1fr 1fr' },
-            gap: { xs: 1.5, md: 2.5 },
-            height: { xs: 520, sm: 640, md: 760 },
+            gridTemplateColumns: { xs: '1fr', sm: '260px 260px', lg: '240px 240px 240px' },
+            gap: { xs: 1.5, md: 1.5 },
+            justifyContent: 'center',
+            height: { xs: 440, sm: 520, md: 680 },
             overflow: 'hidden',
             alignItems: 'start',
-            /* Slight vertical padding so top-fade doesn't cut first card header */
-            pt: '20px', pb: '20px',
+            pt: '16px', pb: '16px',
           }}>
             {COLUMNS.map((col, ci) => (
               <InfiniteColumn
@@ -590,13 +508,13 @@ export function TestimonialsSection() {
                 dir={col.dir as 1 | -1}
                 initialOffset={col.initialOffset}
                 parallaxProgress={scrollYProgress}
-                parallaxAmount={ci === 1 ? -120 : ci === 0 ? 80 : 100}
+                parallaxAmount={ci === 1 ? -80 : ci === 0 ? 50 : 60}  // more subtle parallax
               />
             ))}
           </Box>
         </Box>
 
-        {/* ── Footer stats ── */}
+        {/* Footer stats */}
         <FooterStats inView={inView} />
 
       </Container>

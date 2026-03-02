@@ -14,20 +14,23 @@ import type { BlogPost } from '@/types/blog.types';
 ══════════════════════════════════════════════════════ */
 const T = {
   white:     '#FFFFFF',
-  offwhite:  '#F8F6F1',
-  cream:     '#F0EDE4',
-  parchment: '#E8E3D8',
-  ink:       '#0A0C0F',
-  inkMid:    '#1C2333',
-  inkMuted:  '#4A5568',
-  inkFaint:  '#8896A8',
-  inkGhost:  '#B8C4D0',
-  rule:      '#D8D3C8',
-  ruleMd:    '#C4BDB0',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldGlow:  'rgba(184,146,42,0.07)',
+  offwhite:  '#F5F7FB',              // cool section background
+  cream:     '#EDF3FF',              // soft blue pale surface
+  parchment: 'rgba(59,123,246,0.06)',// subtle blue tint layer
+
+  ink:       '#0A0A0F',
+  inkMid:    '#1E1E2A',
+  inkMuted:  '#5A5A72',
+  inkFaint:  '#9898AE',
+  inkGhost:  '#C2CAD6',
+
+  rule:      'rgba(10,10,20,0.08)',
+  ruleMd:    'rgba(10,10,20,0.14)',
+
+  blue:      '#3B7BF6',
+  blueMid:   '#5A92F8',
+  blueLight: '#7AABFF',
+  blueGlow:  'rgba(59,123,246,0.10)',
 };
 
 const FONT_DISPLAY = '"Instrument Serif", "Playfair Display", Georgia, serif';
@@ -89,8 +92,8 @@ function Dateline() {
 function IssueBadge({ cat }: { cat: string }) {
   return (
     <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
-      <Box sx={{ width: 10, height: 10, borderRadius: '50%', background: T.gold, opacity: 0.7 }} />
-      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.18em', color: T.gold, textTransform: 'uppercase' }}>
+      <Box sx={{ width: 10, height: 10, borderRadius: '50%', background: T.blue, opacity: 0.7 }} />
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.54rem', letterSpacing: '0.18em', color: T.blue, textTransform: 'uppercase' }}>
         {cat}
       </Typography>
     </Box>
@@ -116,7 +119,7 @@ function LeadCard({ post }: { post: BlogPost }) {
           background: T.white,
           transition: 'box-shadow 0.25s ease',
           '&:hover': { boxShadow: `0 8px 40px rgba(10,12,15,0.08)` },
-          '&:hover .lead-title': { color: T.gold },
+          '&:hover .lead-title': { color: T.blue },
         }}>
           {/* Left: cover */}
           <Box sx={{
@@ -162,8 +165,8 @@ function LeadCard({ post }: { post: BlogPost }) {
             {/* Footer meta */}
             <Box sx={{ pt: 2.5, borderTop: `1px solid ${T.rule}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ width: 32, height: 32, borderRadius: '2px', background: `linear-gradient(135deg, ${T.gold}22, ${T.gold}08)`, border: `1px solid ${T.gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1rem', color: T.gold }}>
+                <Box sx={{ width: 32, height: 32, borderRadius: '2px', background: `linear-gradient(135deg, ${T.blue}22, ${T.blue}08)`, border: `1px solid ${T.blue}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '1rem', color: T.blue }}>
                     {post.author.name.charAt(0)}
                   </Typography>
                 </Box>
@@ -204,7 +207,7 @@ function ArticleCard({ post, index = 0, size = 'md' }: { post: BlogPost; index?:
           borderBottom: `1px solid ${T.rule}`,
           pb: isSm ? 2.5 : 3,
           transition: 'all 0.2s ease',
-          '&:hover .art-title': { color: T.gold },
+          '&:hover .art-title': { color: T.blue },
         }}>
           {/* Cover — only for md+ */}
           {!isSm && (
@@ -260,16 +263,16 @@ function CatPill({ label, active, onClick }: { label: string; active: boolean; o
       onClick={onClick}
       sx={{
         px: 2, py: 0.75,
-        border: `1px solid ${active ? T.gold : T.rule}`,
+        border: `1px solid ${active ? T.blue : T.rule}`,
         borderRadius: '2px',
-        background: active ? `linear-gradient(115deg, ${T.goldLight}14, ${T.gold}08)` : 'transparent',
+        background: active ? `linear-gradient(115deg, ${T.blueLight}14, ${T.blue}08)` : 'transparent',
         cursor: 'pointer',
         outline: 'none',
         transition: 'all 0.15s ease',
-        '&:hover': { borderColor: T.gold },
+        '&:hover': { borderColor: T.blue },
       }}
     >
-      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.56rem', letterSpacing: '0.14em', color: active ? T.gold : T.inkMuted, textTransform: 'uppercase', transition: 'color 0.15s' }}>
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.56rem', letterSpacing: '0.14em', color: active ? T.blue : T.inkMuted, textTransform: 'uppercase', transition: 'color 0.15s' }}>
         {label}
       </Typography>
     </Box>
@@ -326,8 +329,8 @@ export function BlogPageClient() {
       <Box sx={{ background: T.white, borderBottom: `3px double ${T.rule}`, pt: { xs: 10, md: 14 }, pb: 0, position: 'relative', overflow: 'hidden' }}>
         {/* Warm grid */}
         <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `linear-gradient(${T.rule} 1px, transparent 1px), linear-gradient(90deg, ${T.rule} 1px, transparent 1px)`, backgroundSize: '72px 72px', opacity: 0.3 }} />
-        {/* Gold glow */}
-        <Box sx={{ position: 'absolute', width: '50vw', height: '30vw', top: '-12vw', left: '25vw', borderRadius: '50%', background: `radial-gradient(ellipse, ${T.goldGlow} 0%, transparent 70%)`, pointerEvents: 'none' }} />
+        {/* Blue glow */}
+        <Box sx={{ position: 'absolute', width: '50vw', height: '30vw', top: '-12vw', left: '25vw', borderRadius: '50%', background: `radial-gradient(ellipse, ${T.blueGlow} 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
         <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
 
@@ -439,7 +442,7 @@ export function BlogPageClient() {
         ) : bodyPosts.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 10 }}>
             <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '2rem', color: T.inkMuted, mb: 1 }}>No articles found.</Typography>
-            <Box component="button" onClick={() => handleSearchChange('')} sx={{ fontFamily: FONT_SANS, fontSize: '0.875rem', color: T.gold, border: `1px solid ${T.gold}`, borderRadius: '2px', px: 2, py: 0.75, cursor: 'pointer', background: 'transparent', mt: 2 }}>
+            <Box component="button" onClick={() => handleSearchChange('')} sx={{ fontFamily: FONT_SANS, fontSize: '0.875rem', color: T.blue, border: `1px solid ${T.blue}`, borderRadius: '2px', px: 2, py: 0.75, cursor: 'pointer', background: 'transparent', mt: 2 }}>
               Clear search
             </Box>
           </Box>
@@ -495,14 +498,14 @@ export function BlogPageClient() {
                 onClick={() => goToPage(i + 1)}
                 sx={{
                   width: 36, height: 36,
-                  border: `1px solid ${page === i + 1 ? T.gold : T.rule}`,
+                  border: `1px solid ${page === i + 1 ? T.blue : T.rule}`,
                   borderRadius: '2px',
-                  background: page === i + 1 ? `linear-gradient(115deg, ${T.goldLight}18, ${T.gold}08)` : 'transparent',
+                  background: page === i + 1 ? `linear-gradient(115deg, ${T.blueLight}18, ${T.blue}08)` : 'transparent',
                   cursor: 'pointer',
                   fontFamily: FONT_MONO, fontSize: '0.75rem',
-                  color: page === i + 1 ? T.gold : T.inkMuted,
+                  color: page === i + 1 ? T.blue : T.inkMuted,
                   transition: 'all 0.15s', outline: 'none',
-                  '&:hover': { borderColor: T.gold, color: T.gold },
+                  '&:hover': { borderColor: T.blue, color: T.blue },
                 }}
               >
                 {i + 1}

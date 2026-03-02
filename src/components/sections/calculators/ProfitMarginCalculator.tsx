@@ -6,12 +6,45 @@ import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer, AreaChart, Area,
 } from 'recharts';
-import { CalcLayout, T, FONT_MONO, FONT_SANS } from './CalcLayout';
+import { CalcLayout,FONT_MONO, FONT_SANS } from './CalcLayout';
 import { CalcInput } from './CalcInput';
 import { MetricCard } from './MetricCard';
 import { Typography } from '@mui/material';
 
-const ACCENT = '#5C7A5C';
+const T = {
+  /* surfaces */
+  white:     "#FFFFFF",
+  offwhite:  "#F9F8F5",
+  cream:     "#F0EDE6",
+  parchment: "#E8E4DA",
+
+  /* text */
+  ink:       "#0C0E12",
+  inkMid:    "#2E3440",
+  inkMuted:  "#64748B",
+  inkFaint:  "#94A3B8",
+  inkGhost:  "#CBD5E1",
+
+  /* borders */
+  border:    "#E2DED5",
+  borderMd:  "#C8C3B8",
+
+  /* Blue and light shades */
+ 
+  blue:      "#3B82F6",             // main blue
+  blueMid:   "#60A5FA",             // lighter mid-tone
+  blueLight: "#93C5FD",             // soft/light blue
+  blueGlow:  "rgba(59,130,246,0.07)", // subtle glow effect
+  blueBdr:   "rgba(59,130,246,0.18)", // border/tint effect
+
+  /* neutral/cool accents for footer */
+  accents: [
+    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // soft blue
+    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
+    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // cool gray
+    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
+  ],
+};
 
 function fmtINR(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
@@ -76,7 +109,7 @@ export function ProfitMarginCalculator() {
     <CalcLayout
       title="Profit Margin Calculator"
       description="Analyse your gross, operating, and net margins — see exactly where revenue is consumed and how efficiently you convert sales into profit."
-      accent={ACCENT}
+      accent={T.accents[0].line}
       glyph="03"
       inputsPanel={
         <Box>
@@ -96,7 +129,7 @@ export function ProfitMarginCalculator() {
             { label: 'Tax Paid',         value: fmtINR(r.taxAmount),               sub: `${inputs.tax}% rate` },
           ].map((m, i) => (
             <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
-              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={ACCENT} highlight={m.highlight} index={i} />
+              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={T.accents[0].line} highlight={m.highlight} index={i} />
             </Grid>
           ))}
         </Grid>
@@ -111,7 +144,7 @@ export function ProfitMarginCalculator() {
               <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
               <Bar dataKey="value" name="Amount" radius={[4,4,0,0]} barSize={28}
-                fill={ACCENT + '88'}
+                fill={T.accents[0].line + '88'}
                 label={false}
               />
             </ComposedChart>
@@ -124,8 +157,8 @@ export function ProfitMarginCalculator() {
               <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={false} />
               <YAxis tickFormatter={v => `${v}%`} tick={axisStyle} tickLine={false} axisLine={false} width={44} />
               <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Bar dataKey="margin" name="Margin %" fill={ACCENT + '55'} radius={[4,4,0,0]} barSize={36} />
-              <Line type="monotone" dataKey="margin" stroke={ACCENT} strokeWidth={2} dot={{ fill: ACCENT, r: 4, strokeWidth: 0 }} />
+              <Bar dataKey="margin" name="Margin %" fill={T.accents[0].line + '55'} radius={[4,4,0,0]} barSize={36} />
+              <Line type="monotone" dataKey="margin" stroke={T.accents[0].line} strokeWidth={2} dot={{ fill: T.accents[0].line, r: 4, strokeWidth: 0 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </Box>

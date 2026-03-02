@@ -8,20 +8,23 @@ import type { BlogPost } from "@/types/blog.types";
 
 const T = {
   white:     '#FFFFFF',
-  offwhite:  '#F8F6F1',
-  cream:     '#F0EDE4',
-  parchment: '#E8E3D8',
-  ink:       '#0A0C0F',
-  inkMid:    '#1C2333',
-  inkMuted:  '#4A5568',
-  inkFaint:  '#8896A8',
-  inkGhost:  '#B8C4D0',
-  rule:      '#D8D3C8',
-  ruleMd:    '#C4BDB0',
-  gold:      '#B8922A',
-  goldMid:   '#C9A84C',
-  goldLight: '#DDB96A',
-  goldGlow:  'rgba(184,146,42,0.07)',
+  offwhite:  '#F5F7FB',              // cool section background
+  cream:     '#EDF3FF',              // soft blue pale surface
+  parchment: 'rgba(59,123,246,0.06)',// subtle blue tint layer
+
+  ink:       '#0A0A0F',
+  inkMid:    '#1E1E2A',
+  inkMuted:  '#5A5A72',
+  inkFaint:  '#9898AE',
+  inkGhost:  '#C2CAD6',
+
+  rule:      'rgba(10,10,20,0.08)',
+  ruleMd:    'rgba(10,10,20,0.14)',
+
+  blue:      '#3B7BF6',
+  blueMid:   '#5A92F8',
+  blueLight: '#7AABFF',
+  blueGlow:  'rgba(59,123,246,0.10)',
 };
 
 const FONT_DISPLAY = '"Instrument Serif", "Playfair Display", Georgia, serif';
@@ -60,7 +63,7 @@ export function BlogCard({ post, index = 0, variant = 'default' }: BlogCardProps
           '&:hover': {
             boxShadow: `0 6px 28px rgba(10,12,15,0.07)`,
             borderColor: T.ruleMd,
-            '& .card-title': { color: T.gold },
+            '& .card-title': { color: T.blue },
             '& .card-cover img': { transform: 'scale(1.04)' },
           },
         }}>
@@ -92,7 +95,7 @@ export function BlogCard({ post, index = 0, variant = 'default' }: BlogCardProps
               </Box>
 
               {post.isFeatured && (
-                <Box sx={{ position: 'absolute', top: 10, right: 10, px: 1.25, py: 0.5, background: T.gold }}>
+                <Box sx={{ position: 'absolute', top: 10, right: 10, px: 1.25, py: 0.5, background: T.blue }}>
                   <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.18em', color: T.white, textTransform: 'uppercase' }}>Featured</Typography>
                 </Box>
               )}
@@ -105,8 +108,8 @@ export function BlogCard({ post, index = 0, variant = 'default' }: BlogCardProps
             {/* Compact: category inline */}
             {isCompact && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-                <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: T.gold, opacity: 0.65 }} />
-                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.5rem', letterSpacing: '0.16em', color: T.gold, textTransform: 'uppercase' }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: T.blue, opacity: 0.65 }} />
+                <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.5rem', letterSpacing: '0.16em', color: T.blue, textTransform: 'uppercase' }}>
                   {post.category?.name}
                 </Typography>
               </Box>
@@ -144,8 +147,8 @@ export function BlogCard({ post, index = 0, variant = 'default' }: BlogCardProps
             }}>
               {!isCompact && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                  <Box sx={{ width: 24, height: 24, borderRadius: '2px', background: `${T.gold}18`, border: `1px solid ${T.gold}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.75rem', color: T.gold }}>
+                  <Box sx={{ width: 24, height: 24, borderRadius: '2px', background: `${T.blue}18`, border: `1px solid ${T.blue}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Typography sx={{ fontFamily: FONT_DISPLAY, fontStyle: 'italic', fontSize: '0.75rem', color: T.blue }}>
                       {post.author.name.charAt(0)}
                     </Typography>
                   </Box>
