@@ -30,7 +30,7 @@ export function useBlogPosts(params: BlogPostsParams = {}) {
   return useQuery({
     queryKey: blogKeys.list(params),
     queryFn: () => getBlogPosts(params),
-    placeholderData: keepPreviousData,  // smooth pagination — no flash between pages
+    placeholderData: keepPreviousData, 
     staleTime: 1000 * 60 * 3,
   });
 }

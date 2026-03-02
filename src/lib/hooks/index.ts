@@ -15,7 +15,7 @@ export {
   useBlogSearch,
   useBlogPost,
   useBlogCategories,
-  BLOG_KEYS,
+  blogKeys,
 } from "./useBlogPosts";
 export {
   useTestQuestions,
