@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -46,12 +46,20 @@ const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
+function useIsMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
+}
+
 /* ══ HEADER ══════════════════════════════════════════════ */
 export function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const itemCount = useCartStore((s) => s.getItemCount());
+  const isMounted = useIsMounted();
+  const _itemCount = useCartStore((s) => s.getItemCount());
   const openCart = useCartStore((s) => s.openDrawer);
+  const itemCount  = isMounted ? _itemCount : 0;
 
   const fgColor = T.inkMid;
   const fgMuted = T.inkMuted;
@@ -266,6 +274,8 @@ interface NavItemProps {
   hoverBg: string;
   hoverColor: string;
 }
+
+
 
 function NavItem({
   link,

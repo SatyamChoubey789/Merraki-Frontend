@@ -20,6 +20,7 @@ export interface CreateOrderPayload {
     email: string;
     phone?: string;
     company?: string;
+    country?: string;
   };
   currency: string;
   couponCode?: string;
@@ -66,6 +67,7 @@ export interface Order {
     email: string;
     phone?: string;
     company?: string;
+    country?: string;
   };
   items: OrderItem[];
   subtotal: number;

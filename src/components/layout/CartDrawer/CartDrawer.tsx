@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Drawer,
-  Box,
-  Typography,
-  Button,
-  Stack,
-} from "@mui/material";
+import { Drawer, Box, Typography, Button, Stack } from "@mui/material";
 import {
   Add as AddIcon,
   Remove as RemoveIcon,
@@ -16,7 +10,6 @@ import {
   GridView as BrowseIcon,
 } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import type { CartItem } from "@/types/cart.types";
 import { useCurrency } from "@/lib/hooks/useCurrency";
@@ -24,23 +17,23 @@ import { useCartStore } from "@/lib/stores/cartStore";
 
 /* ── tokens ──────────────────────────────────────────────────────────── */
 const T = {
-  bg:       "#FFFFFF",
-  surface:  "#F7F8FA",
-  border:   "#E8EAED",
-  borderMid:"#D1D5DB",
-  ink:      "#0F1117",
-  inkMid:   "#374151",
+  bg: "#FFFFFF",
+  surface: "#F7F8FA",
+  border: "#E8EAED",
+  borderMid: "#D1D5DB",
+  ink: "#0F1117",
+  inkMid: "#374151",
   inkMuted: "#6B7280",
   inkFaint: "#9CA3AF",
-  accent:   "#0057FF",
+  accent: "#0057FF",
   accentBg: "rgba(0,87,255,0.06)",
-  error:    "#DC2626",
-  errorBg:  "rgba(220,38,38,0.06)",
-  success:  "#059669",
+  error: "#DC2626",
+  errorBg: "rgba(220,38,38,0.06)",
+  success: "#059669",
 };
 
-const FONT_BODY    = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
-const FONT_MONO    = `"DM Mono", "JetBrains Mono", monospace`;
+const FONT_BODY = `"DM Sans", "Mona Sans", system-ui, sans-serif`;
+const FONT_MONO = `"DM Mono", "JetBrains Mono", monospace`;
 const FONT_DISPLAY = `"Instrument Serif", "Playfair Display", Georgia, serif`;
 
 /* ── Close button ────────────────────────────────────────────────────── */
@@ -51,8 +44,12 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label="Close cart"
       sx={{
-        display: "flex", alignItems: "center", justifyContent: "center",
-        width: 34, height: 34, flexShrink: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 34,
+        height: 34,
+        flexShrink: 0,
         background: "none",
         border: `1.5px solid ${T.border}`,
         borderRadius: "8px",
@@ -64,13 +61,21 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
     >
       <Box sx={{ position: "relative", width: 12, height: 12 }}>
         {[45, -45].map((deg, i) => (
-          <Box key={i} sx={{
-            position: "absolute", top: "50%", left: 0,
-            width: "100%", height: "1.5px",
-            background: T.inkMid, borderRadius: "2px",
-            transform: `rotate(${deg}deg)`,
-            transformOrigin: "center", mt: "-0.75px",
-          }} />
+          <Box
+            key={i}
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              width: "100%",
+              height: "1.5px",
+              background: T.inkMid,
+              borderRadius: "2px",
+              transform: `rotate(${deg}deg)`,
+              transformOrigin: "center",
+              mt: "-0.75px",
+            }}
+          />
         ))}
       </Box>
     </Box>
@@ -82,12 +87,17 @@ function CloseBtn({ onClick }: { onClick: () => void }) {
 ══════════════════════════════════════════════════════════════════════ */
 export function CartDrawer() {
   const {
-    items, isDrawerOpen, closeDrawer,
-    removeItem, updateQuantity, getSubtotal, getItemCount,
+    items,
+    isDrawerOpen,
+    closeDrawer,
+    removeItem,
+    updateQuantity,
+    getSubtotal,
+    getItemCount,
   } = useCartStore();
 
   const { format } = useCurrency();
-  const subtotal  = getSubtotal();
+  const subtotal = getSubtotal();
   const itemCount = getItemCount();
 
   return (
@@ -111,8 +121,10 @@ export function CartDrawer() {
       {/* ── Header ─────────────────────────────────────────────────── */}
       <Box
         sx={{
-          px: 2.5, height: 60,
-          display: "flex", alignItems: "center",
+          px: 2.5,
+          height: 60,
+          display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
           borderBottom: `1px solid ${T.border}`,
           flexShrink: 0,
@@ -136,7 +148,8 @@ export function CartDrawer() {
           {itemCount > 0 && (
             <Box
               sx={{
-                px: "8px", py: "2px",
+                px: "8px",
+                py: "2px",
                 borderRadius: "5px",
                 background: T.accentBg,
                 border: `1px solid rgba(0,87,255,0.15)`,
@@ -160,7 +173,6 @@ export function CartDrawer() {
       <Box sx={{ flex: 1, overflowY: "auto", px: 2.5, py: 2 }}>
         <AnimatePresence mode="popLayout">
           {items.length === 0 ? (
-
             /* Empty state */
             <motion.div
               key="empty"
@@ -171,23 +183,33 @@ export function CartDrawer() {
             >
               <Box
                 sx={{
-                  display: "flex", flexDirection: "column",
-                  alignItems: "center", justifyContent: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
                   textAlign: "center",
-                  pt: 8, pb: 6, px: 3,
+                  pt: 8,
+                  pb: 6,
+                  px: 3,
                   gap: 2,
                 }}
               >
                 {/* Icon */}
                 <Box
                   sx={{
-                    width: 64, height: 64, borderRadius: "16px",
+                    width: 64,
+                    height: 64,
+                    borderRadius: "16px",
                     border: `1.5px solid ${T.border}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     mb: 0.5,
                   }}
                 >
-                  <EmptyCartIcon sx={{ fontSize: "1.6rem", color: T.inkFaint }} />
+                  <EmptyCartIcon
+                    sx={{ fontSize: "1.6rem", color: T.inkFaint }}
+                  />
                 </Box>
 
                 <Typography
@@ -221,7 +243,9 @@ export function CartDrawer() {
                   href="/templates"
                   onClick={closeDrawer}
                   disableElevation
-                  endIcon={<ArrowIcon sx={{ fontSize: "0.85rem !important" }} />}
+                  endIcon={
+                    <ArrowIcon sx={{ fontSize: "0.85rem !important" }} />
+                  }
                   sx={{
                     mt: 1,
                     fontFamily: FONT_BODY,
@@ -229,7 +253,8 @@ export function CartDrawer() {
                     fontSize: "0.875rem",
                     textTransform: "none",
                     letterSpacing: "-0.01em",
-                    px: 2.5, py: 1.125,
+                    px: 2.5,
+                    py: 1.125,
                     borderRadius: "9px",
                     color: "#fff",
                     background: T.ink,
@@ -240,7 +265,6 @@ export function CartDrawer() {
                 </Button>
               </Box>
             </motion.div>
-
           ) : (
             <Stack spacing={1.5}>
               {items.map((item) => (
@@ -256,22 +280,36 @@ export function CartDrawer() {
               {/* Browse more link */}
               <Box
                 sx={{
-                  pt: 0.5, pb: 1,
-                  display: "flex", justifyContent: "center",
+                  pt: 0.5,
+                  pb: 1,
+                  display: "flex",
+                  justifyContent: "center",
                 }}
               >
-                <Link href="/templates" onClick={closeDrawer} style={{ textDecoration: "none" }}>
+                <Link
+                  href="/templates"
+                  onClick={closeDrawer}
+                  style={{ textDecoration: "none" }}
+                >
                   <Box
                     sx={{
-                      display: "inline-flex", alignItems: "center", gap: 0.75,
-                      px: 2, py: 0.875,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.75,
+                      px: 2,
+                      py: 0.875,
                       borderRadius: "8px",
                       border: `1px solid ${T.border}`,
                       transition: "all 0.15s ease",
-                      "&:hover": { borderColor: T.inkMid, background: T.surface },
+                      "&:hover": {
+                        borderColor: T.inkMid,
+                        background: T.surface,
+                      },
                     }}
                   >
-                    <BrowseIcon sx={{ fontSize: "0.85rem", color: T.inkMuted }} />
+                    <BrowseIcon
+                      sx={{ fontSize: "0.85rem", color: T.inkMuted }}
+                    />
                     <Typography
                       sx={{
                         fontFamily: FONT_BODY,
@@ -285,7 +323,9 @@ export function CartDrawer() {
                     >
                       Browse more templates
                     </Typography>
-                    <ArrowIcon sx={{ fontSize: "0.75rem", color: T.inkFaint }} />
+                    <ArrowIcon
+                      sx={{ fontSize: "0.75rem", color: T.inkFaint }}
+                    />
                   </Box>
                 </Link>
               </Box>
@@ -316,7 +356,8 @@ export function CartDrawer() {
               {/* Order summary */}
               <Box
                 sx={{
-                  p: 2, mb: 2,
+                  p: 2,
+                  mb: 2,
                   borderRadius: "12px",
                   border: `1px solid ${T.border}`,
                   background: T.bg,
@@ -325,7 +366,8 @@ export function CartDrawer() {
                 {/* Subtotal row */}
                 <Box
                   sx={{
-                    display: "flex", alignItems: "center",
+                    display: "flex",
+                    alignItems: "center",
                     justifyContent: "space-between",
                     mb: 1.25,
                   }}
@@ -372,7 +414,10 @@ export function CartDrawer() {
 
               {/* CTAs */}
               <Stack spacing={1}>
-                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                >
                   <Button
                     component={Link}
                     href="/checkout"
@@ -380,16 +425,20 @@ export function CartDrawer() {
                     fullWidth
                     onClick={closeDrawer}
                     disableElevation
-                    endIcon={<ArrowIcon sx={{ fontSize: "0.9rem !important" }} />}
+                    endIcon={
+                      <ArrowIcon sx={{ fontSize: "0.9rem !important" }} />
+                    }
                     sx={{
                       fontFamily: FONT_BODY,
                       fontWeight: 600,
                       fontSize: "0.9375rem",
                       textTransform: "none",
                       letterSpacing: "-0.01em",
-                      py: 1.5, borderRadius: "10px",
+                      py: 1.5,
+                      borderRadius: "10px",
                       minHeight: 50,
-                      background: T.ink, color: "#fff",
+                      background: T.ink,
+                      color: "#fff",
                       "&:hover": { background: "#1B2030" },
                     }}
                   >
@@ -404,18 +453,25 @@ export function CartDrawer() {
                   fullWidth
                   onClick={closeDrawer}
                   disableElevation
-                  startIcon={<BrowseIcon sx={{ fontSize: "0.9rem !important" }} />}
+                  startIcon={
+                    <BrowseIcon sx={{ fontSize: "0.9rem !important" }} />
+                  }
                   sx={{
                     fontFamily: FONT_BODY,
                     fontWeight: 500,
                     fontSize: "0.875rem",
                     textTransform: "none",
                     letterSpacing: "-0.01em",
-                    py: 1.375, borderRadius: "10px",
+                    py: 1.375,
+                    borderRadius: "10px",
                     minHeight: 48,
                     color: T.inkMid,
                     borderColor: T.border,
-                    "&:hover": { borderColor: T.inkMid, color: T.ink, background: "rgba(15,17,23,0.03)" },
+                    "&:hover": {
+                      borderColor: T.inkMid,
+                      color: T.ink,
+                      background: "rgba(15,17,23,0.03)",
+                    },
                   }}
                 >
                   Browse Templates
@@ -437,7 +493,12 @@ interface CartItemRowProps {
   formatPrice: (amount: number) => string;
 }
 
-function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowProps) {
+function CartItemRow({
+  item,
+  onRemove,
+  onUpdateQty,
+  formatPrice,
+}: CartItemRowProps) {
   const { template, quantity } = item;
 
   return (
@@ -450,7 +511,8 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
     >
       <Box
         sx={{
-          display: "flex", gap: 2,
+          display: "flex",
+          gap: 2,
           p: 2,
           borderRadius: "12px",
           border: `1px solid ${T.border}`,
@@ -466,33 +528,15 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
         {/* Thumbnail */}
         <Box
           sx={{
-            width: 68, height: 68,
+            width: 68,
+            height: 68,
             borderRadius: "9px",
             overflow: "hidden",
             flexShrink: 0,
             background: T.surface,
             border: `1px solid ${T.border}`,
           }}
-        >
-          {template.thumbnailUrl ? (
-            <Image
-              src={template.thumbnailUrl}
-              alt={template.name}
-              width={68} height={68}
-              style={{ objectFit: "cover", width: "100%", height: "100%" }}
-            />
-          ) : (
-            <Box
-              sx={{
-                width: "100%", height: "100%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1.4rem",
-              }}
-            >
-              📊
-            </Box>
-          )}
-        </Box>
+        ></Box>
 
         {/* Details */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -509,7 +553,7 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
               textTransform: "uppercase",
             }}
           >
-            {template.format}
+            {template.file_url.split(".").slice(-1)[0]}
           </Typography>
 
           {/* Name */}
@@ -528,20 +572,22 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
               pr: 2,
             }}
           >
-            {template.name}
+            {template.title}
           </Typography>
 
           {/* Qty + Price row */}
           <Box
             sx={{
-              display: "flex", alignItems: "center",
+              display: "flex",
+              alignItems: "center",
               justifyContent: "space-between",
             }}
           >
             {/* Quantity stepper */}
             <Box
               sx={{
-                display: "flex", alignItems: "center",
+                display: "flex",
+                alignItems: "center",
                 border: `1px solid ${T.border}`,
                 borderRadius: "8px",
                 overflow: "hidden",
@@ -552,9 +598,14 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
                 component="button"
                 onClick={() => onUpdateQty(quantity - 1)}
                 sx={{
-                  width: 28, height: 30,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "none", border: "none", cursor: "pointer",
+                  width: 28,
+                  height: 30,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
                   color: T.inkMuted,
                   transition: "background 0.12s ease",
                   "&:hover": { background: T.surface, color: T.ink },
@@ -582,9 +633,14 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
                 component="button"
                 onClick={() => onUpdateQty(quantity + 1)}
                 sx={{
-                  width: 28, height: 30,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "none", border: "none", cursor: "pointer",
+                  width: 28,
+                  height: 30,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
                   color: T.inkMuted,
                   transition: "background 0.12s ease",
                   "&:hover": { background: T.surface, color: T.ink },
@@ -605,7 +661,7 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
                 letterSpacing: "-0.02em",
               }}
             >
-              {formatPrice(template.price * quantity)}
+              {formatPrice(template.price_inr * quantity)}
             </Typography>
           </Box>
         </Box>
@@ -616,11 +672,18 @@ function CartItemRow({ item, onRemove, onUpdateQty, formatPrice }: CartItemRowPr
           onClick={onRemove}
           aria-label="Remove item"
           sx={{
-            position: "absolute", top: 8, right: 8,
-            width: 26, height: 26,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "none", border: "none",
-            borderRadius: "6px", cursor: "pointer",
+            position: "absolute",
+            top: 8,
+            right: 8,
+            width: 26,
+            height: 26,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "none",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
             color: T.inkFaint,
             transition: "all 0.15s ease",
             "&:hover": { color: T.error, background: T.errorBg },
