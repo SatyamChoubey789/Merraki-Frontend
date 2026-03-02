@@ -179,7 +179,7 @@ export function TemplateFilters({ filter, inline }:Props) {
             {categories.map(cat=>(
               <CatPill
                 key={cat.id}
-                label={`${cat.name} (${cat.templateCount})`}
+                label={`${cat.name} (${cat.templates_count})`}
                 active={selectedCategory===cat.slug}
                 onClick={()=>handleCategoryChange(cat.slug)}
               />
