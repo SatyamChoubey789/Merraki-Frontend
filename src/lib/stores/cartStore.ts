@@ -5,8 +5,8 @@ import type { Template } from "@/types/template.types";
 
 interface CartActions {
   addItem: (template: Template) => void;
-  removeItem: (templateId: string) => void;
-  updateQuantity: (templateId: string, quantity: number) => void;
+  removeItem: (templateId: number) => void;
+  updateQuantity: (templateId: number, quantity: number) => void;
   clearCart: () => void;
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -49,13 +49,13 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      removeItem: (templateId: string) => {
+      removeItem: (templateId: number) => {
         set({
           items: get().items.filter((item) => item.templateId !== templateId),
         });
       },
 
-      updateQuantity: (templateId: string, quantity: number) => {
+      updateQuantity: (templateId: number, quantity: number) => {
         if (quantity <= 0) {
           get().removeItem(templateId);
           return;
@@ -80,7 +80,7 @@ export const useCartStore = create<CartStore>()(
 
       getSubtotal: () =>
         get().items.reduce(
-          (acc, item) => acc + item.template.price * item.quantity,
+          (acc, item) => acc + item.template.price_inr * item.quantity,
           0,
         ),
     }),

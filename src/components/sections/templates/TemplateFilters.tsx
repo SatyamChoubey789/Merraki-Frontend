@@ -14,7 +14,6 @@ const T = {
 };
 const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
-const EASE = [0.16,1,0.3,1] as const;
 
 const SORT_OPTIONS = [
   { value:'popular',    label:'Popular'     },
@@ -188,7 +187,6 @@ export function TemplateFilters({ filter, inline }:Props) {
           </>
         )}
       </Box>
-
     </Box>
   );
 }

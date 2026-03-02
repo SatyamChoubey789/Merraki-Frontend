@@ -1,7 +1,6 @@
 "use client";
 
 import { useCartStore } from "@/lib/stores/cartStore";
-import { useCurrencyStore } from "@/lib/stores/currencyStore";
 import { useCurrency } from "./useCurrency";
 import type { Template } from "@/types/template.types";
 
@@ -19,17 +18,17 @@ export function useCart() {
     getSubtotal,
   } = useCartStore();
 
-  const { format, convertPrice } = useCurrency();
+  const { format } = useCurrency();
 
   const itemCount = getItemCount();
   const subtotalRaw = getSubtotal();
   const subtotalFormatted = format(subtotalRaw);
 
-  const isInCart = (templateId: string) =>
-    items.some((item) => item.templateId === templateId);
+const isInCart = (templateId: number) =>
+  items.some((item) => item.templateId === Number(templateId));
 
-  const getItemQuantity = (templateId: string) =>
-    items.find((item) => item.templateId === templateId)?.quantity ?? 0;
+const getItemQuantity = (templateId: number) =>
+  items.find((item) => item.templateId === Number(templateId))?.quantity ?? 0;
 
   const handleAddItem = (template: Template) => {
     addItem(template);

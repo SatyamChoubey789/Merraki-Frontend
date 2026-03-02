@@ -18,9 +18,9 @@ import {
   ShoppingBag as BagIcon,
 } from "@mui/icons-material";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import { colorTokens, shadowTokens } from "@/theme";
 import { useCart } from "@/lib/hooks/useCart";
 import { useCurrency } from "@/lib/hooks/useCurrency";
@@ -32,7 +32,7 @@ import {
 
 export function CheckoutPageClient() {
   const router = useRouter();
-  const { items, itemCount, subtotalFormatted } = useCart();
+  const { items, itemCount, subtotalRaw } = useCart(); // subtotalRaw in paise
   const { format } = useCurrency();
   const { initiateCheckout, isProcessing } = useCheckout();
 
@@ -49,6 +49,8 @@ export function CheckoutPageClient() {
   }, [itemCount, router]);
 
   if (itemCount === 0) return null;
+
+  const subtotalFormatted = format(subtotalRaw / 100, "INR"); // Convert paise to INR
 
   const onSubmit = (data: CheckoutFormValues) => {
     initiateCheckout(data);
@@ -270,30 +272,8 @@ export function CheckoutPageClient() {
                           flexShrink: 0,
                           backgroundColor: colorTokens.financeBlue[50],
                         }}
-                      >
-                        {item.template.thumbnailUrl ? (
-                          <Image
-                            src={item.template.thumbnailUrl}
-                            alt={item.template.name}
-                            width={52}
-                            height={52}
-                            style={{ objectFit: "cover" }}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "1.25rem",
-                            }}
-                          >
-                            📊
-                          </Box>
-                        )}
-                      </Box>
+                      />
+
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
                           variant="body2"
@@ -306,13 +286,13 @@ export function CheckoutPageClient() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {item.template.name}
+                          {item.template.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Qty: {item.quantity} ·{" "}
-                          {item.template.format.toUpperCase()}
+                          Qty: {item.quantity}
                         </Typography>
                       </Box>
+
                       <Typography
                         variant="body2"
                         sx={{
@@ -323,8 +303,8 @@ export function CheckoutPageClient() {
                         }}
                       >
                         {format(
-                          item.template.price * item.quantity,
-                          item.template.currency as "INR",
+                          (item.template.price_inr / 100) * item.quantity,
+                          "INR",
                         )}
                       </Typography>
                     </Box>
@@ -347,6 +327,7 @@ export function CheckoutPageClient() {
                       {subtotalFormatted}
                     </Typography>
                   </Box>
+
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
@@ -361,7 +342,9 @@ export function CheckoutPageClient() {
                       Included
                     </Typography>
                   </Box>
+
                   <Divider />
+
                   <Box
                     sx={{
                       display: "flex",

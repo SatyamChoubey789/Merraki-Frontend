@@ -1,7 +1,7 @@
 import type { Template } from './template.types';
 
 export interface CartItem {
-  templateId: string;
+  templateId: number;
   template: Template;
   quantity: number;
   addedAt: string;
