@@ -12,7 +12,7 @@ export interface OrderItem {
 
 export interface CreateOrderPayload {
   items: {
-    templateId: string;
+    templateId: number;
     quantity: number;
   }[];
   customerDetails: {
