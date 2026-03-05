@@ -3,114 +3,57 @@
 import { Box, Typography } from '@mui/material';
 import { FONT_MONO, FONT_SANS } from './CalcLayout';
 
-interface CalcInputProps {
-  label: string;
-  value: number | string;
-  onChange: (value: number) => void;
-  prefix?: string;
-  suffix?: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  helperText?: string;
-  disabled?: boolean;
-}
-
-/* ── BLUISH-WHITE LIGHT MODE TOKENS ─────────────────────────────── */
-
 const T = {
-  /* surfaces */
-  white: "#FFFFFF",
-  offwhite: "#F6F9FF",
-
-  /* text */
-  ink: "#0B1220",
-  inkMid: "#1E293B",
-  inkMuted: "#475569",
-  inkFaint: "#94A3B8",
-
-  /* borders */
-  border: "#E2E8F0",
-  borderMd: "#CBD5E1",
-
-  /* blue system */
-  blue: "#2563EB",
-  blueMid: "#3B82F6",
-  blueLight: "#93C5FD",
-  blueGlow: "rgba(37,99,235,0.08)",
+  white:    '#FFFFFF',
+  bg:       '#F7F8FA',
+  ink:      '#0A0A0F',
+  inkMid:   '#1E293B',
+  inkMuted: '#5A6478',
+  inkFaint: '#A0A0AE',
+  border:   'rgba(10,10,20,0.08)',
+  borderFocus: 'rgba(29,78,216,0.4)',
+  blue:     '#1D4ED8',
+  blueGlow: 'rgba(29,78,216,0.07)',
 };
 
-/* ───────────────────────────────────────────────────────────────── */
+interface CalcInputProps {
+  label:       string;
+  value:       number | string;
+  onChange:    (value: number) => void;
+  prefix?:     string;
+  suffix?:     string;
+  min?:        number;
+  step?:       number;
+  helperText?: string;
+  disabled?:   boolean;
+}
 
-export function CalcInput({
-  label,
-  value,
-  onChange,
-  prefix,
-  suffix,
-  min = 0,
-  step = 1,
-  helperText,
-  disabled,
-}: CalcInputProps) {
+export function CalcInput({ label, value, onChange, prefix, suffix, min = 0, step = 1, helperText, disabled }: CalcInputProps) {
   return (
-    <Box sx={{ mb: 2.75 }}>
-      {/* Label */}
-      <Typography
-        sx={{
-          fontFamily: FONT_SANS,
-          fontWeight: 500,
-          fontSize: '0.8125rem',
-          color: T.inkMid,
-          mb: 0.75,
-          letterSpacing: '-0.01em',
-        }}
-      >
+    <Box sx={{ mb: 1.5 }}>
+      <Typography sx={{
+        fontFamily: FONT_SANS, fontWeight: 500,
+        fontSize: '0.7rem', color: T.inkMid,
+        mb: 0.4, letterSpacing: '-0.005em',
+      }}>
         {label}
       </Typography>
-
-      {/* Input wrapper */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          background: disabled ? T.offwhite : T.white,
-          border: `1px solid ${T.border}`,
-          borderRadius: '10px',
-          overflow: 'hidden',
-          transition: 'all 0.15s ease',
-
-          '&:focus-within': {
-            borderColor: T.blueMid,
-            boxShadow: `0 0 0 3px ${T.blueGlow}`,
-          },
-        }}
-      >
-        {/* Prefix */}
+      <Box sx={{
+        display: 'flex', alignItems: 'stretch',
+        background: disabled ? T.bg : T.white,
+        border: `1px solid ${T.border}`,
+        borderRadius: '6px', overflow: 'hidden',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        '&:focus-within': {
+          borderColor: T.borderFocus,
+          boxShadow: `0 0 0 2px ${T.blueGlow}`,
+        },
+      }}>
         {prefix && (
-          <Box
-            sx={{
-              px: 1.75,
-              borderRight: `1px solid ${T.border}`,
-              background: T.offwhite,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: FONT_MONO,
-                fontSize: '0.75rem',
-                color: T.inkMuted,
-                fontWeight: 500,
-              }}
-            >
-              {prefix}
-            </Typography>
+          <Box sx={{ px: 1.25, background: T.bg, borderRight: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.7rem', color: T.inkMuted }}>{prefix}</Typography>
           </Box>
         )}
-
-        {/* Input field */}
         <Box
           component="input"
           type="number"
@@ -123,70 +66,22 @@ export function CalcInput({
           min={min}
           step={step}
           sx={{
-            flex: 1,
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            px: 1.75,
-            py: 1.3,
-            fontFamily: FONT_MONO,
-            fontSize: '0.9rem',
-            fontWeight: 500,
-            color: T.ink,
-            letterSpacing: '-0.01em',
-
-            '&::placeholder': {
-              color: T.inkFaint,
-            },
-
-            '&::-webkit-inner-spin-button, &::-webkit-outer-spin-button': {
-              opacity: 0.35,
-            },
-
-            '&:disabled': {
-              opacity: 0.5,
-              cursor: 'not-allowed',
-            },
+            flex: 1, border: 'none', outline: 'none', background: 'transparent',
+            px: 1.25, py: 0.875,
+            fontFamily: FONT_MONO, fontSize: '0.8125rem', fontWeight: 500, color: T.ink,
+            minWidth: 0,
+            '&::-webkit-inner-spin-button, &::-webkit-outer-spin-button': { opacity: 0.3 },
+            '&:disabled': { opacity: 0.45, cursor: 'not-allowed' },
           }}
         />
-
-        {/* Suffix */}
         {suffix && (
-          <Box
-            sx={{
-              px: 1.75,
-              borderLeft: `1px solid ${T.border}`,
-              background: T.offwhite,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: FONT_MONO,
-                fontSize: '0.75rem',
-                color: T.inkMuted,
-                fontWeight: 500,
-              }}
-            >
-              {suffix}
-            </Typography>
+          <Box sx={{ px: 1.25, background: T.bg, borderLeft: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.7rem', color: T.inkMuted }}>{suffix}</Typography>
           </Box>
         )}
       </Box>
-
-      {/* Helper text */}
       {helperText && (
-        <Typography
-          sx={{
-            fontFamily: FONT_SANS,
-            fontSize: '0.7rem',
-            color: T.inkFaint,
-            mt: 0.6,
-            letterSpacing: '0.01em',
-            lineHeight: 1.4,
-          }}
-        >
+        <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.625rem', color: T.inkFaint, mt: 0.35, lineHeight: 1.4 }}>
           {helperText}
         </Typography>
       )}

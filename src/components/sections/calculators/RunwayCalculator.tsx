@@ -1,49 +1,18 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Box, Grid, Typography } from '@mui/material';
-import {
-  AreaChart, Area, ComposedChart, Bar, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
-} from 'recharts';
-import { CalcLayout,FONT_MONO, FONT_SANS } from './CalcLayout';
+import { Box, Typography } from '@mui/material';
+import { AreaChart, Area, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from 'recharts';
+import { CalcLayout, FONT_MONO, FONT_SANS } from './CalcLayout';
 import { CalcInput } from './CalcInput';
 import { MetricCard } from './MetricCard';
 
-const T = {
-  /* surfaces */
-  white:     "#FFFFFF",
-  offwhite:  "#F9F8F5",
-  cream:     "#F0EDE6",
-  parchment: "#E8E4DA",
-
-  /* text */
-  ink:       "#0C0E12",
-  inkMid:    "#2E3440",
-  inkMuted:  "#64748B",
-  inkFaint:  "#94A3B8",
-  inkGhost:  "#CBD5E1",
-
-  /* borders */
-  border:    "#E2DED5",
-  borderMd:  "#C8C3B8",
-
-  /* Blue and light shades */
- 
-  blue:      "#3B82F6",             // main blue
-  blueMid:   "#60A5FA",             // lighter mid-tone
-  blueLight: "#93C5FD",             // soft/light blue
-  blueGlow:  "rgba(59,130,246,0.07)", // subtle glow effect
-  blueBdr:   "rgba(59,130,246,0.18)", // border/tint effect
-
-  /* neutral/cool accents for footer */
-  accents: [
-    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // soft blue
-    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
-    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // cool gray
-    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
-  ],
-};
+const ACCENT = '#1D4ED8';
+const RED    = '#DC2626';
+const BORDER = 'rgba(10,10,20,0.08)';
+const FAINT  = '#A0A0AE';
+const WHITE  = '#FFFFFF';
+const ax     = { fill: FAINT, fontSize: 9, fontFamily: FONT_MONO };
 
 function fmtINR(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
@@ -53,110 +22,98 @@ function compute(i: { cashBalance: number; monthlyRevenue: number; revenueGrowth
   const netBurn = i.monthlyBurn - i.monthlyRevenue;
   const runwayMonths = netBurn > 0 ? Math.floor(i.cashBalance / netBurn) : Infinity;
   const forecast: any[] = [];
-  let cash = i.cashBalance;
-  let exhaustedMonth: number | null = null;
+  let cash = i.cashBalance, exhausted: number | null = null;
   for (let m = 1; m <= 36; m++) {
-    const revenue = m === 1 ? i.monthlyRevenue : forecast[m-2].revenue * (1 + i.revenueGrowthRate/100);
-    const burn    = m === 1 ? i.monthlyBurn    : forecast[m-2].burn    * (1 + i.burnGrowthRate/100);
-    const net     = revenue - burn;
-    cash += net;
-    if (cash <= 0 && exhaustedMonth === null) exhaustedMonth = m;
-    forecast.push({ month: m, revenue: Math.round(revenue), burn: Math.round(burn), net: Math.round(net), cashBalance: Math.max(0, Math.round(cash)) });
+    const rev  = m === 1 ? i.monthlyRevenue : forecast[m-2].revenue * (1 + i.revenueGrowthRate/100);
+    const burn = m === 1 ? i.monthlyBurn    : forecast[m-2].burn    * (1 + i.burnGrowthRate/100);
+    cash += rev - burn;
+    if (cash <= 0 && exhausted === null) exhausted = m;
+    forecast.push({ month: m, revenue: Math.round(rev), burn: Math.round(burn), cashBalance: Math.max(0, Math.round(cash)) });
   }
-  return { netBurn: Math.round(netBurn), runwayMonths: isFinite(runwayMonths) ? runwayMonths : null, exhaustedMonth, forecast };
+  return { netBurn: Math.round(netBurn), runway: isFinite(runwayMonths) ? runwayMonths : null, exhausted, forecast };
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+function Tip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <Box sx={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: '12px', p: 2, boxShadow: '0 8px 32px rgba(12,14,18,0.1)', minWidth: 180 }}>
-      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.58rem', letterSpacing: '0.12em', color: T.inkFaint, mb: 1, textTransform: 'uppercase' }}>Month {label}</Typography>
+    <Box sx={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: '6px', p: 1.25, minWidth: 150, boxShadow: '0 4px 12px rgba(10,10,20,0.1)' }}>
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', color: FAINT, mb: 0.5, textTransform: 'uppercase' }}>M{label}</Typography>
       {payload.map((p: any) => (
-        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2.5, mb: 0.35 }}>
-          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.75rem', color: T.inkMuted }}>{p.name}</Typography>
-          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', fontWeight: 600, color: T.ink }}>{fmtINR(p.value)}</Typography>
+        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, mb: 0.2 }}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.65rem', color: '#5A6478' }}>{p.name}</Typography>
+          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.65rem', fontWeight: 600, color: '#0A0A0F' }}>{fmtINR(p.value)}</Typography>
         </Box>
       ))}
     </Box>
   );
 }
 
-function ChartLabel({ text }: { text: string }) {
-  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.62rem', letterSpacing: '0.12em', color: T.inkMuted, textTransform: 'uppercase', mb: 2 }}>{text}</Typography>;
+function CLabel({ text }: { text: string }) {
+  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.12em', color: FAINT, textTransform: 'uppercase', mb: 1 }}>{text}</Typography>;
 }
 
-const axisStyle = { fill: T.inkFaint, fontSize: 11, fontFamily: FONT_MONO };
-
 export function RunwayCalculator() {
-  const [inputs, setInputs] = useState({ cashBalance: 5000000, monthlyRevenue: 500000, revenueGrowthRate: 10, monthlyBurn: 800000, burnGrowthRate: 2 });
-  const set = (k: keyof typeof inputs) => (v: number) => setInputs(p => ({ ...p, [k]: v }));
-  const r = useMemo(() => compute(inputs), [inputs]);
-
-  const runwayDisplay = r.runwayMonths === null ? 'Cash positive' : `${r.runwayMonths} months`;
+  const [p, setP] = useState({ cashBalance: 5000000, monthlyRevenue: 500000, revenueGrowthRate: 10, monthlyBurn: 800000, burnGrowthRate: 2 });
+  const set = (k: keyof typeof p) => (v: number) => setP(x => ({ ...x, [k]: v }));
+  const r = useMemo(() => compute(p), [p]);
 
   return (
     <CalcLayout
       title="Runway Calculator"
-      description="See exactly how long your cash will last, when you reach zero, and how revenue growth vs burn rate affect your survival timeline."
-      accent={T.accents[0].line}
-      glyph="04"
+      description="How long your cash lasts at current burn rate."
+      accent={ACCENT} glyph="04"
       inputsPanel={
         <Box>
-          <CalcInput label="Current Cash Balance" value={inputs.cashBalance} onChange={set('cashBalance')} prefix="₹" step={100000} helperText="Total cash in bank right now" />
-          <CalcInput label="Monthly Revenue" value={inputs.monthlyRevenue} onChange={set('monthlyRevenue')} prefix="₹" step={10000} />
-          <CalcInput label="Revenue Growth Rate" value={inputs.revenueGrowthRate} onChange={set('revenueGrowthRate')} suffix="%" step={0.5} helperText="Monthly % growth in revenue" />
-          <CalcInput label="Monthly Burn (Total Costs)" value={inputs.monthlyBurn} onChange={set('monthlyBurn')} prefix="₹" step={10000} helperText="All monthly outflows incl. salaries" />
-          <CalcInput label="Burn Growth Rate" value={inputs.burnGrowthRate} onChange={set('burnGrowthRate')} suffix="%" step={0.5} helperText="Monthly % increase in costs" />
+          <CalcInput label="Current Cash Balance"  value={p.cashBalance}       onChange={set('cashBalance')}       prefix="₹" step={100000} helperText="Total cash in bank" />
+          <CalcInput label="Monthly Revenue"       value={p.monthlyRevenue}    onChange={set('monthlyRevenue')}    prefix="₹" step={10000} />
+          <CalcInput label="Revenue Growth / Mo"   value={p.revenueGrowthRate} onChange={set('revenueGrowthRate')} suffix="%" step={0.5} helperText="Monthly % revenue growth" />
+          <CalcInput label="Monthly Burn"          value={p.monthlyBurn}       onChange={set('monthlyBurn')}       prefix="₹" step={10000} helperText="All monthly outflows" />
+          <CalcInput label="Burn Growth / Mo"      value={p.burnGrowthRate}    onChange={set('burnGrowthRate')}    suffix="%" step={0.5} helperText="Monthly % increase in costs" />
         </Box>
       }
       resultsPanel={
-        <Grid container spacing={2}>
-          {[
-            { label: 'Runway',        value: runwayDisplay,            sub: 'months until cash zero',   highlight: true },
-            { label: 'Net Burn / Mo', value: fmtINR(r.netBurn),        sub: r.netBurn > 0 ? 'burning cash' : 'cash positive' },
-            { label: 'Cash Depleted', value: r.exhaustedMonth ? `Month ${r.exhaustedMonth}` : 'Never', sub: 'at current trajectory' },
-            { label: 'Starting Cash', value: fmtINR(inputs.cashBalance), sub: 'current balance' },
-          ].map((m, i) => (
-            <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
-              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={T.accents[0].line} highlight={m.highlight} index={i} />
-            </Grid>
-          ))}
-        </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)' }, gap: 1 }}>
+          <MetricCard label="Runway"        value={r.runway === null ? 'Cash +ve' : `${r.runway} mo`} accent={ACCENT} highlight index={0} />
+          <MetricCard label="Net Burn / Mo" value={fmtINR(r.netBurn)}  accent={ACCENT}          index={1} />
+          <MetricCard label="Cash Depleted" value={r.exhausted ? `Month ${r.exhausted}` : 'Never'}   accent={ACCENT}          index={2} />
+          <MetricCard label="Cash Balance"  value={fmtINR(p.cashBalance)} accent={ACCENT}          index={3} />
+        </Box>
       }
       chartsPanel={
-        <Box>
-          <ChartLabel text="Cash Balance Over Time" />
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={r.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={T.accents[0].line} stopOpacity={0.18} />
-                  <stop offset="95%" stopColor={T.accents[0].line} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <ReferenceLine y={0} stroke={T.borderMd} strokeDasharray="4 3" strokeWidth={1} />
-              {r.exhaustedMonth && (
-                <ReferenceLine x={r.exhaustedMonth} stroke="#DC2626" strokeDasharray="4 3" strokeWidth={1.5} label={{ value: `M${r.exhaustedMonth}`, fill: '#DC2626', fontSize: 10, fontFamily: FONT_MONO, fontWeight: 700 }} />
-              )}
-              <Area type="monotone" dataKey="cashBalance" name="Cash Balance" stroke={T.accents[0].line} strokeWidth={2} fill="url(#cashGrad)" dot={false} activeDot={{ r: 4, fill: T.accents[0].line, strokeWidth: 0 }} />
-            </AreaChart>
-          </ResponsiveContainer>
-
-          <Box sx={{ mt: 4, mb: 2 }}><ChartLabel text="Revenue vs Burn Rate" /></Box>
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={r.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Bar dataKey="revenue" name="Revenue" fill={T.accents[0].line + '44'} radius={[3,3,0,0]} barSize={8} />
-              <Line type="monotone" dataKey="burn" name="Burn" stroke="#DC2626" strokeWidth={1.5} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 2.5, md: 3 } }}>
+          <Box>
+            <CLabel text="Cash Balance Over Time" />
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={r.forecast} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="cashGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.1} />
+                    <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={ax} tickLine={false} axisLine={false} interval={5} />
+                <YAxis tickFormatter={v => v >= 1e6 ? `₹${(v/1e6).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={ax} tickLine={false} axisLine={false} width={54} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <ReferenceLine y={0} stroke={BORDER} strokeDasharray="3 3" />
+                {r.exhausted && <ReferenceLine x={r.exhausted} stroke={RED} strokeDasharray="3 3" strokeWidth={1.5} label={{ value: `M${r.exhausted}`, fill: RED, fontSize: 8, fontFamily: FONT_MONO }} />}
+                <Area type="monotone" dataKey="cashBalance" name="Cash" stroke={ACCENT} strokeWidth={1.5} fill="url(#cashGrad)" dot={false} activeDot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Box>
+          <Box>
+            <CLabel text="Revenue vs Burn" />
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={r.forecast} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={ax} tickLine={false} axisLine={false} interval={5} />
+                <YAxis tickFormatter={v => v >= 1e6 ? `₹${(v/1e6).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={ax} tickLine={false} axisLine={false} width={54} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <Bar dataKey="revenue" name="Revenue" fill={`${ACCENT}28`} radius={[2,2,0,0]} barSize={6} />
+                <Line type="monotone" dataKey="burn" name="Burn" stroke={RED} strokeWidth={1.5} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
         </Box>
       }
     />

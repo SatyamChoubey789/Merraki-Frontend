@@ -1,94 +1,21 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import {
   AreaChart, Area, ComposedChart, Bar, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine,
+  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import { CalcLayout, FONT_MONO, FONT_SANS } from './CalcLayout';
 import { CalcInput } from './CalcInput';
 import { MetricCard } from './MetricCard';
 
-// ------------------ COLORS (cool-only palette) ------------------
-const T = {
-  /* surfaces */
-  white:     "#FFFFFF",
-  offwhite:  "#F9F8F5",
-  cream:     "#F0EDE6",
-  parchment: "#E8E4DA",
-
-  /* text */
-  ink:       "#0C0E12",
-  inkMid:    "#2E3440",
-  inkMuted:  "#64748B",
-  inkFaint:  "#94A3B8",
-  inkGhost:  "#CBD5E1",
-
-  /* borders */
-  border:    "#E2DED5",
-  borderMd:  "#C8C3B8",
-
-  /* blue / cool shades */
-  blue:      "#3B82F6",
-  blueMid:   "#60A5FA",
-  blueLight: "#93C5FD",
-  blueGlow:  "rgba(59,130,246,0.07)",
-  blueBdr:   "rgba(59,130,246,0.18)",
-
-  /* cool accents for charts/footer */
-  accents: [
-    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // primary blue
-    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
-    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // gray
-    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
-  ],
-};
-
-// ------------------ CALCULATION LOGIC ------------------
-function computeBreakeven(inputs: {
-  sellingPrice: number; variableCost: number; monthlyFixedCosts: number;
-  startingUnits: number; monthlyGrowthRate: number; months: number;
-}) {
-  const { sellingPrice, variableCost, monthlyFixedCosts, startingUnits, monthlyGrowthRate, months } = inputs;
-  const contributionPerUnit = sellingPrice - variableCost;
-  const contributionMarginPct = sellingPrice > 0 ? (contributionPerUnit / sellingPrice) * 100 : 0;
-  const breakevenUnits = contributionPerUnit > 0 ? monthlyFixedCosts / contributionPerUnit : Infinity;
-  const breakevenRevenue = contributionMarginPct > 0 ? monthlyFixedCosts / (contributionMarginPct / 100) : Infinity;
-
-  const forecast: any[] = [];
-  let cumulative = 0;
-  let breakevenMonth: number | null = null;
-
-  for (let m = 1; m <= months; m++) {
-    const units = m === 1 ? startingUnits : forecast[m - 2].units * (1 + monthlyGrowthRate / 100);
-    const revenue = units * sellingPrice;
-    const varCost = units * variableCost;
-    const profit = revenue - varCost - monthlyFixedCosts;
-    cumulative += profit;
-    if (cumulative > 0 && breakevenMonth === null) breakevenMonth = m;
-
-    forecast.push({
-      month: m,
-      units: Math.round(units),
-      revenue: Math.round(revenue),
-      variableCost: Math.round(varCost),
-      fixedCost: monthlyFixedCosts,
-      profit: Math.round(profit),
-      cumulativeProfit: Math.round(cumulative),
-    });
-  }
-
-  return {
-    contributionPerUnit,
-    contributionMarginPct,
-    breakevenUnits: isFinite(breakevenUnits) ? Math.ceil(breakevenUnits) : null,
-    breakevenRevenue: isFinite(breakevenRevenue) ? Math.round(breakevenRevenue) : null,
-    breakevenMonth,
-    forecast,
-  };
-}
+const ACCENT = '#1D4ED8';
+const RED    = '#DC2626';
+const BORDER = 'rgba(10,10,20,0.08)';
+const FAINT  = '#A0A0AE';
+const WHITE  = '#FFFFFF';
+const ax     = { fill: FAINT, fontSize: 9, fontFamily: FONT_MONO };
 
 function fmtINR(n: number | null) {
   if (n === null || !isFinite(n)) return '∞';
@@ -96,119 +23,113 @@ function fmtINR(n: number | null) {
 }
 function fmtNum(n: number | null) { return n === null ? '∞' : n.toLocaleString('en-IN'); }
 
-// ------------------ CHART TOOLTIP ------------------
-function ChartTooltip({ active, payload, label }: any) {
+function compute(p: { sellingPrice: number; variableCost: number; monthlyFixedCosts: number; startingUnits: number; monthlyGrowthRate: number; months: number }) {
+  const contrib = p.sellingPrice - p.variableCost;
+  const cm      = p.sellingPrice > 0 ? (contrib / p.sellingPrice) * 100 : 0;
+  const beu     = contrib > 0 ? Math.ceil(p.monthlyFixedCosts / contrib) : null;
+  const ber     = cm > 0 ? Math.round(p.monthlyFixedCosts / (cm / 100)) : null;
+  const forecast: any[] = [];
+  let cum = 0, bem: number | null = null;
+  for (let m = 1; m <= p.months; m++) {
+    const units   = m === 1 ? p.startingUnits : forecast[m-2].units * (1 + p.monthlyGrowthRate / 100);
+    const rev     = units * p.sellingPrice;
+    const profit  = rev - units * p.variableCost - p.monthlyFixedCosts;
+    cum += profit;
+    if (cum > 0 && bem === null) bem = m;
+    forecast.push({ month: m, units: Math.round(units), revenue: Math.round(rev), fixedCost: p.monthlyFixedCosts, cumulativeProfit: Math.round(cum) });
+  }
+  return { contrib, cm, beu, ber, bem, forecast };
+}
+
+function Tip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <Box sx={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: '12px', p: 2, minWidth: 190, boxShadow: '0 8px 32px rgba(12,14,18,0.1)' }}>
-      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.58rem', letterSpacing: '0.12em', color: T.inkFaint, mb: 1, textTransform: 'uppercase' }}>
-        Month {label}
-      </Typography>
+    <Box sx={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: '6px', p: 1.25, minWidth: 140, boxShadow: '0 4px 12px rgba(10,10,20,0.1)' }}>
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.1em', color: FAINT, mb: 0.5, textTransform: 'uppercase' }}>M{label}</Typography>
       {payload.map((p: any) => (
-        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2.5, mb: 0.4 }}>
-          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.75rem', color: T.inkMuted }}>{p.name}</Typography>
-          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', fontWeight: 600, color: T.ink }}>
-            {typeof p.value === 'number' ? (p.value < 0 ? `-${fmtINR(Math.abs(p.value))}` : fmtINR(p.value)) : p.value}
-          </Typography>
+        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, mb: 0.2 }}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.65rem', color: '#5A6478' }}>{p.name}</Typography>
+          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.65rem', fontWeight: 600, color: '#0A0A0F' }}>{fmtINR(p.value)}</Typography>
         </Box>
       ))}
     </Box>
   );
 }
 
-function ChartLabel({ text }: { text: string }) {
-  return (
-    <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.62rem', letterSpacing: '0.12em', color: T.inkMuted, textTransform: 'uppercase', mb: 2 }}>
-      {text}
-    </Typography>
-  );
+function CLabel({ text }: { text: string }) {
+  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.12em', color: FAINT, textTransform: 'uppercase', mb: 1 }}>{text}</Typography>;
 }
 
-// ------------------ MAIN COMPONENT ------------------
 export function BreakevenCalculator() {
-  const [inputs, setInputs] = useState({
-    sellingPrice: 1000, variableCost: 600, monthlyFixedCosts: 1000000,
-    startingUnits: 1000, monthlyGrowthRate: 20, months: 24,
-  });
-  const set = (key: keyof typeof inputs) => (v: number) => setInputs(p => ({ ...p, [key]: v }));
-  const result = useMemo(() => computeBreakeven(inputs), [inputs]);
-  const invalid = inputs.sellingPrice <= inputs.variableCost;
-  const axisStyle = { fill: T.inkFaint, fontSize: 11, fontFamily: FONT_MONO };
+  const [p, setP] = useState({ sellingPrice: 1000, variableCost: 600, monthlyFixedCosts: 1000000, startingUnits: 1000, monthlyGrowthRate: 20, months: 24 });
+  const set = (k: keyof typeof p) => (v: number) => setP(x => ({ ...x, [k]: v }));
+  const r = useMemo(() => compute(p), [p]);
+  const invalid = p.sellingPrice <= p.variableCost;
+  const interval = Math.max(1, Math.floor(p.months / 6));
 
   return (
     <CalcLayout
       title="Break-Even Calculator"
-      description="Find exactly how many units you need to sell, what revenue covers your costs, and in which month you turn profitable — with a full 24-month forecast."
-      accent={T.accents[0].line}
-      glyph="01"
+      description="Units, revenue & month you turn profitable."
+      accent={ACCENT} glyph="01"
       inputsPanel={
         <Box>
-          <CalcInput label="Selling Price per Unit" value={inputs.sellingPrice} onChange={set('sellingPrice')} prefix="₹" step={100} />
-          <CalcInput label="Variable Cost per Unit" value={inputs.variableCost} onChange={set('variableCost')} prefix="₹" step={100} />
-          <CalcInput label="Monthly Fixed Costs" value={inputs.monthlyFixedCosts} onChange={set('monthlyFixedCosts')} prefix="₹" step={10000} helperText="Rent, salaries, subscriptions, etc." />
-          <CalcInput label="Starting Monthly Units Sold" value={inputs.startingUnits} onChange={set('startingUnits')} step={10} />
-          <CalcInput label="Monthly Growth Rate" value={inputs.monthlyGrowthRate} onChange={set('monthlyGrowthRate')} suffix="%" step={0.5} helperText="How fast your unit sales grow each month" />
-          <CalcInput label="Forecast Months" value={inputs.months} onChange={set('months')} min={3} step={1} />
+          <CalcInput label="Selling Price / Unit"  value={p.sellingPrice}       onChange={set('sellingPrice')}       prefix="₹" step={100} />
+          <CalcInput label="Variable Cost / Unit"  value={p.variableCost}       onChange={set('variableCost')}       prefix="₹" step={100} />
+          <CalcInput label="Monthly Fixed Costs"   value={p.monthlyFixedCosts}  onChange={set('monthlyFixedCosts')}  prefix="₹" step={10000} helperText="Rent, salaries, subscriptions" />
+          <CalcInput label="Starting Units / Month"value={p.startingUnits}      onChange={set('startingUnits')}      step={10} />
+          <CalcInput label="Monthly Growth Rate"   value={p.monthlyGrowthRate}  onChange={set('monthlyGrowthRate')}  suffix="%" step={0.5} helperText="Unit sales growth per month" />
+          <CalcInput label="Forecast Months"       value={p.months}             onChange={set('months')}             min={3} step={1} />
           {invalid && (
-            <Box sx={{ mt: 1, p: 2, borderRadius: '9px', background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
-              <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.8rem', color: '#DC2626' }}>
-                Selling price must exceed variable cost per unit.
-              </Typography>
+            <Box sx={{ mt: 0.5, p: 1.25, borderRadius: '5px', background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
+              <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.7rem', color: RED }}>Selling price must exceed variable cost.</Typography>
             </Box>
           )}
         </Box>
       }
       resultsPanel={
-        <Grid container spacing={2}>
-          {[
-            { label: 'Breakeven Month', value: result.breakevenMonth ? `Month ${result.breakevenMonth}` : 'Not reached', sub: 'first profitable month', highlight: true },
-            { label: 'Breakeven Units', value: fmtNum(result.breakevenUnits), sub: 'units per month' },
-            { label: 'Breakeven Revenue', value: fmtINR(result.breakevenRevenue), sub: 'monthly revenue needed' },
-            { label: 'Contribution Margin', value: `${result.contributionMarginPct.toFixed(1)}%`, sub: `₹${result.contributionPerUnit.toLocaleString()} per unit` },
-          ].map((m, i) => (
-            <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
-              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={T.accents[0].line} highlight={m.highlight} index={i} />
-            </Grid>
-          ))}
-        </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)' }, gap: 1 }}>
+          <MetricCard label="Breakeven Month"   value={r.bem ? `Month ${r.bem}` : '—'} accent={ACCENT} highlight index={0} />
+          <MetricCard label="Breakeven Units"   value={fmtNum(r.beu)}                  accent={ACCENT}          index={1} />
+          <MetricCard label="Breakeven Revenue" value={fmtINR(r.ber)}                  accent={ACCENT}          index={2} />
+          <MetricCard label="Contribution"      value={`${r.cm.toFixed(1)}%`}          accent={ACCENT} index={3} />
+        </Box>
       }
       chartsPanel={
-        <Box>
-          {/* Cumulative Profit Chart */}
-          <ChartLabel text="Cumulative Profit / Loss Over Time" />
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={result.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="beProfGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={T.accents[0].line} stopOpacity={0.15} />
-                  <stop offset="95%" stopColor={T.accents[0].line} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}`} tick={axisStyle} tickLine={false} axisLine={false} width={68} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <ReferenceLine y={0} stroke={T.borderMd} strokeDasharray="4 3" strokeWidth={1} />
-              {result.breakevenMonth && (
-                <ReferenceLine x={result.breakevenMonth} stroke={T.accents[0].line} strokeDasharray="4 3" strokeWidth={1.5} label={{ value: `M${result.breakevenMonth}`, fill: T.accents[0].line, fontSize: 10, fontFamily: FONT_MONO, fontWeight: 700 }} />
-              )}
-              <Area type="monotone" dataKey="cumulativeProfit" name="Cumulative Profit" stroke={T.accents[0].line} strokeWidth={2} fill="url(#beProfGrad)" dot={false} activeDot={{ r: 4, fill: T.accents[0].line, strokeWidth: 0 }} />
-            </AreaChart>
-          </ResponsiveContainer>
-
-          {/* Revenue vs Costs Chart */}
-          <Box sx={{ mt: 4, mb: 2 }}><ChartLabel text="Monthly Revenue vs Costs" /></Box>
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={result.forecast} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={68} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Legend wrapperStyle={{ fontFamily: FONT_SANS, fontSize: '0.75rem', paddingTop: 12, color: T.inkMuted }} />
-              <Bar dataKey="revenue" name="Revenue" fill={T.accents[0].line + '44'} radius={[3,3,0,0]} barSize={10} />
-              <Line type="monotone" dataKey="fixedCost" name="Fixed Costs" stroke="#DC2626" strokeWidth={1.5} dot={false} strokeDasharray="5 3" />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 2.5, md: 3 } }}>
+          <Box>
+            <CLabel text="Cumulative Profit / Loss" />
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={r.forecast} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="beGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={ACCENT} stopOpacity={0.1} />
+                    <stop offset="95%" stopColor={ACCENT} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={ax} tickLine={false} axisLine={false} interval={interval} />
+                <YAxis tickFormatter={v => v >= 1e6 ? `₹${(v/1e6).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={ax} tickLine={false} axisLine={false} width={54} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <ReferenceLine y={0} stroke={BORDER} strokeDasharray="3 3" />
+                {r.bem && <ReferenceLine x={r.bem} stroke={ACCENT} strokeDasharray="3 3" strokeWidth={1.5} label={{ value: `M${r.bem}`, fill: ACCENT, fontSize: 8, fontFamily: FONT_MONO }} />}
+                <Area type="monotone" dataKey="cumulativeProfit" name="Cum. Profit" stroke={ACCENT} strokeWidth={1.5} fill="url(#beGrad)" dot={false} activeDot={{ r: 3, fill: ACCENT, strokeWidth: 0 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Box>
+          <Box>
+            <CLabel text="Revenue vs Fixed Costs" />
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={r.forecast} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="month" tickFormatter={v => `M${v}`} tick={ax} tickLine={false} axisLine={false} interval={interval} />
+                <YAxis tickFormatter={v => v >= 1e6 ? `₹${(v/1e6).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={ax} tickLine={false} axisLine={false} width={54} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <Bar dataKey="revenue" name="Revenue" fill={`${ACCENT}28`} radius={[2,2,0,0]} barSize={6} />
+                <Line type="monotone" dataKey="fixedCost" name="Fixed Costs" stroke={RED} strokeWidth={1.5} dot={false} strokeDasharray="4 3" />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
         </Box>
       }
     />

@@ -1,305 +1,191 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Box, Container, Typography } from "@mui/material";
+import { useState, useRef, useCallback } from "react";
+import { Box, Typography } from "@mui/material";
 import {
   ShowChart as BreakevenIcon,
   Rocket as ValuationIcon,
   PieChart as MarginIcon,
   Speed as RunwayIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
-import {
-  motion,
-  AnimatePresence,
-  useScroll,
-  useTransform,
-  useSpring,
-  Variants,
-} from "framer-motion";
-import { BreakevenCalculator } from "./BreakevenCalculator";
-import { ValuationCalculator } from "./ValuationCalculator";
+import { motion, AnimatePresence, Variants } from "framer-motion";
+import { BreakevenCalculator }    from "./BreakevenCalculator";
+import { ValuationCalculator }    from "./ValuationCalculator";
 import { ProfitMarginCalculator } from "./ProfitMarginCalculator";
-import { RunwayCalculator } from "./RunwayCalculator";
-
-/* ------------------------------------------------------------------ */
-/* BLUISH-WHITE LIGHT MODE THEME */
-/* ------------------------------------------------------------------ */
+import { RunwayCalculator }       from "./RunwayCalculator";
 
 const T = {
-  /* surfaces */
-  white: "#FFFFFF",
-  offwhite: "#F6F9FF",
-  cream: "#EEF4FF",
-  parchment: "#E6EEFF",
-
-  /* text */
-  ink: "#0B1220",
-  inkMid: "#1E293B",
-  inkMuted: "#475569",
-  inkFaint: "#94A3B8",
-  inkGhost: "#CBD5E1",
-
-  /* borders */
-  border: "#E2E8F0",
-  borderMd: "#CBD5E1",
-
-  /* primary blue system */
-  blue: "#2563EB",
-  blueMid: "#3B82F6",
-  blueLight: "#93C5FD",
-  blueGlow: "rgba(37,99,235,0.08)",
-  blueBdr: "rgba(37,99,235,0.18)",
-
-  /* tab accents */
-  accents: [
-    { line: "#2563EB", glow: "rgba(37,99,235,0.06)" },
-    { line: "#3B82F6", glow: "rgba(59,130,246,0.06)" },
-    { line: "#0EA5E9", glow: "rgba(14,165,233,0.06)" },
-    { line: "#6366F1", glow: "rgba(99,102,241,0.06)" },
-  ],
+  white:   '#FFFFFF',
+  bg:      '#F7F8FA',
+  ink:     '#0A0A0F',
+  inkMuted:'#5A6478',
+  inkFaint:'#A0A0AE',
+  border:  'rgba(10,10,20,0.08)',
+  blue:    '#1D4ED8',
+  blueBdr: 'rgba(29,78,216,0.18)',
 };
 
-const FONT_SERIF = '"Instrument Serif", "Playfair Display", Georgia, serif';
-const FONT_SANS = '"DM Sans", "Mona Sans", system-ui, sans-serif';
-const FONT_MONO = '"DM Mono", "JetBrains Mono", ui-monospace, monospace';
-const EASE_EXPO = [0.16, 1, 0.3, 1] as const;
-
-/* ------------------------------------------------------------------ */
+const FONT_SANS = '"DM Sans", system-ui, sans-serif';
+const FONT_MONO = '"DM Mono", ui-monospace, monospace';
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 const TABS = [
-  { label: "Breakeven", icon: <BreakevenIcon />, sub: "Units · Revenue · Month", glyph: "01" },
-  { label: "Valuation", icon: <ValuationIcon />, sub: "5-yr forecast · Present value", glyph: "02" },
-  { label: "Profit Margin", icon: <MarginIcon />, sub: "Gross · Operating · Net", glyph: "03" },
-  { label: "Runway", icon: <RunwayIcon />, sub: "Cash burn · Months left", glyph: "04" },
+  { label: "Breakeven",  short: "B/E",    icon: <BreakevenIcon sx={{ fontSize: '0.9rem' }} /> },
+  { label: "Valuation",  short: "Val",    icon: <ValuationIcon sx={{ fontSize: '0.9rem' }} /> },
+  { label: "Margins",    short: "Margin", icon: <MarginIcon    sx={{ fontSize: '0.9rem' }} /> },
+  { label: "Runway",     short: "Run",    icon: <RunwayIcon    sx={{ fontSize: '0.9rem' }} /> },
 ];
 
 const panelVariants: Variants = {
-  enter: { opacity: 0, y: 24, filter: "blur(5px)" },
-  center: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.48, ease: EASE_EXPO } },
-  exit: { opacity: 0, y: -14, filter: "blur(3px)", transition: { duration: 0.22, ease: "easeIn" } },
+  enter:  { opacity: 0, y: 8 },
+  center: { opacity: 1, y: 0, transition: { duration: 0.25, ease: EASE } },
+  exit:   { opacity: 0,       transition: { duration: 0.12 } },
 };
-
-/* ------------------------------------------------------------------ */
-
-function Stat({ value, label, first }: { value: string; label: string; first?: boolean }) {
-  return (
-    <Box sx={{ pl: first ? 0 : 3, pr: 3, borderLeft: first ? "none" : `1px solid ${T.border}` }}>
-      <Typography
-        sx={{
-          fontFamily: FONT_MONO,
-          fontSize: "1.1rem",
-          fontWeight: 600,
-          color: T.ink,
-          lineHeight: 1,
-          mb: 0.4,
-        }}
-      >
-        {value}
-      </Typography>
-      <Typography
-        sx={{
-          fontFamily: FONT_MONO,
-          fontSize: "0.52rem",
-          letterSpacing: "0.14em",
-          color: T.inkFaint,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Typography>
-    </Box>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-
-function TabBtn({ tab, index, active, onClick }: any) {
-  const accent = T.accents[index];
-
-  return (
-    <Box
-      component="button"
-      onClick={onClick}
-      sx={{
-        px: 3,
-        pt: 2,
-        pb: 2.25,
-        minWidth: 150,
-        background: active ? "#FFFFFF" : "transparent",
-        border: "1px solid",
-        borderColor: active ? T.blueBdr : "transparent",
-        borderBottom: active ? `1px solid #FFFFFF` : "1px solid transparent",
-        borderRadius: "12px 12px 0 0",
-        cursor: "pointer",
-        transition: "all 0.2s",
-        "&:hover": {
-          background: active ? "#FFFFFF" : T.offwhite,
-          borderColor: T.blueBdr,
-        },
-      }}
-    >
-      <Typography
-        sx={{
-          fontFamily: FONT_MONO,
-          fontSize: "0.47rem",
-          letterSpacing: "0.18em",
-          color: active ? accent.line : T.inkGhost,
-          mb: 0.9,
-        }}
-      >
-        {tab.glyph}
-      </Typography>
-
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Box sx={{ color: active ? accent.line : T.inkGhost }}>
-          {tab.icon}
-        </Box>
-        <Typography
-          sx={{
-            fontFamily: FONT_SANS,
-            fontWeight: active ? 600 : 500,
-            fontSize: "0.9rem",
-            color: active ? T.ink : T.inkMuted,
-          }}
-        >
-          {tab.label}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 
 export function CalculatorsPageClient() {
   const [activeTab, setActiveTab] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
-  const { scrollYProgress } = useScroll({ target: headerRef, offset: ["start start", "end start"] });
-  const rawY = useTransform(scrollYProgress, [0, 1], [0, 40]);
-  const rawO = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
-  const sY = useSpring(rawY, { stiffness: 80, damping: 22 });
-  const sO = useSpring(rawO, { stiffness: 80, damping: 22 });
-
-  const accent = T.accents[activeTab];
+  const handleDownload = useCallback(async () => {
+    if (typeof window === "undefined" || !panelRef.current) return;
+    const html2pdf = (await import("html2pdf.js" as any)).default;
+    html2pdf()
+      .set({
+        margin: 6,
+        filename: `${TABS[activeTab].label.toLowerCase()}-calculator.pdf`,
+        image: { type: "jpeg", quality: 0.96 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+      })
+      .from(panelRef.current)
+      .save();
+  }, [activeTab]);
 
   return (
-    <Box sx={{ minHeight: "100vh", background: T.offwhite }}>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      // Desktop: full viewport height; mobile: natural height
+      height: { md: '100vh' },
+      minHeight: { xs: 'auto', md: '100vh' },
+      background: T.bg,
+      fontFamily: FONT_SANS,
+      overflow: 'hidden',
+      '@media (max-width:899px)': { overflow: 'visible', height: 'auto' },
+    }}>
 
-      {/* HEADER */}
-      <Box
-        ref={headerRef}
-        sx={{
-          background: T.white,
-          borderBottom: `1px solid ${T.border}`,
-          pt: 16,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
+      {/* ── Nav ── */}
+      <Box sx={{
+        flexShrink: 0,
+        background: T.white,
+        borderBottom: `1px solid ${T.border}`,
+        px: { xs: 1.5, md: 3 },
+        height: { xs: 48, md: 50 },
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+      }}>
+        {/* Tabs */}
+        <Box sx={{ display: 'flex', gap: { xs: 0.25, md: 0.5 }, overflowX: 'auto',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}>
+          {TABS.map((tab, i) => (
+            <Box
+              key={tab.label}
+              component="button"
+              onClick={() => setActiveTab(i)}
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 0.625,
+                px: { xs: 1.25, md: 1.75 }, py: 0.875,
+                borderRadius: '6px',
+                border: `1px solid ${i === activeTab ? T.blueBdr : 'transparent'}`,
+                background: i === activeTab ? `${T.blue}08` : 'transparent',
+                cursor: 'pointer', outline: 'none', flexShrink: 0,
+                transition: 'all 0.15s',
+                '&:hover': { background: i === activeTab ? `${T.blue}08` : 'rgba(10,10,20,0.04)' },
+              }}
+            >
+              <Box sx={{ color: i === activeTab ? T.blue : T.inkFaint, display: 'flex' }}>
+                {tab.icon}
+              </Box>
+              {/* Full label on md+, short on xs */}
+              <Typography sx={{
+                fontFamily: FONT_SANS, fontWeight: i === activeTab ? 600 : 500,
+                fontSize: '0.8rem',
+                color: i === activeTab ? T.ink : T.inkMuted,
+                letterSpacing: '-0.01em',
+                display: { xs: 'none', sm: 'block' },
+              }}>
+                {tab.label}
+              </Typography>
+              <Typography sx={{
+                fontFamily: FONT_SANS, fontWeight: i === activeTab ? 600 : 500,
+                fontSize: '0.75rem',
+                color: i === activeTab ? T.ink : T.inkMuted,
+                display: { xs: 'block', sm: 'none' },
+              }}>
+                {tab.short}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
 
-        {/* Top blue glow */}
+        {/* PDF */}
         <Box
+          component="button"
+          onClick={handleDownload}
           sx={{
-            position: "absolute",
-            width: "70vw",
-            height: "46vw",
-            top: "-26vw",
-            left: "15vw",
-            borderRadius: "50%",
-            background:
-              "radial-gradient(ellipse at top, rgba(59,130,246,0.10) 0%, transparent 70%)",
+            display: 'flex', alignItems: 'center', gap: 0.625,
+            px: { xs: 1.25, md: 1.5 }, py: 0.875,
+            borderRadius: '6px',
+            border: `1px solid ${T.blueBdr}`,
+            background: `${T.blue}07`,
+            cursor: 'pointer', outline: 'none', flexShrink: 0,
+            transition: 'all 0.15s',
+            '&:hover': { background: `${T.blue}12` },
           }}
-        />
-
-        <Container maxWidth="xl" sx={{ position: "relative", zIndex: 1 }}>
-          <motion.div style={{ y: sY, opacity: sO }}>
-            <Typography
-              sx={{
-                fontFamily: FONT_SERIF,
-                fontStyle: "italic",
-                fontSize: { xs: "3rem", md: "6rem" },
-                lineHeight: 0.95,
-                color: T.ink,
-              }}
-            >
-              Calculators built
-            </Typography>
-
-            <Typography
-              sx={{
-                fontFamily: FONT_SERIF,
-                fontStyle: "italic",
-                fontSize: { xs: "3rem", md: "6rem" },
-                lineHeight: 0.95,
-                background: `linear-gradient(115deg, ${T.blueLight}, ${T.blue})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              for real founders.
-            </Typography>
-          </motion.div>
-
-          {/* Tabs */}
-          <Box sx={{ display: "flex", gap: 1, mt: 6 }}>
-            {TABS.map((tab, i) => (
-              <TabBtn
-                key={tab.label}
-                tab={tab}
-                index={i}
-                active={activeTab === i}
-                onClick={() => setActiveTab(i)}
-              />
-            ))}
-          </Box>
-        </Container>
+        >
+          <DownloadIcon sx={{ fontSize: '0.85rem', color: T.blue }} />
+          <Typography sx={{
+            fontFamily: FONT_SANS, fontWeight: 600,
+            fontSize: '0.75rem', color: T.blue,
+            display: { xs: 'none', sm: 'block' },
+          }}>
+            PDF
+          </Typography>
+        </Box>
       </Box>
 
-      {/* PANEL */}
+      {/* ── Panel ── */}
       <Box
+        ref={panelRef}
         sx={{
-          background: T.white,
-          borderTop: `1px solid ${T.border}`,
-          position: "relative",
+          flex: 1, overflow: 'hidden', position: 'relative',
+          '@media (max-width:899px)': { overflow: 'visible' },
         }}
       >
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: accent.glow,
-          }}
-        />
-
         <AnimatePresence mode="wait">
-          <motion.div key={activeTab} variants={panelVariants} initial="enter" animate="center" exit="exit">
-            {activeTab === 0 && <BreakevenCalculator />}
-            {activeTab === 1 && <ValuationCalculator />}
-            {activeTab === 2 && <ProfitMarginCalculator />}
-            {activeTab === 3 && <RunwayCalculator />}
+          <motion.div
+            key={activeTab}
+            variants={panelVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            style={{ height: '100%' }}
+          >
+            <Box sx={{
+              height: '100%',
+              '@media (max-width:899px)': { height: 'auto' },
+            }}>
+              {activeTab === 0 && <BreakevenCalculator    />}
+              {activeTab === 1 && <ValuationCalculator    />}
+              {activeTab === 2 && <ProfitMarginCalculator />}
+              {activeTab === 3 && <RunwayCalculator       />}
+            </Box>
           </motion.div>
         </AnimatePresence>
-      </Box>
-
-      {/* FOOTER */}
-      <Box
-        sx={{
-          background: T.offwhite,
-          borderTop: `1px solid ${T.border}`,
-          py: 2,
-          px: 4,
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <Typography sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", color: T.inkFaint }}>
-          Built from the same models our experts use
-        </Typography>
-
-        <Typography sx={{ fontFamily: FONT_MONO, fontSize: "0.6rem", color: T.inkFaint }}>
-          All systems operational
-        </Typography>
       </Box>
     </Box>
   );

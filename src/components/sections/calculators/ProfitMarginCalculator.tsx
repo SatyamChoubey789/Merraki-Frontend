@@ -1,92 +1,61 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Box, Grid } from '@mui/material';
-import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer, AreaChart, Area,
-} from 'recharts';
-import { CalcLayout,FONT_MONO, FONT_SANS } from './CalcLayout';
+import { Box, Typography } from '@mui/material';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { CalcLayout, FONT_MONO, FONT_SANS } from './CalcLayout';
 import { CalcInput } from './CalcInput';
 import { MetricCard } from './MetricCard';
-import { Typography } from '@mui/material';
 
-const T = {
-  /* surfaces */
-  white:     "#FFFFFF",
-  offwhite:  "#F9F8F5",
-  cream:     "#F0EDE6",
-  parchment: "#E8E4DA",
-
-  /* text */
-  ink:       "#0C0E12",
-  inkMid:    "#2E3440",
-  inkMuted:  "#64748B",
-  inkFaint:  "#94A3B8",
-  inkGhost:  "#CBD5E1",
-
-  /* borders */
-  border:    "#E2DED5",
-  borderMd:  "#C8C3B8",
-
-  /* Blue and light shades */
- 
-  blue:      "#3B82F6",             // main blue
-  blueMid:   "#60A5FA",             // lighter mid-tone
-  blueLight: "#93C5FD",             // soft/light blue
-  blueGlow:  "rgba(59,130,246,0.07)", // subtle glow effect
-  blueBdr:   "rgba(59,130,246,0.18)", // border/tint effect
-
-  /* neutral/cool accents for footer */
-  accents: [
-    { line: "#3B82F6", glow: "rgba(59,130,246,0.055)" }, // soft blue
-    { line: "#10B981", glow: "rgba(16,185,129,0.055)" }, // teal
-    { line: "#64748B", glow: "rgba(100,116,139,0.055)" }, // cool gray
-    { line: "#94A3B8", glow: "rgba(148,163,184,0.055)" }, // light gray-blue
-  ],
-};
+const ACCENT = '#1D4ED8';
+const BORDER = 'rgba(10,10,20,0.08)';
+const FAINT  = '#A0A0AE';
+const WHITE  = '#FFFFFF';
+const ax     = { fill: FAINT, fontSize: 9, fontFamily: FONT_MONO };
 
 function fmtINR(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 }
 
 function compute(i: { revenue: number; cogs: number; operatingExpenses: number; interest: number; tax: number }) {
-  const grossProfit    = i.revenue - i.cogs;
-  const grossMargin    = i.revenue > 0 ? (grossProfit / i.revenue) * 100 : 0;
-  const operatingProfit = grossProfit - i.operatingExpenses;
-  const operatingMargin = i.revenue > 0 ? (operatingProfit / i.revenue) * 100 : 0;
-  const ebt            = operatingProfit - i.interest;
-  const taxAmount      = ebt > 0 ? (ebt * i.tax) / 100 : 0;
-  const netProfit      = ebt - taxAmount;
-  const netMargin      = i.revenue > 0 ? (netProfit / i.revenue) * 100 : 0;
-  const waterfall = [
-    { name: 'Revenue',    value: i.revenue,           type: 'total' },
-    { name: 'COGS',       value: -i.cogs,             type: 'cost'  },
-    { name: 'Gross',      value: grossProfit,          type: 'sub'   },
-    { name: 'OpEx',       value: -i.operatingExpenses, type: 'cost'  },
-    { name: 'EBIT',       value: operatingProfit,      type: 'sub'   },
-    { name: 'Interest',   value: -i.interest,          type: 'cost'  },
-    { name: 'Tax',        value: -taxAmount,           type: 'cost'  },
-    { name: 'Net Profit', value: netProfit,            type: 'final' },
-  ];
-  const margins = [
-    { name: 'Gross',     margin: parseFloat(grossMargin.toFixed(1)) },
-    { name: 'Operating', margin: parseFloat(operatingMargin.toFixed(1)) },
-    { name: 'Net',       margin: parseFloat(netMargin.toFixed(1)) },
-  ];
-  return { grossProfit, grossMargin, operatingProfit, operatingMargin, netProfit, netMargin, taxAmount, waterfall, margins };
+  const gross   = i.revenue - i.cogs;
+  const gm      = i.revenue > 0 ? (gross / i.revenue) * 100 : 0;
+  const opProfit= gross - i.operatingExpenses;
+  const om      = i.revenue > 0 ? (opProfit / i.revenue) * 100 : 0;
+  const ebt     = opProfit - i.interest;
+  const taxAmt  = ebt > 0 ? (ebt * i.tax) / 100 : 0;
+  const net     = ebt - taxAmt;
+  const nm      = i.revenue > 0 ? (net / i.revenue) * 100 : 0;
+  return {
+    gross, gm, opProfit, om, net, nm, taxAmt,
+    waterfall: [
+      { name: 'Revenue',  value: i.revenue },
+      { name: 'COGS',     value: -i.cogs },
+      { name: 'Gross',    value: gross },
+      { name: 'OpEx',     value: -i.operatingExpenses },
+      { name: 'EBIT',     value: opProfit },
+      { name: 'Interest', value: -i.interest },
+      { name: 'Tax',      value: -taxAmt },
+      { name: 'Net',      value: net },
+    ],
+    margins: [
+      { name: 'Gross',     margin: parseFloat(gm.toFixed(1)) },
+      { name: 'Operating', margin: parseFloat(om.toFixed(1)) },
+      { name: 'Net',       margin: parseFloat(nm.toFixed(1)) },
+    ],
+  };
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+function Tip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <Box sx={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: '12px', p: 2, boxShadow: '0 8px 32px rgba(12,14,18,0.1)', minWidth: 160 }}>
-      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.58rem', letterSpacing: '0.12em', color: T.inkFaint, mb: 1, textTransform: 'uppercase' }}>{label}</Typography>
+    <Box sx={{ background: WHITE, border: `1px solid ${BORDER}`, borderRadius: '6px', p: 1.25, minWidth: 130, boxShadow: '0 4px 12px rgba(10,10,20,0.1)' }}>
+      <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', color: FAINT, mb: 0.5, textTransform: 'uppercase' }}>{label}</Typography>
       {payload.map((p: any) => (
-        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 0.35 }}>
-          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.75rem', color: T.inkMuted }}>{p.name}</Typography>
-          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.75rem', fontWeight: 600, color: p.value >= 0 ? T.ink : '#DC2626' }}>
-            {typeof p.value === 'number' ? (p.name?.includes('%') || p.name?.includes('Margin') ? `${p.value}%` : fmtINR(Math.abs(p.value))) : p.value}
+        <Box key={p.dataKey} sx={{ display: 'flex', justifyContent: 'space-between', gap: 1.5, mb: 0.2 }}>
+          <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.65rem', color: '#5A6478' }}>{p.name}</Typography>
+          <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.65rem', fontWeight: 600, color: p.value < 0 ? '#DC2626' : '#0A0A0F' }}>
+            {p.name?.includes('Margin') || p.name?.includes('%') ? `${p.value}%` : fmtINR(Math.abs(p.value))}
           </Typography>
         </Box>
       ))}
@@ -94,73 +63,64 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-function ChartLabel({ text }: { text: string }) {
-  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.62rem', letterSpacing: '0.12em', color: T.inkMuted, textTransform: 'uppercase', mb: 2 }}>{text}</Typography>;
+function CLabel({ text }: { text: string }) {
+  return <Typography sx={{ fontFamily: FONT_MONO, fontSize: '0.46rem', letterSpacing: '0.12em', color: FAINT, textTransform: 'uppercase', mb: 1 }}>{text}</Typography>;
 }
 
-const axisStyle = { fill: T.inkFaint, fontSize: 11, fontFamily: FONT_MONO };
-
 export function ProfitMarginCalculator() {
-  const [inputs, setInputs] = useState({ revenue: 5000000, cogs: 2000000, operatingExpenses: 1000000, interest: 100000, tax: 25 });
-  const set = (k: keyof typeof inputs) => (v: number) => setInputs(p => ({ ...p, [k]: v }));
-  const r = useMemo(() => compute(inputs), [inputs]);
+  const [p, setP] = useState({ revenue: 5000000, cogs: 2000000, operatingExpenses: 1000000, interest: 100000, tax: 25 });
+  const set = (k: keyof typeof p) => (v: number) => setP(x => ({ ...x, [k]: v }));
+  const r = useMemo(() => compute(p), [p]);
 
   return (
     <CalcLayout
       title="Profit Margin Calculator"
-      description="Analyse your gross, operating, and net margins — see exactly where revenue is consumed and how efficiently you convert sales into profit."
-      accent={T.accents[0].line}
-      glyph="03"
+      description="Gross, operating & net margins in one view."
+      accent={ACCENT} glyph="03"
       inputsPanel={
         <Box>
-          <CalcInput label="Total Revenue" value={inputs.revenue} onChange={set('revenue')} prefix="₹" step={50000} />
-          <CalcInput label="Cost of Goods Sold (COGS)" value={inputs.cogs} onChange={set('cogs')} prefix="₹" step={50000} helperText="Direct production or service delivery costs" />
-          <CalcInput label="Operating Expenses" value={inputs.operatingExpenses} onChange={set('operatingExpenses')} prefix="₹" step={10000} helperText="Salaries, rent, marketing, overheads" />
-          <CalcInput label="Interest Expense" value={inputs.interest} onChange={set('interest')} prefix="₹" step={5000} />
-          <CalcInput label="Tax Rate" value={inputs.tax} onChange={set('tax')} suffix="%" step={0.5} min={0} />
+          <CalcInput label="Total Revenue"        value={p.revenue}           onChange={set('revenue')}           prefix="₹" step={50000} />
+          <CalcInput label="Cost of Goods Sold"   value={p.cogs}              onChange={set('cogs')}              prefix="₹" step={50000} helperText="Direct production costs" />
+          <CalcInput label="Operating Expenses"   value={p.operatingExpenses} onChange={set('operatingExpenses')} prefix="₹" step={10000} helperText="Salaries, rent, marketing" />
+          <CalcInput label="Interest Expense"     value={p.interest}          onChange={set('interest')}          prefix="₹" step={5000} />
+          <CalcInput label="Tax Rate"             value={p.tax}               onChange={set('tax')}               suffix="%" step={0.5} min={0} />
         </Box>
       }
       resultsPanel={
-        <Grid container spacing={2}>
-          {[
-            { label: 'Gross Margin',     value: `${r.grossMargin.toFixed(1)}%`,     sub: fmtINR(r.grossProfit),     highlight: true },
-            { label: 'Operating Margin', value: `${r.operatingMargin.toFixed(1)}%`, sub: fmtINR(r.operatingProfit) },
-            { label: 'Net Margin',       value: `${r.netMargin.toFixed(1)}%`,       sub: fmtINR(r.netProfit) },
-            { label: 'Tax Paid',         value: fmtINR(r.taxAmount),               sub: `${inputs.tax}% rate` },
-          ].map((m, i) => (
-            <Grid key={m.label} size={{ xs: 12, sm: 6, md: 3 }}>
-              <MetricCard label={m.label} value={m.value} subValue={m.sub} accent={T.accents[0].line} highlight={m.highlight} index={i} />
-            </Grid>
-          ))}
-        </Grid>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)' }, gap: 1 }}>
+          <MetricCard label="Gross Margin"     value={`${r.gm.toFixed(1)}%`}  accent={ACCENT} highlight index={0} />
+          <MetricCard label="Operating Margin" value={`${r.om.toFixed(1)}%`}  accent={ACCENT}          index={1} />
+          <MetricCard label="Net Margin"       value={`${r.nm.toFixed(1)}%`}  accent={ACCENT}          index={2} />
+          <MetricCard label="Tax Paid"         value={fmtINR(r.taxAmt)}       accent={ACCENT}          index={3} />
+        </Box>
       }
       chartsPanel={
-        <Box>
-          <ChartLabel text="P&L Waterfall" />
-          <ResponsiveContainer width="100%" height={260}>
-            <ComposedChart data={r.waterfall} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => v >= 1000000 ? `₹${(v/1000000).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={axisStyle} tickLine={false} axisLine={false} width={72} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Bar dataKey="value" name="Amount" radius={[4,4,0,0]} barSize={28}
-                fill={T.accents[0].line + '88'}
-                label={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-
-          <Box sx={{ mt: 4, mb: 2 }}><ChartLabel text="Margin Comparison" /></Box>
-          <ResponsiveContainer width="100%" height={180}>
-            <ComposedChart data={r.margins} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="2 4" stroke={T.border} vertical={false} />
-              <XAxis dataKey="name" tick={axisStyle} tickLine={false} axisLine={false} />
-              <YAxis tickFormatter={v => `${v}%`} tick={axisStyle} tickLine={false} axisLine={false} width={44} />
-              <Tooltip content={<ChartTooltip />} cursor={{ stroke: T.border, strokeWidth: 1 }} />
-              <Bar dataKey="margin" name="Margin %" fill={T.accents[0].line + '55'} radius={[4,4,0,0]} barSize={36} />
-              <Line type="monotone" dataKey="margin" stroke={T.accents[0].line} strokeWidth={2} dot={{ fill: T.accents[0].line, r: 4, strokeWidth: 0 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 2.5, md: 3 } }}>
+          <Box>
+            <CLabel text="P&L Waterfall" />
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={r.waterfall} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="name" tick={ax} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => v >= 1e6 ? `₹${(v/1e6).toFixed(1)}M` : `₹${(v/1000).toFixed(0)}K`} tick={ax} tickLine={false} axisLine={false} width={54} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <Bar dataKey="value" name="Amount" radius={[3,3,0,0]} barSize={22} fill={`${ACCENT}30`} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
+          <Box>
+            <CLabel text="Margin Comparison" />
+            <ResponsiveContainer width="100%" height={180}>
+              <ComposedChart data={r.margins} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke={BORDER} vertical={false} />
+                <XAxis dataKey="name" tick={ax} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={v => `${v}%`} tick={ax} tickLine={false} axisLine={false} width={36} />
+                <Tooltip content={<Tip />} cursor={{ stroke: BORDER, strokeWidth: 1 }} />
+                <Bar dataKey="margin" name="Margin %" fill={`${ACCENT}28`} radius={[3,3,0,0]} barSize={30} />
+                <Line type="monotone" dataKey="margin" stroke={ACCENT} strokeWidth={1.5} dot={{ fill: ACCENT, r: 3, strokeWidth: 0 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
         </Box>
       }
     />

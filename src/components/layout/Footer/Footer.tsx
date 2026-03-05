@@ -133,21 +133,6 @@ function NewsletterStrip({ inView }: any) {
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.65 }}
       >
-        <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
-          <BlueRule width={22} delay={0.1} inView={inView} />
-          <Typography
-            sx={{
-              fontFamily: MONO,
-              fontSize: "0.52rem",
-              letterSpacing: "0.22em",
-              color: T.blue,
-              textTransform: "uppercase",
-            }}
-          >
-            Newsletter
-          </Typography>
-        </Box>
-
         <Typography
           sx={{
             fontFamily: SERIF,
@@ -184,7 +169,6 @@ function NewsletterStrip({ inView }: any) {
         </Typography>
       </motion.div>
 
-      {/* RIGHT */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -195,9 +179,10 @@ function NewsletterStrip({ inView }: any) {
             background: "#111116",
             border: `1px solid ${T.borderMid}`,
             borderRadius: "12px",
-            p: "6px 6px 6px 16px",
+            p: 1, // uniform padding
             display: "flex",
             alignItems: "center",
+            gap: 1, // space between input and button
           }}
         >
           <TextField
@@ -206,14 +191,13 @@ function NewsletterStrip({ inView }: any) {
             placeholder="your@email.com"
             variant="outlined"
             fullWidth
+            size="small" // ensures the height matches the button
             sx={{
               "& fieldset": { border: "none" },
               "& input": {
                 color: "#fff",
                 fontSize: "0.9rem",
-                "&::placeholder": {
-                  color: "#77778E",
-                },
+                "&::placeholder": { color: "#77778E" },
               },
             }}
           />
@@ -221,7 +205,8 @@ function NewsletterStrip({ inView }: any) {
           <motion.button
             onClick={handleSubscribe}
             style={{
-              padding: "10px 22px",
+              height: 36, // matches TextField
+              padding: "0 22px",
               borderRadius: "8px",
               border: "none",
               background: T.blueGrad,
@@ -354,7 +339,13 @@ export function Footer() {
             gap: 2,
           }}
         >
-          <Typography sx={{ fontSize: "0.75rem", color: T.inkFaint , textDecoration:"none"}}>
+          <Typography
+            sx={{
+              fontSize: "0.75rem",
+              color: T.inkFaint,
+              textDecoration: "none",
+            }}
+          >
             © {new Date().getFullYear()} Merraki Solutions all rights reserved.
           </Typography>
         </Box>

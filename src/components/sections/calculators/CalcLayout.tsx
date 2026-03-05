@@ -1,278 +1,110 @@
 'use client';
 
-import { Box, Container, Typography } from '@mui/material';
-import { motion } from 'framer-motion';
-
-/* ── BLUISH-WHITE LIGHT MODE TOKENS ─────────────────────────────── */
+import { Box, Typography } from '@mui/material';
 
 const T = {
-  /* surfaces */
-  white: "#FFFFFF",
-  offwhite: "#F6F9FF",
-  cream: "#EEF4FF",
-  parchment: "#E6EEFF",
-
-  /* text */
-  ink: "#0B1220",
-  inkMid: "#1E293B",
-  inkMuted: "#475569",
-  inkFaint: "#94A3B8",
-  inkGhost: "#CBD5E1",
-
-  /* borders */
-  border: "#E2E8F0",
-  borderMd: "#CBD5E1",
-
-  /* blues */
-  blue: "#2563EB",
-  blueMid: "#3B82F6",
-  blueLight: "#93C5FD",
-  blueGlow: "rgba(37,99,235,0.08)",
-  blueBdr: "rgba(37,99,235,0.18)",
+  white:    '#FFFFFF',
+  bg:       '#F7F8FA',
+  ink:      '#0A0A0F',
+  inkMuted: '#5A6478',
+  inkFaint: '#A0A0AE',
+  border:   'rgba(10,10,20,0.08)',
 };
 
-export const FONT_SERIF = '"Instrument Serif", "Playfair Display", Georgia, serif';
-export const FONT_SANS  = '"DM Sans", "Mona Sans", system-ui, sans-serif';
-export const FONT_MONO  = '"DM Mono", "JetBrains Mono", ui-monospace, monospace';
-export const EASE       = [0.16, 1, 0.3, 1] as const;
-
-/* ───────────────────────────────────────────────────────────────── */
+export const FONT_SANS = '"DM Sans", system-ui, sans-serif';
+export const FONT_MONO = '"DM Mono", ui-monospace, monospace';
+export const EASE      = [0.16, 1, 0.3, 1] as const;
 
 interface CalcLayoutProps {
-  title: string;
-  description: string;
-  accent: string;
-  glyph: string;
-  inputsPanel: React.ReactNode;
+  title:        string;
+  description:  string;
+  accent:       string;
+  glyph:        string;
+  inputsPanel:  React.ReactNode;
   resultsPanel: React.ReactNode;
-  chartsPanel: React.ReactNode;
+  chartsPanel:  React.ReactNode;
 }
 
-export function CalcLayout({
-  title,
-  description,
-  accent,
-  glyph,
-  inputsPanel,
-  resultsPanel,
-  chartsPanel,
-}: CalcLayoutProps) {
+export function CalcLayout({ title, description, accent, inputsPanel, resultsPanel, chartsPanel }: CalcLayoutProps) {
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>
+    <Box sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      overflow: 'hidden',
+      // On mobile, allow full scroll
+      '@media (max-width:899px)': {
+        height: 'auto',
+        overflow: 'visible',
+      },
+    }}>
 
-      {/* Section header */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE }}
-      >
-        <Box
-          sx={{
-            mb: 5,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Box>
-            {/* Glyph + accent line */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-              <Typography
-                sx={{
-                  fontFamily: FONT_MONO,
-                  fontSize: '0.56rem',
-                  letterSpacing: '0.2em',
-                  color: accent,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {glyph}
-              </Typography>
-              <Box sx={{ width: 32, height: '1px', background: accent, opacity: 0.6 }} />
-            </Box>
+      {/* ── Results strip ── */}
+      <Box sx={{
+        flexShrink: 0,
+        px: { xs: 2, md: 3 },
+        py: { xs: 1.5, md: 1.5 },
+        borderBottom: `1px solid ${T.border}`,
+        background: T.white,
+      }}>
+        {resultsPanel}
+      </Box>
 
-            <Typography
-              sx={{
-                fontFamily: FONT_SERIF,
-                fontStyle: 'italic',
-                fontWeight: 400,
-                fontSize: { xs: '1.75rem', md: '2.5rem' },
-                color: T.ink,
-                letterSpacing: '-0.025em',
-                lineHeight: 1.05,
-                mb: 1,
-              }}
-            >
+      {/* ── Body: inputs | charts ── */}
+      <Box sx={{
+        flex: 1,
+        display: 'grid',
+        // Desktop: side-by-side. Mobile: stacked
+        gridTemplateColumns: { xs: '1fr', md: '240px 1fr' },
+        minHeight: 0,
+        overflow: 'hidden',
+        '@media (max-width:899px)': { overflow: 'visible' },
+      }}>
+
+        {/* Inputs */}
+        <Box sx={{
+          borderRight: { md: `1px solid ${T.border}` },
+          borderBottom: { xs: `1px solid ${T.border}`, md: 'none' },
+          background: T.white,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          '@media (max-width:899px)': { overflow: 'visible' },
+        }}>
+          <Box sx={{ px: { xs: 2, md: 2.5 }, pt: { xs: 1.5, md: 2 }, pb: 1.25, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+            <Typography sx={{ fontFamily: FONT_SANS, fontWeight: 700, fontSize: '0.8125rem', color: T.ink, letterSpacing: '-0.01em', mb: 0.2 }}>
               {title}
             </Typography>
-
-            <Typography
-              sx={{
-                fontFamily: FONT_SANS,
-                fontSize: '0.95rem',
-                color: T.inkMuted,
-                lineHeight: 1.72,
-                maxWidth: 560,
-              }}
-            >
+            <Typography sx={{ fontFamily: FONT_SANS, fontSize: '0.6875rem', color: T.inkFaint, lineHeight: 1.4 }}>
               {description}
             </Typography>
           </Box>
-        </Box>
-      </motion.div>
-
-      {/* Layout */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: '360px 1fr' },
-          gap: { xs: 3, lg: 4 },
-          alignItems: 'start',
-        }}
-      >
-        {/* ── Inputs panel (sticky) ── */}
-        <Box sx={{ position: { lg: 'sticky' }, top: { lg: 90 } }}>
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55, delay: 0.1, ease: EASE }}
-          >
-            <Box
-              sx={{
-                background: T.white,
-                borderRadius: '16px',
-                border: `1px solid ${T.border}`,
-                overflow: 'hidden',
-                boxShadow: '0 4px 18px rgba(37,99,235,0.04)',
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              {/* Header */}
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2,
-                  borderBottom: `1px solid ${T.border}`,
-                  background: T.offwhite,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <Box sx={{ width: 2, height: 14, borderRadius: '2px', background: accent }} />
-                <Typography
-                  sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: '0.58rem',
-                    letterSpacing: '0.18em',
-                    color: T.inkMuted,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Inputs
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 3 }}>{inputsPanel}</Box>
-            </Box>
-          </motion.div>
+          <Box sx={{
+            flex: 1,
+            overflowY: 'auto',
+            px: { xs: 2, md: 2.5 },
+            py: 1.75,
+            '@media (max-width:899px)': { overflow: 'visible' },
+            '&::-webkit-scrollbar': { width: 3 },
+            '&::-webkit-scrollbar-thumb': { background: T.border, borderRadius: 2 },
+          }}>
+            {inputsPanel}
+          </Box>
         </Box>
 
-        {/* ── Results + Charts ── */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-
-          {/* Key Results */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.18, ease: EASE }}
-          >
-            <Box
-              sx={{
-                background: T.white,
-                borderRadius: '16px',
-                border: `1px solid ${T.border}`,
-                overflow: 'hidden',
-                boxShadow: '0 4px 18px rgba(37,99,235,0.04)',
-              }}
-            >
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2,
-                  borderBottom: `1px solid ${T.border}`,
-                  background: T.offwhite,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <Box sx={{ width: 2, height: 14, borderRadius: '2px', background: accent }} />
-                <Typography
-                  sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: '0.58rem',
-                    letterSpacing: '0.18em',
-                    color: T.inkMuted,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Key Results
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 3 }}>{resultsPanel}</Box>
-            </Box>
-          </motion.div>
-
-          {/* Charts */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.28, ease: EASE }}
-          >
-            <Box
-              sx={{
-                background: T.white,
-                borderRadius: '16px',
-                border: `1px solid ${T.border}`,
-                overflow: 'hidden',
-                boxShadow: '0 4px 18px rgba(37,99,235,0.04)',
-              }}
-            >
-              <Box
-                sx={{
-                  px: 3,
-                  py: 2,
-                  borderBottom: `1px solid ${T.border}`,
-                  background: T.offwhite,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                }}
-              >
-                <Box sx={{ width: 2, height: 14, borderRadius: '2px', background: T.borderMd }} />
-                <Typography
-                  sx={{
-                    fontFamily: FONT_MONO,
-                    fontSize: '0.58rem',
-                    letterSpacing: '0.18em',
-                    color: T.inkMuted,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Visual Analysis
-                </Typography>
-              </Box>
-
-              <Box sx={{ p: 3 }}>{chartsPanel}</Box>
-            </Box>
-          </motion.div>
-
+        {/* Charts */}
+        <Box sx={{
+          overflowY: 'auto',
+          px: { xs: 2, md: 2.5 },
+          py: { xs: 2, md: 2 },
+          background: T.bg,
+          '@media (max-width:899px)': { overflow: 'visible' },
+          '&::-webkit-scrollbar': { width: 3 },
+          '&::-webkit-scrollbar-thumb': { background: T.border, borderRadius: 2 },
+        }}>
+          {chartsPanel}
         </Box>
       </Box>
-    </Container>
+    </Box>
   );
 }
