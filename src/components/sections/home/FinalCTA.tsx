@@ -153,7 +153,7 @@ export function FinalCTA() {
               mb: 4.5,
             }}>
               Join us in shaping the future of finance. At Merraki, we're passionate about
-              creating an impact — for our users, our clients, and the industry.
+              creating an impact for our users, our clients, and the industry.
               Ready to lead the change?
             </Typography>
           </motion.div>

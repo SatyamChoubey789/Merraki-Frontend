@@ -2,265 +2,193 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Box, Typography } from '@mui/material';
-import {
-  Download as DownloadIcon,
-  ShoppingCart as CartIcon,
-  Visibility as ViewIcon,
-  Star as StarIcon,
-} from '@mui/icons-material';
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from 'framer-motion';
+import { Star as StarIcon, Download as DownloadIcon } from '@mui/icons-material';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { useCart } from '@/lib/hooks/useCart';
 import { useCurrency } from '@/lib/hooks/useCurrency';
 import { TemplateDetailDrawer } from './TemplateDetailDrawer';
 import type { Template } from '@/types/template.types';
-import { border } from '@mui/system';
 
-/* ══ TOKENS ══════════════════════════════════════════════ */
 const T = {
-  white:     '#FFFFFF',
-  offwhite:  '#F5F7FB',              // cool section background
-  cream:     '#EDF3FF',              // soft blue pale surface
-  parchment: 'rgba(59,123,246,0.06)',// subtle blue tint layer
-
-  ink:       '#0A0A0F',
-  inkMid:    '#1E1E2A',
-  inkMuted:  '#5A5A72',
-  inkFaint:  '#9898AE',
-  inkGhost:  '#C2CAD6',
-
-  rule:      'rgba(10,10,20,0.08)',
-  ruleMd:    'rgba(10,10,20,0.14)',
-
-  blue:      '#3B7BF6',
-  blueMid:   '#5A92F8',
-  blueLight: '#7AABFF',
-  blueGlow:  'rgba(59,123,246,0.10)',
-  border:    'rgba(10,10,20,0.12)',
+  bg:       '#FFFFFF',
+  bgHover:  '#F8FAFF',
+  ink:      '#0A0A0F',
+  inkMid:   '#1E1E2A',
+  inkMuted: '#5A5A72',
+  inkFaint: '#9898AE',
+  border:   'rgba(10,10,20,0.09)',
+  blue:     '#3B7BF6',
+  blueLight:'#7AABFF',
+  bluePale: '#EDF3FF',
+  blueGrad: 'linear-gradient(135deg,#3B7BF6 0%,#7AABFF 100%)',
+  imgBg:    '#F0F4FF',
 };
 
-const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
 const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-interface Props {
-  template: Template;
-  index?: number;
-}
+/* Icon set for placeholder visual variety */
+const ICONS = ['◈','△','◆','◎','◇','✦','⬡','⬢','○'];
+
+interface Props { template: Template; index?: number; }
 
 export function TemplateCard({ template, index = 0 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [hovered,    setHovered]    = useState(false);
   const { addItem, isInCart } = useCart();
-  const { format } = useCurrency();
+  const { format }            = useCurrency();
   const inCart = isInCart(template.id);
-  const cardRef = useRef<HTMLDivElement>(null);
 
-  /* ── 3D tilt ── */
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const sx = useSpring(mx, { stiffness: 320, damping: 28 });
-  const sy = useSpring(my, { stiffness: 320, damping: 28 });
-  const rotateX = useTransform(sy, [-0.5, 0.5], ['7deg', '-7deg']);
-  const rotateY = useTransform(sx, [-0.5, 0.5], ['-7deg', '7deg']);
-  const glowX = useTransform(sx, [-0.5, 0.5], ['0%', '100%']);
-  const glowY = useTransform(sy, [-0.5, 0.5], ['0%', '100%']);
-
-  const onMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      const r = cardRef.current?.getBoundingClientRect();
-      if (!r) return;
-      mx.set((e.clientX - r.left) / r.width - 0.5);
-      my.set((e.clientY - r.top) / r.height - 0.5);
-    },
-    [mx, my]
-  );
-
-  const onLeave = useCallback(() => {
-    mx.set(0);
-    my.set(0);
-  }, [mx, my]);
+  const icon = ICONS[template.id % ICONS.length] ?? '◈';
 
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 32 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05, duration: 0.5, ease: EASE }}
-        style={{ perspective: 1100, height: '100%' }}
+        transition={{ delay: index * 0.04, duration: 0.45, ease: EASE }}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={()   => setHovered(false)}
+        style={{ height: '100%' }}
       >
-        <motion.div
-          ref={cardRef}
-          style={{
-            rotateX,
-            rotateY,
-            transformStyle: 'preserve-3d',
-            height: '100%',
-          }}
-          onMouseMove={onMove}
-          onMouseLeave={onLeave}
-        >
+        <Box sx={{
+          display: 'flex', flexDirection: 'column',
+          height: '100%', cursor: 'pointer',
+        }}>
+
+          {/* ── Image block ── */}
           <Box
+            onClick={() => setDrawerOpen(true)}
             sx={{
               position: 'relative',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              background: T.white,
-              borderRadius: '18px',
-              border: `1px solid ${T.border}`,
+              height: 220,
+              borderRadius: '14px',
               overflow: 'hidden',
-              boxShadow: '0 2px 12px rgba(12,14,18,0.05)',
+              background: T.imgBg,
+              border: `1px solid ${T.border}`,
+              mb: 1.75,
+              flexShrink: 0,
             }}
           >
-            {/* Glow */}
-            <motion.div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 1,
-                pointerEvents: 'none',
-                borderRadius: '18px',
-                background: `radial-gradient(circle at ${glowX} ${glowY}, ${T.blueGlow} 0%, transparent 60%)`,
-              }}
-            />
-
-            {/* Image Placeholder */}
-            <Box
-              sx={{
-                height: 200,
-                background: T.parchment,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-              onClick={() => setDrawerOpen(true)}
-            >
-              <Typography
-                sx={{
-                  fontFamily: SERIF,
-                  fontSize: '3rem',
-                  color: 'rgba(12,14,18,0.1)',
-                }}
-              >
-                ₹
+            {/* Placeholder visual — replace with <img> when real images available */}
+            <Box sx={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `linear-gradient(140deg, #EEF3FF 0%, #E5EEFF 100%)`,
+            }}>
+              {/* Grid lines decoration */}
+              <Box sx={{
+                position: 'absolute', inset: 0, opacity: 0.35,
+                backgroundImage: `linear-gradient(rgba(59,123,246,0.15) 1px,transparent 1px),
+                                  linear-gradient(90deg,rgba(59,123,246,0.15) 1px,transparent 1px)`,
+                backgroundSize: '28px 28px',
+              }} />
+              <Typography sx={{
+                fontFamily: MONO, fontSize: '3.5rem',
+                color: 'rgba(59,123,246,0.18)', lineHeight: 1,
+                position: 'relative', zIndex: 1,
+              }}>
+                {icon}
               </Typography>
             </Box>
 
-            {/* Body */}
-            <Box sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-              
-              {/* Category ID */}
-              <Typography
-                sx={{
-                  fontFamily: MONO,
-                  fontSize: '0.6rem',
-                  color: T.inkFaint,
-                  textTransform: 'uppercase',
-                  mb: 1,
-                }}
-              >
-                Category #{template.category_id}
-              </Typography>
+            {/* Hover overlay with quick-view */}
+            <motion.div
+              animate={{ opacity: hovered ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'rgba(10,10,20,0.38)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 2,
+              }}
+            >
+              <Box sx={{
+                px: '18px', py: '9px', borderRadius: '8px',
+                background: 'rgba(255,255,255,0.96)',
+                fontFamily: SANS, fontWeight: 700,
+                fontSize: '0.78rem', color: T.ink,
+                letterSpacing: '-0.01em',
+              }}>
+                Quick view
+              </Box>
+            </motion.div>
+          </Box>
 
-              {/* Title */}
+          {/* ── Text block ── */}
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
+            {/* Title + price row */}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 0.75 }}>
               <Typography
                 onClick={() => setDrawerOpen(true)}
                 sx={{
-                  fontFamily: SERIF,
-                  fontSize: '1.2rem',
-                  mb: 1,
-                  cursor: 'pointer',
+                  fontFamily: SANS, fontWeight: 700,
+                  fontSize: '0.9375rem', color: T.ink,
+                  letterSpacing: '-0.02em', lineHeight: 1.3,
+                  flex: 1,
+                  '&:hover': { color: T.blue },
+                  transition: 'color 0.15s ease',
                 }}
               >
                 {template.title}
               </Typography>
-
-              {/* Description */}
-              <Typography
-                sx={{
-                  fontFamily: SANS,
-                  fontSize: '0.9rem',
-                  color: T.inkMuted,
-                  mb: 2,
-                  flex: 1,
-                }}
-              >
-                {template.description}
+              <Typography sx={{
+                fontFamily: MONO, fontWeight: 700,
+                fontSize: '0.9rem', color: T.ink,
+                letterSpacing: '-0.02em', flexShrink: 0,
+              }}>
+                {format(template.price_inr / 100, 'INR')}
               </Typography>
+            </Box>
 
-              {/* Rating + Downloads */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  mb: 2,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <StarIcon sx={{ fontSize: 16, color: T.blueMid }} />
-                  <Typography sx={{ fontSize: '0.8rem' }}>
-                    {template.rating.toFixed(1)} ({template.rating_count})
-                  </Typography>
-                </Box>
+            {/* Description */}
+            <Typography sx={{
+              fontFamily: SANS, fontSize: '0.8125rem',
+              color: T.inkMuted, lineHeight: 1.65, mb: 1.5,
+              flex: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}>
+              {template.description}
+            </Typography>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <DownloadIcon sx={{ fontSize: 16, color: T.inkGhost }} />
-                  <Typography sx={{ fontSize: '0.8rem' }}>
-                    {template.downloads_count}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Price + CTA */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: SERIF,
-                    fontSize: '1.4rem',
-                  }}
-                >
-                  {format(template.price_inr / 100, 'INR')}
+            {/* Meta row — downloads + add to cart */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <DownloadIcon sx={{ fontSize: 13, color: T.inkFaint }} />
+                <Typography sx={{ fontFamily: MONO, fontSize: '0.52rem', letterSpacing: '0.08em', color: T.inkFaint }}>
+                  {template.downloads_count} downloads
                 </Typography>
-
-                <Box
-                  component="button"
-                  onClick={() => {
-                    if (!inCart) addItem(template);
-                  }}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    px: 2,
-                    py: 1,
-                    borderRadius: '8px',
-                    border: `1px solid ${T.blue}`,
-                    background: T.blueLight,
-                    cursor: inCart ? 'default' : 'pointer',
-                  }}
-                >
-                  <CartIcon sx={{ fontSize: 18 }} />
-                  <Typography sx={{ fontSize: '0.8rem' }}>
-                    {inCart ? 'In Cart ✓' : 'Add to Cart'}
-                  </Typography>
-                </Box>
               </Box>
+
+              <motion.button
+                onClick={() => { if (!inCart) addItem(template); }}
+                whileHover={inCart ? {} : { scale: 1.03 }}
+                whileTap={inCart ? {} : { scale: 0.97 }}
+                style={{
+                  padding: '7px 16px',
+                  borderRadius: '8px',
+                  border: inCart ? `1px solid rgba(59,123,246,0.3)` : 'none',
+                  background: inCart ? T.bluePale : T.blueGrad,
+                  color: inCart ? T.blue : '#FFFFFF',
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  cursor: inCart ? 'default' : 'pointer',
+                  letterSpacing: '-0.01em',
+                  boxShadow: inCart ? 'none' : '0 3px 12px rgba(59,123,246,0.28)',
+                  transition: 'box-shadow 0.2s ease',
+                }}
+              >
+                {inCart ? '✓ Added' : 'Add to cart'}
+              </motion.button>
             </Box>
           </Box>
-        </motion.div>
+        </Box>
       </motion.div>
 
       <TemplateDetailDrawer
