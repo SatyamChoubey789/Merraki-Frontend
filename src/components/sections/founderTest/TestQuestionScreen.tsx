@@ -1,144 +1,80 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import {
-  ArrowBack as BackIcon,
-  ArrowForward as NextIcon,
-} from "@mui/icons-material";
+import { ArrowBack as BackIcon, ArrowForward as NextIcon } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
 import type { useFounderTestEngine } from "@/lib/hooks/useFounderTestEngine";
 
 const T = {
-  ink: "#0C0E12",
-  inkMid: "#1C2333",
-  inkMuted: "#3D4860",
-  inkFaint: "#64748B",
-  inkGhost: "#94A3B8",
-  white: "#FFFFFF",
-  offwhite: "#F9F8F5",
-  cream: "#F0EDE6",
-  parchment: "#E8E4DA",
-  border: "#E2DED5",
-  borderMd: "#C8C3B8",
-  blue: "#3B82F6",
-  blueLight: "#60A5FA",
-  blueGlow: "rgba(59,130,246,0.1)",
-  sage: "#5C7A5C",
-  error: "#DC2626",
+  darkBg:    "#0D1B2E",
+  darkGlow1: "rgba(99,102,241,0.12)",
+  darkGlow2: "rgba(236,72,153,0.07)",
+  darkBorder:"rgba(255,255,255,0.08)",
+  darkMuted: "rgba(255,255,255,0.50)",
+  darkFaint: "rgba(255,255,255,0.22)",
+  white:     "#FFFFFF",
+  bg:        "#F7F8FA",
+  ink:       "#0A0A0F",
+  inkMuted:  "#5A6478",
+  inkFaint:  "#A0A0AE",
+  border:    "rgba(10,10,20,0.08)",
+  borderMd:  "rgba(10,10,20,0.16)",
+  blue:      "#1D4ED8",
+  blueBdr:   "rgba(29,78,216,0.22)",
+  blueGlow:  "rgba(29,78,216,0.10)",
+  grad:      "linear-gradient(115deg, #818CF8, #A855F7, #EC4899)",
+  btn:       "linear-gradient(115deg, #7C3AED, #EC4899)",
+  btnShadow: "0 4px 16px rgba(124,58,237,0.28)",
+  error:     "#DC2626",
 };
 
-const SERIF = '"Instrument Serif","Playfair Display",Georgia,serif';
-const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
-const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
+const SANS = '"DM Sans", system-ui, sans-serif';
+const MONO = '"DM Mono", ui-monospace, monospace';
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 type Engine = ReturnType<typeof useFounderTestEngine>;
 
-function OptionRow({
-  id,
-  label,
-  selected,
-  index,
-  type,
-  onClick,
-}: {
-  id: string;
-  label: string;
-  selected: boolean;
-  index: number;
-  type: "single" | "multiple" | "scale";
-  onClick: () => void;
+function OptionRow({ id, label, selected, index, type, onClick }: {
+  id: string; label: string; selected: boolean;
+  index: number; type: "single" | "multiple" | "scale"; onClick: () => void;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.08 + index * 0.06, duration: 0.38, ease: EASE }}
-      whileHover={{ x: 2 }}
-      whileTap={{ scale: 0.98 }}
+      transition={{ delay: 0.05 + index * 0.05, duration: 0.28, ease: EASE }}
+      whileTap={{ scale: 0.99 }}
     >
-      <Box
-        onClick={onClick}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          p: "14px 20px",
-          borderRadius: "12px",
-          cursor: "pointer",
-          border: `1px solid ${selected ? T.blue + "55" : T.border}`,
-          background: selected
-            ? `linear-gradient(115deg,rgba(96,165,250,0.1),rgba(59,130,246,0.06))`
-            : T.white,
-          transition: "all 0.18s ease",
-          boxShadow: selected
-            ? `0 2px 14px rgba(59,130,246,0.14)`
-            : "0 1px 3px rgba(12,14,18,0.04)",
-          "&:hover": {
-            borderColor: selected ? T.blue + "88" : T.borderMd,
-            background: selected ? undefined : T.offwhite,
-          },
-        }}
-      >
-        <Box
-          sx={{
-            width: 22,
-            height: 22,
-            flexShrink: 0,
-            borderRadius: type === "multiple" ? "6px" : "50%",
-            border: `1.5px solid ${selected ? T.blue : T.border}`,
-            background: selected
-              ? `linear-gradient(115deg,${T.blueLight},${T.blue})`
-              : "transparent",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.18s ease",
-          }}
-        >
+      <Box onClick={onClick} sx={{
+        display: "flex", alignItems: "center", gap: 1.75,
+        p: "11px 16px", borderRadius: "8px", cursor: "pointer",
+        border: `1px solid ${selected ? T.blueBdr : T.border}`,
+        background: selected ? `${T.blue}07` : T.white,
+        transition: "all 0.15s",
+        "&:hover": { borderColor: selected ? T.blueBdr : T.borderMd, background: selected ? `${T.blue}07` : T.bg },
+      }}>
+        <Box sx={{
+          width: 18, height: 18, flexShrink: 0,
+          borderRadius: type === "multiple" ? "5px" : "50%",
+          border: `1.5px solid ${selected ? T.blue : T.border}`,
+          background: selected ? T.blue : "transparent",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 0.15s",
+        }}>
           {selected && type === "multiple" && (
-            <motion.svg
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 0.2 }}
-              width="11"
-              height="11"
-              viewBox="0 0 11 11"
-              fill="none"
-            >
-              <motion.path
-                d="M2 5.5L4.5 8L9 3"
-                stroke={T.ink}
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </motion.svg>
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+              <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           )}
           {selected && type === "single" && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 450, damping: 22 }}
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: T.ink,
-              }}
-            />
+            <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: T.white }} />
           )}
         </Box>
-        <Typography
-          sx={{
-            fontFamily: SANS,
-            fontSize: "0.9375rem",
-            color: selected ? T.ink : T.inkFaint,
-            fontWeight: selected ? 500 : 400,
-            lineHeight: 1.5,
-            transition: "color 0.15s",
-          }}
-        >
+        <Typography sx={{
+          fontFamily: SANS, fontSize: "0.875rem",
+          color: selected ? T.ink : T.inkMuted,
+          fontWeight: selected ? 500 : 400, lineHeight: 1.5, transition: "color 0.15s",
+        }}>
           {label}
         </Typography>
       </Box>
@@ -146,524 +82,205 @@ function OptionRow({
   );
 }
 
-function ScaleRow({
-  options,
-  selectedId,
-  onSelect,
-}: {
+function ScaleRow({ options, selectedId, onSelect }: {
   options: { id: string; label: string; value: string }[];
-  selectedId: string;
-  onSelect: (id: string) => void;
+  selectedId: string; onSelect: (id: string) => void;
 }) {
-  const selIdx = options.findIndex((o) => o.id === selectedId);
+  const selIdx = options.findIndex(o => o.id === selectedId);
   return (
     <Box>
-      <Box sx={{ display: "flex", gap: 1.25, mb: 2 }}>
+      <Box sx={{ display: "flex", gap: 1, mb: 1.25 }}>
         {options.map((opt, i) => {
           const isSel = selectedId === opt.id;
           const isPast = selIdx >= 0 && i <= selIdx;
           return (
-            <motion.div
-              key={opt.id}
-              style={{ flex: 1 }}
-              whileHover={{ scale: 1.04, y: -1 }}
-              whileTap={{ scale: 0.96 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 + i * 0.05, duration: 0.3, ease: EASE }}
-            >
-              <Box
-                onClick={() => onSelect(opt.id)}
-                sx={{
-                  height: 52,
-                  borderRadius: "10px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: `1.5px solid ${isSel ? T.blue : isPast ? T.blue + "44" : T.border}`,
-                  background: isSel
-                    ? `linear-gradient(115deg,${T.blueLight},${T.blue})`
-                    : isPast
-                      ? `${T.blue}0a`
-                      : T.white,
-                  transition: "all 0.18s ease",
-                  boxShadow: isSel
-                    ? `0 4px 16px rgba(59,130,246,0.28)`
-                    : "none",
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontWeight: 700,
-                    fontSize: "0.9375rem",
-                    color: isSel ? T.ink : isPast ? T.blue : T.inkGhost,
-                    transition: "color 0.15s",
-                  }}
-                >
-                  {i + 1}
-                </Typography>
+            <motion.div key={opt.id} style={{ flex: 1 }} whileTap={{ scale: 0.96 }}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 + i * 0.04, duration: 0.26, ease: EASE }}>
+              <Box onClick={() => onSelect(opt.id)} sx={{
+                height: 44, borderRadius: "7px", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: `1px solid ${isSel ? T.blue : isPast ? T.blueBdr : T.border}`,
+                background: isSel ? T.blue : isPast ? `${T.blue}08` : T.white,
+                transition: "all 0.15s",
+              }}>
+                <Typography sx={{
+                  fontFamily: MONO, fontWeight: 700, fontSize: "0.875rem",
+                  color: isSel ? T.white : isPast ? T.blue : T.inkFaint, transition: "color 0.15s",
+                }}>{i + 1}</Typography>
               </Box>
             </motion.div>
           );
         })}
       </Box>
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography
-          sx={{
-            fontFamily: MONO,
-            fontSize: "0.52rem",
-            letterSpacing: "0.1em",
-            color: T.inkGhost,
-            textTransform: "uppercase",
-          }}
-        >
-          {options[0]?.label}
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: MONO,
-            fontSize: "0.52rem",
-            letterSpacing: "0.1em",
-            color: T.inkGhost,
-            textTransform: "uppercase",
-          }}
-        >
-          {options[options.length - 1]?.label}
-        </Typography>
+        <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase" }}>{options[0]?.label}</Typography>
+        <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase" }}>{options[options.length - 1]?.label}</Typography>
       </Box>
     </Box>
   );
 }
 
-function NavBtn({
-  onClick,
-  disabled,
-  variant,
-  children,
-}: {
-  onClick?: () => void;
-  disabled?: boolean;
-  variant: "primary" | "ghost";
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={disabled}
-      whileHover={disabled ? {} : { scale: 1.03 }}
-      whileTap={disabled ? {} : { scale: 0.97 }}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: variant === "primary" ? "12px 28px" : "12px 20px",
-        borderRadius: "10px",
-        outline: "none",
-        cursor: disabled ? "default" : "pointer",
-        border: variant === "ghost" ? `1px solid ${T.border}` : "none",
-        background:
-          variant === "primary"
-            ? disabled
-              ? T.parchment
-              : `linear-gradient(115deg,${T.blueLight},${T.blue})`
-            : "transparent",
-        boxShadow:
-          variant === "primary" && !disabled
-            ? `0 4px 16px rgba(59,130,246,0.24)`
-            : "none",
-        transition: "box-shadow 0.18s",
-      }}
-    >
-      {children}
-    </motion.button>
-  );
-}
-
-interface Props {
-  engine: Engine;
-}
+interface Props { engine: Engine; }
 
 export function TestQuestionScreen({ engine }: Props) {
-  const {
-    currentQuestion,
-    currentQuestionIndex,
-    totalQuestions,
-    progress,
-    getCurrentAnswer,
-    handleAnswer,
-    handleNext,
-    handlePrev,
-    canProceed,
-  } = engine;
-
+  const { currentQuestion, currentQuestionIndex, totalQuestions, getCurrentAnswer, handleAnswer, handleNext, handlePrev, canProceed } = engine;
   if (!currentQuestion) return null;
 
   const selectedIds = getCurrentAnswer(currentQuestion.id);
   const isLast = currentQuestionIndex === totalQuestions - 1;
   const pct = Math.round((currentQuestionIndex / totalQuestions) * 100);
-  const qNum = String(currentQuestionIndex + 1).padStart(2, "0");
+  const blocked = !!(currentQuestion.isRequired && !canProceed());
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: T.offwhite,
-        fontFamily: SANS,
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Top progress */}
-      <Box
-        sx={{
-          height: 3,
-          background: T.parchment,
-          position: "relative",
-          flexShrink: 0,
-        }}
-      >
-        <motion.div
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.5, ease: EASE }}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            background: `linear-gradient(90deg,${T.blueLight},${T.blue})`,
-            borderRadius: "0 2px 2px 0",
-          }}
-        />
-      </Box>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: SANS }}>
 
-      {/* Header */}
-      <Box
-        sx={{
-          px: { xs: 3, md: 8 },
-          py: 2,
-          background: T.white,
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexShrink: 0,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 2,
-              height: 14,
-              borderRadius: "2px",
-              background: `linear-gradient(180deg,${T.blueLight},${T.blue})`,
-            }}
-          />
-          <Typography
-            sx={{
-              fontFamily: MONO,
-              fontSize: "0.54rem",
-              letterSpacing: "0.18em",
-              color: T.inkGhost,
-              textTransform: "uppercase",
-            }}
-          >
+      {/* Dark top bar */}
+      <Box sx={{ background: T.darkBg, flexShrink: 0, position: "relative", overflow: "hidden" }}>
+        <Box sx={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `radial-gradient(ellipse 60% 90% at 5% 50%, ${T.darkGlow1}, transparent),
+                       radial-gradient(ellipse 40% 70% at 95% 50%, ${T.darkGlow2}, transparent)`,
+        }} />
+        <Box sx={{
+          position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.03,
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)`,
+          backgroundSize: "48px 48px",
+        }} />
+        <Box sx={{
+          position: "relative", zIndex: 1,
+          px: { xs: 3, md: 6 }, pt: 2.5, pb: 2,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <Typography sx={{ fontFamily: MONO, fontSize: "0.54rem", letterSpacing: "0.18em", color: "#A5B4FC", textTransform: "uppercase" }}>
             Founder Assessment
           </Typography>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-          {Array.from({ length: totalQuestions }).map((_, i) => (
-            <Box
-              key={i}
-              sx={{
-                width: i === currentQuestionIndex ? 16 : 6,
-                height: 6,
-                borderRadius: "3px",
-                background:
-                  i < currentQuestionIndex
-                    ? T.blue
-                    : i === currentQuestionIndex
-                      ? `linear-gradient(90deg,${T.blueLight},${T.blue})`
-                      : T.parchment,
+          {/* Dot progress */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.625 }}>
+            {Array.from({ length: totalQuestions }).map((_, i) => (
+              <Box key={i} sx={{
+                width: i === currentQuestionIndex ? 14 : 5,
+                height: 5, borderRadius: "3px",
+                background: i < currentQuestionIndex
+                  ? "rgba(255,255,255,0.4)"
+                  : i === currentQuestionIndex
+                    ? "linear-gradient(90deg,#818CF8,#EC4899)"
+                    : T.darkBorder,
                 transition: "all 0.3s ease",
-              }}
-            />
-          ))}
+              }} />
+            ))}
+          </Box>
+          <Typography sx={{ fontFamily: MONO, fontSize: "0.54rem", letterSpacing: "0.1em", color: T.darkFaint }}>
+            {currentQuestionIndex + 1} / {totalQuestions}
+          </Typography>
+        </Box>
+        {/* Gradient progress bar */}
+        <Box sx={{ height: "2px", background: T.darkBorder }}>
+          <motion.div animate={{ width: `${pct}%` }} transition={{ duration: 0.45, ease: EASE }}
+            style={{ height: "100%", background: "linear-gradient(90deg,#818CF8,#EC4899)", borderRadius: "0 2px 2px 0" }} />
         </Box>
       </Box>
 
-      {/* Main */}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          py: { xs: 5, md: 7 },
-          px: { xs: 3, md: 8 },
-        }}
-      >
-        <Box sx={{ width: "100%", maxWidth: 660 }}>
+      {/* Light question area */}
+      <Box sx={{
+        flex: 1, background: T.bg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        px: { xs: 2.5, md: 4 }, py: { xs: 4, md: 5 },
+      }}>
+        <Box sx={{ width: "100%", maxWidth: 580 }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentQuestion.id}
-              initial={{ opacity: 0, x: 28, filter: "blur(3px)" }}
+              initial={{ opacity: 0, x: 18, filter: "blur(2px)" }}
               animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, x: -22, filter: "blur(2px)" }}
-              transition={{ duration: 0.42, ease: EASE }}
+              exit={{ opacity: 0, x: -14, filter: "blur(2px)" }}
+              transition={{ duration: 0.3, ease: EASE }}
             >
-              {/* Question card */}
-              <Box
-                sx={{
-                  background: T.white,
-                  borderRadius: "20px",
-                  border: `1px solid ${T.border}`,
-                  overflow: "hidden",
-                  mb: 3.5,
-                  boxShadow: "0 4px 24px rgba(12,14,18,0.06)",
-                  position: "relative",
-                }}
-              >
-                <Box
-                  sx={{
-                    position: "absolute",
-                    right: -8,
-                    top: -16,
-                    fontFamily: SERIF,
-                    fontStyle: "italic",
-                    fontSize: "10rem",
-                    fontWeight: 400,
-                    color: "rgba(12,14,18,0.03)",
-                    lineHeight: 1,
-                    pointerEvents: "none",
-                    userSelect: "none",
-                    letterSpacing: "-0.04em",
-                  }}
-                >
-                  {qNum}
-                </Box>
-
-                <Box
-                  sx={{
-                    px: 3.5,
-                    py: 1.25,
-                    background: T.parchment,
-                    borderBottom: `1px solid ${T.border}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: MONO,
-                      fontSize: "0.52rem",
-                      letterSpacing: "0.18em",
-                      color: T.inkGhost,
-                      textTransform: "uppercase",
-                    }}
-                  >
+              {/* Card */}
+              <Box sx={{
+                background: T.white, borderRadius: "10px",
+                border: `1px solid ${T.border}`, overflow: "hidden",
+                mb: 2, boxShadow: "0 2px 16px rgba(10,10,20,0.06)",
+              }}>
+                {/* Card header */}
+                <Box sx={{
+                  px: { xs: 2.5, md: 3 }, py: 1.125,
+                  borderBottom: `1px solid ${T.border}`, background: T.bg,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                }}>
+                  <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.16em", color: T.inkFaint, textTransform: "uppercase" }}>
                     {currentQuestion.category}
                   </Typography>
-                  <Typography
-                    sx={{
-                      fontFamily: MONO,
-                      fontSize: "0.52rem",
-                      letterSpacing: "0.1em",
-                      color: T.inkGhost,
-                    }}
-                  >
-                    {currentQuestionIndex + 1} / {totalQuestions}
-                  </Typography>
+                  {currentQuestion.type === "multiple" && (
+                    <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.12em", color: T.blue, textTransform: "uppercase" }}>
+                      Select all that apply
+                    </Typography>
+                  )}
                 </Box>
 
-                <Box
-                  sx={{
-                    p: { xs: 3, md: 4.5 },
-                    position: "relative",
-                    zIndex: 1,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: SERIF,
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      fontSize: { xs: "1.375rem", md: "1.75rem" },
-                      color: T.ink,
-                      letterSpacing: "-0.025em",
-                      lineHeight: 1.25,
-                      mb: currentQuestion.description ? 1.5 : 3.5,
-                    }}
-                  >
+                <Box sx={{ p: { xs: 2.5, md: 3.5 } }}>
+                  <Typography sx={{
+                    fontFamily: SANS, fontWeight: 700,
+                    fontSize: { xs: "1.0625rem", md: "1.25rem" },
+                    color: T.ink, letterSpacing: "-0.02em",
+                    lineHeight: 1.3, mb: currentQuestion.description ? 1 : 2.5,
+                  }}>
                     {currentQuestion.question}
                   </Typography>
                   {currentQuestion.description && (
-                    <Typography
-                      sx={{
-                        fontFamily: SANS,
-                        fontSize: "0.9rem",
-                        color: T.inkFaint,
-                        lineHeight: 1.7,
-                        mb: 3.5,
-                      }}
-                    >
+                    <Typography sx={{ fontFamily: SANS, fontSize: "0.85rem", color: T.inkFaint, lineHeight: 1.65, mb: 2.5 }}>
                       {currentQuestion.description}
                     </Typography>
                   )}
 
-                  {currentQuestion.type === "multiple" && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 2.5,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: "50%",
-                          background: T.blueLight,
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          fontFamily: MONO,
-                          fontSize: "0.52rem",
-                          letterSpacing: "0.12em",
-                          color: T.inkGhost,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Select all that apply
-                      </Typography>
-                    </Box>
-                  )}
-
                   {currentQuestion.type === "scale" ? (
-                    <ScaleRow
-                      options={currentQuestion.options}
-                      selectedId={selectedIds[0] ?? ""}
-                      onSelect={(id) =>
-                        handleAnswer(currentQuestion.id, id, "scale")
-                      }
-                    />
+                    <ScaleRow options={currentQuestion.options} selectedId={selectedIds[0] ?? ""} onSelect={id => handleAnswer(currentQuestion.id, id, "scale")} />
                   ) : (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1.25,
-                      }}
-                    >
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.875 }}>
                       {currentQuestion.options.map((opt, i) => (
-                        <OptionRow
-                          key={opt.id}
-                          id={opt.id}
-                          label={opt.label}
-                          selected={
-                            currentQuestion.type === "multiple"
-                              ? selectedIds.includes(opt.id)
-                              : selectedIds[0] === opt.id
-                          }
-                          index={i}
-                          type={currentQuestion.type as "single" | "multiple"}
-                          onClick={() =>
-                            handleAnswer(
-                              currentQuestion.id,
-                              opt.id,
-                              currentQuestion.type as any,
-                            )
-                          }
-                        />
+                        <OptionRow key={opt.id} id={opt.id} label={opt.label}
+                          selected={currentQuestion.type === "multiple" ? selectedIds.includes(opt.id) : selectedIds[0] === opt.id}
+                          index={i} type={currentQuestion.type as "single" | "multiple"}
+                          onClick={() => handleAnswer(currentQuestion.id, opt.id, currentQuestion.type as any)} />
                       ))}
                     </Box>
                   )}
                 </Box>
               </Box>
 
+              {/* Error */}
               <AnimatePresence>
-                {currentQuestion.isRequired && !canProceed() && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: "50%",
-                          background: T.error,
-                        }}
-                      />
-                      <Typography
-                        sx={{
-                          fontFamily: MONO,
-                          fontSize: "0.52rem",
-                          letterSpacing: "0.12em",
-                          color: T.error,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Please select an answer
-                      </Typography>
-                    </Box>
+                {blocked && (
+                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+                    <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.error, mb: 1.5 }}>
+                      Please select an answer to continue.
+                    </Typography>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
-                <NavBtn onClick={handlePrev} variant="ghost">
-                  <BackIcon sx={{ fontSize: "0.9rem", color: T.inkFaint }} />
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontWeight: 500,
-                      fontSize: "0.875rem",
-                      color: T.inkFaint,
-                    }}
-                  >
-                    Back
-                  </Typography>
-                </NavBtn>
+              {/* Nav */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <motion.button onClick={handlePrev} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", borderRadius: "8px", border: `1px solid ${T.border}`, background: "transparent", cursor: "pointer", outline: "none" }}>
+                  <BackIcon sx={{ fontSize: "0.85rem", color: T.inkFaint }} />
+                  <Typography sx={{ fontFamily: SANS, fontWeight: 500, fontSize: "0.875rem", color: T.inkMuted }}>Back</Typography>
+                </motion.button>
 
-                <NavBtn
-                  onClick={handleNext}
-                  disabled={!!(currentQuestion.isRequired && !canProceed())}
-                  variant="primary"
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontWeight: 600,
-                      fontSize: "0.9375rem",
-                      color: T.ink,
-                    }}
-                  >
+                <motion.button onClick={handleNext} disabled={blocked}
+                  whileHover={blocked ? {} : { scale: 1.02 }} whileTap={blocked ? {} : { scale: 0.98 }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8,
+                    padding: "11px 24px", borderRadius: "8px", border: "none",
+                    background: blocked ? T.bg : T.btn,
+                    cursor: blocked ? "not-allowed" : "pointer", outline: "none",
+                    boxShadow: blocked ? "none" : T.btnShadow, transition: "all 0.15s",
+                  }}>
+                  <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "0.9rem", color: blocked ? T.inkFaint : T.white }}>
                     {isLast ? "Finish" : "Next"}
                   </Typography>
-                  <NextIcon sx={{ fontSize: "0.9rem", color: T.ink }} />
-                </NavBtn>
+                  <NextIcon sx={{ fontSize: "0.875rem", color: blocked ? T.inkFaint : T.white }} />
+                </motion.button>
               </Box>
             </motion.div>
           </AnimatePresence>
