@@ -271,34 +271,7 @@ function SectionHeader({ inView }: { inView: boolean }) {
   return (
     <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.55, ease: EASE }}
-      >
-        <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-          <motion.div
-            initial={{ scaleX: 0 }} animate={inView ? { scaleX: 1 } : {}}
-            transition={{ duration: 0.5, delay: 0.1, ease: EASE }}
-            style={{ transformOrigin: 'right' }}
-          >
-            <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
-          </motion.div>
-          <Typography sx={{
-            fontFamily: MONO, fontSize: '0.52rem',
-            letterSpacing: '0.22em', color: T.blue, textTransform: 'uppercase',
-          }}>
-            Client Stories
-          </Typography>
-          <motion.div
-            initial={{ scaleX: 0 }} animate={inView ? { scaleX: 1 } : {}}
-            transition={{ duration: 0.5, delay: 0.15, ease: EASE }}
-            style={{ transformOrigin: 'left' }}
-          >
-            <Box sx={{ width: 24, height: 1.5, borderRadius: 1, background: T.blueGrad }} />
-          </motion.div>
-        </Box>
-      </motion.div>
+
 
       <Box sx={{ overflow: 'hidden', mb: 0.5 }}>
         <motion.div
@@ -307,9 +280,12 @@ function SectionHeader({ inView }: { inView: boolean }) {
           transition={{ duration: 0.75, delay: 0.08, ease: EASE }}
         >
           <Typography sx={{
-            fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
+            fontFamily: SERIF,
+            fontWeight: 400,
             fontSize: { xs: '2.25rem', sm: '3rem', md: '4.25rem' },
-            color: T.ink, letterSpacing: '-0.034em', lineHeight: 1.0,
+            color: T.ink,
+            letterSpacing: '-0.034em',
+            lineHeight: 1.0,
           }}>
             Trusted by founders
           </Typography>
@@ -323,11 +299,15 @@ function SectionHeader({ inView }: { inView: boolean }) {
           transition={{ duration: 0.75, delay: 0.16, ease: EASE }}
         >
           <Typography sx={{
-            fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
+            fontFamily: SERIF,
+            fontWeight: 400,
             fontSize: { xs: '2.25rem', sm: '3rem', md: '4.25rem' },
-            letterSpacing: '-0.034em', lineHeight: 1.0,
+            letterSpacing: '-0.034em',
+            lineHeight: 1.0,
             background: T.blueGrad,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
           }}>
             across India.
           </Typography>

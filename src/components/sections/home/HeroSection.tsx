@@ -388,7 +388,7 @@ export function HeroSection() {
               }}
             >
               Whether you're struggling with fundraising, managing cash flow, or making
-              sense of your numbers — we bring{" "}
+              sense of your numbers we bring{" "}
               <em style={{ fontStyle:"normal", color:T.inkDark, fontWeight:600 }}>
                 clarity, structure, and strategy
               </em>{" "}to your finances.
