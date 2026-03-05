@@ -349,63 +349,6 @@ function SectionHeader({ inView }: { inView: boolean }) {
   );
 }
 
-/* ══ FOOTER STATS ════════════════════════════════════════ */
-function FooterStats({ inView }: { inView: boolean }) {
-  const stats = [
-    { val: '₹500Cr+', label: 'Revenue modelled' },
-    { val: '120+',    label: 'Engagements'       },
-    { val: '4.9 / 5', label: 'Avg satisfaction'  },
-    { val: '6 wks',   label: 'Avg fundraise'     },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ delay: 0.55, duration: 0.6, ease: EASE }}
-    >
-      <Box sx={{
-        mt: { xs: 8, md: 10 }, pt: 5,
-        borderTop: `1px solid ${T.border}`,
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap', gap: 0,
-      }}>
-        {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.62 + i * 0.08, duration: 0.5, ease: EASE }}
-          >
-            <Box sx={{
-              px: { xs: 3, md: 5 }, py: 1,
-              textAlign: 'center',
-              borderLeft: i > 0 ? `1px solid ${T.border}` : 'none',
-            }}>
-              <Typography sx={{
-                fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400,
-                fontSize: { xs: '1.25rem', md: '1.6rem' },
-                color: T.ink, letterSpacing: '-0.025em',
-                lineHeight: 1, mb: 0.5,
-              }}>
-                {s.val}
-              </Typography>
-              <Typography sx={{
-                fontFamily: MONO, fontSize: '0.48rem',
-                letterSpacing: '0.15em', color: T.inkFaint,
-                textTransform: 'uppercase',
-              }}>
-                {s.label}
-              </Typography>
-            </Box>
-          </motion.div>
-        ))}
-      </Box>
-    </motion.div>
-  );
-}
-
 /* ══ MAIN EXPORT ═════════════════════════════════════════ */
 export function TestimonialsSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -513,10 +456,6 @@ export function TestimonialsSection() {
             ))}
           </Box>
         </Box>
-
-        {/* Footer stats */}
-        <FooterStats inView={inView} />
-
       </Container>
     </Box>
   );
