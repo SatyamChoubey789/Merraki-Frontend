@@ -126,6 +126,17 @@ function BlueRule({ width=28 }:{width?:number}) {
 function HeroLeft() {
   return (
     <div>
+      {/* Eyebrow — footer's exact mono label style */}
+      <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}}
+        transition={{duration:0.6,ease:EASE}}
+        style={{display:"flex",alignItems:"center",gap:12,marginBottom:30}}>
+        <BlueRule width={22}/>
+        <span style={{
+          fontFamily:MONO, fontSize:"0.52rem", letterSpacing:"0.22em",
+          color:T.blue, textTransform:"uppercase",
+        }}>Finance Intelligence for Founders</span>
+      </motion.div>
+
       {/* Headline — footer uses Instrument Serif italic */}
       <motion.div initial={{opacity:0,y:44}} animate={{opacity:1,y:0}}
         transition={{duration:0.95,delay:0.08,ease:EASE}}>
