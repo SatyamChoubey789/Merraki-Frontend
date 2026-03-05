@@ -6,16 +6,17 @@ import { TestimonialsSection } from "./TestimonialsSection";
 import { FinalCTA } from "./FinalCTA";
 import { HeroSection } from "./HeroSection";
 import { BookConsultationClient } from "../consultation/BookConsultationClient";
+import WhyMerrakiSection from "./WhyMerraki";
 
 export function HomePageClient() {
   return (
     <>
-      <HeroSection />
+      <HeroSection /> 
+      <WhyMerrakiSection/>  
       <ServicesSection />
-      <BookConsultationClient />
-      <StatsSection />
-      <TestimonialsSection />
-      <FinalCTA />
+      <StatsSection /> 
+      <TestimonialsSection /> 
+      <FinalCTA /> 
     </>
   );
 }
