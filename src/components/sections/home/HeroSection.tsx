@@ -745,7 +745,7 @@ export function HeroSection() {
                   backgroundClip: "text",
                 }}
               >
-                grow financially.
+                grow financially
               </h1>
             </motion.div>
 
