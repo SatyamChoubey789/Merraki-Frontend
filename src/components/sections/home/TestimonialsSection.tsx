@@ -12,7 +12,7 @@ import {
 
 /* ══ TOKENS — matches footer blue/white theme ════════════ */
 const T = {
-  bg:        '#F5F7FB',   // bluish-white bg matching footer bgSection
+  bg:        '#F5F7FB',
   bgCard:    '#FFFFFF',
   ink:       '#0A0A0F',
   inkMid:    '#1E1E2A',
@@ -99,13 +99,15 @@ const TESTIMONIALS = [
   },
 ];
 
-const COL_A = [TESTIMONIALS[0],  TESTIMONIALS[3], TESTIMONIALS[6], TESTIMONIALS[9]];
-const COL_B = [TESTIMONIALS[1],  TESTIMONIALS[4], TESTIMONIALS[7], TESTIMONIALS[10]];
-const COL_C = [TESTIMONIALS[2],  TESTIMONIALS[5], TESTIMONIALS[8], TESTIMONIALS[11]];
-const COLUMNS = [
-  { cards: COL_A, speed: 22,  dir: 1,  initialOffset: 0    },
-  { cards: COL_B, speed: 32,  dir: -1, initialOffset: -180 },
-  { cards: COL_C, speed: 18,  dir: 1,  initialOffset: -60  },
+/* 3 horizontal rows with different card sets */
+const ROW_A = [TESTIMONIALS[0], TESTIMONIALS[1], TESTIMONIALS[2], TESTIMONIALS[3], TESTIMONIALS[4],  TESTIMONIALS[5]];
+const ROW_B = [TESTIMONIALS[6], TESTIMONIALS[7], TESTIMONIALS[8], TESTIMONIALS[9], TESTIMONIALS[10], TESTIMONIALS[11]];
+const ROW_C = [TESTIMONIALS[3], TESTIMONIALS[0], TESTIMONIALS[9], TESTIMONIALS[6], TESTIMONIALS[1],  TESTIMONIALS[7]];
+
+const ROWS = [
+  { cards: ROW_A, speed: 22, dir: 1  as 1 | -1, initialOffset: 0    },
+  { cards: ROW_B, speed: 28, dir: -1 as 1 | -1, initialOffset: -320 },
+  { cards: ROW_C, speed: 18, dir: 1  as 1 | -1, initialOffset: -160 },
 ];
 
 /* ══ TESTIMONIAL CARD ════════════════════════════════════ */
@@ -132,7 +134,7 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
   const onLeave = useCallback(() => { mx.set(0); my.set(0); }, [mx, my]);
 
   return (
-    <motion.div style={{ perspective: 1000, marginBottom: 12 }}>
+    <motion.div style={{ perspective: 1000, marginRight: 12, flexShrink: 0 }}>
       <motion.div
         ref={cardRef}
         style={{ rotateX: rotX, rotateY: rotY, transformStyle: 'preserve-3d', boxShadow: lift }}
@@ -145,6 +147,7 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
           borderRadius: '14px',
           border: `1px solid ${T.border}`,
           p: '14px 16px',
+          width: 260,
           position: 'relative',
           overflow: 'hidden',
           transition: 'border-color 0.25s ease',
@@ -163,7 +166,6 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
           }} />
 
           <Box sx={{ position: 'relative', zIndex: 1 }}>
-            {/* Quote mark — blue tinted */}
             <Typography sx={{
               fontFamily: SERIF, fontSize: '1.6rem', lineHeight: 0.8,
               color: T.blueLight, mb: 0.5, display: 'block', opacity: 0.7,
@@ -181,7 +183,6 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
               display: 'flex', alignItems: 'center', gap: 1,
               pt: '10px', borderTop: `1px solid ${T.border}`,
             }}>
-              {/* Avatar */}
               <Box sx={{
                 width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                 background: `linear-gradient(135deg, ${t.accent}cc, ${t.accent})`,
@@ -212,7 +213,6 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
                 </Typography>
               </Box>
 
-              {/* Blue accent dot */}
               <Box sx={{
                 width: 5, height: 5, borderRadius: '50%',
                 background: T.blueGrad, opacity: 0.6, flexShrink: 0,
@@ -225,39 +225,42 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
   );
 }
 
-/* ══ INFINITE SCROLL COLUMN ══════════════════════════════ */
-function InfiniteColumn({
-  cards, speed, dir, initialOffset, parallaxProgress, parallaxAmount,
+/* ══ INFINITE HORIZONTAL ROW ═════════════════════════════ */
+function InfiniteRow({
+  cards, speed, dir, initialOffset,
 }: {
   cards: typeof TESTIMONIALS;
   speed: number;
   dir: 1 | -1;
   initialOffset: number;
-  parallaxProgress: any;
-  parallaxAmount: number;
 }) {
-  const autoY = useMotionValue(initialOffset);
-  const rawParallax = useTransform(parallaxProgress, [0, 1], [0, parallaxAmount]);
-  const smoothParallax = useSpring(rawParallax, { stiffness: 50, damping: 20 });
+  const autoX = useMotionValue(initialOffset);
+  /* each card is ~272px (260 + 12 gap) */
+  const wrapWidth = cards.length * 272;
   const looped = [...cards, ...cards, ...cards, ...cards];
 
   useAnimationFrame((_, delta) => {
     const pxPerFrame = (speed / 1000) * delta * dir;
-    autoY.set(autoY.get() + pxPerFrame);
-    const wrapHeight = cards.length * 176;
-    const current = autoY.get();
-    if (dir === 1  && current > 0)            autoY.set(current - wrapHeight);
-    if (dir === -1 && current < -wrapHeight)  autoY.set(current + wrapHeight);
+    const next = autoX.get() + pxPerFrame;
+
+    if (dir === 1  && next > 0)           autoX.set(next - wrapWidth);
+    if (dir === -1 && next < -wrapWidth)  autoX.set(next + wrapWidth);
+    else autoX.set(next);
   });
 
   return (
-    <Box sx={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-      <motion.div style={{ y: smoothParallax }}>
-        <motion.div style={{ y: autoY }}>
-          {looped.map((t, i) => (
-            <TestimonialCard key={`${t.name}-${i}`} t={t} />
-          ))}
-        </motion.div>
+    <Box sx={{ overflow: 'hidden', position: 'relative', width: '100%' }}>
+      <motion.div
+        style={{
+          x: autoX,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'stretch',
+        }}
+      >
+        {looped.map((t, i) => (
+          <TestimonialCard key={`${t.name}-${i}`} t={t} />
+        ))}
       </motion.div>
     </Box>
   );
@@ -268,7 +271,6 @@ function SectionHeader({ inView }: { inView: boolean }) {
   return (
     <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
 
-      {/* Eyebrow — matches footer style */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -298,7 +300,6 @@ function SectionHeader({ inView }: { inView: boolean }) {
         </Box>
       </motion.div>
 
-      {/* Headline */}
       <Box sx={{ overflow: 'hidden', mb: 0.5 }}>
         <motion.div
           initial={{ y: '108%' }}
@@ -371,15 +372,13 @@ export function TestimonialsSection() {
         borderTop: `1px solid ${T.border}`,
       }}
     >
-      {/* Blue radial ambient top-center */}
+      {/* Ambient glows */}
       <Box sx={{
         position: 'absolute', width: '80vw', height: '50vw',
         top: '-10vw', left: '10vw', borderRadius: '50%',
         background: 'radial-gradient(ellipse, rgba(59,123,246,0.07) 0%, transparent 65%)',
         pointerEvents: 'none',
       }} />
-
-      {/* Blue radial ambient bottom-right */}
       <Box sx={{
         position: 'absolute', width: '40vw', height: '35vw',
         bottom: '-5%', right: '-5%', borderRadius: '50%',
@@ -387,7 +386,7 @@ export function TestimonialsSection() {
         pointerEvents: 'none',
       }} />
 
-      {/* Dot grid — matches footer */}
+      {/* Dot grid */}
       <Box sx={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         backgroundImage: `radial-gradient(circle, rgba(59,123,246,0.07) 1px, transparent 1px)`,
@@ -396,66 +395,37 @@ export function TestimonialsSection() {
 
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
 
-        {/* Header */}
         <div ref={headerRef}>
           <SectionHeader inView={inView} />
         </div>
 
-        {/* Card wall */}
-        <Box sx={{ position: 'relative' }}>
-
-          {/* Top fade */}
-          <Box sx={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            height: { xs: 70, md: 100 }, zIndex: 2, pointerEvents: 'none',
-            background: `linear-gradient(to bottom, ${T.bg} 0%, ${T.bg}00 100%)`,
-          }} />
-
-          {/* Bottom fade */}
-          <Box sx={{
-            position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: { xs: 90, md: 130 }, zIndex: 2, pointerEvents: 'none',
-            background: `linear-gradient(to top, ${T.bg} 0%, ${T.bg}00 100%)`,
-          }} />
+        {/* Horizontal row wall */}
+        <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
           {/* Left fade */}
           <Box sx={{
             position: 'absolute', top: 0, bottom: 0, left: 0,
-            width: { xs: 16, md: 32 }, zIndex: 2, pointerEvents: 'none',
+            width: { xs: 40, md: 80 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to right, ${T.bg} 0%, transparent 100%)`,
           }} />
-
           {/* Right fade */}
           <Box sx={{
             position: 'absolute', top: 0, bottom: 0, right: 0,
-            width: { xs: 16, md: 32 }, zIndex: 2, pointerEvents: 'none',
+            width: { xs: 40, md: 80 }, zIndex: 2, pointerEvents: 'none',
             background: `linear-gradient(to left, ${T.bg} 0%, transparent 100%)`,
           }} />
 
-          {/* 3 columns — horizontally narrow / compact */}
-          <Box sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: '260px 260px', lg: '240px 240px 240px' },
-            gap: { xs: 1.5, md: 1.5 },
-            justifyContent: 'center',
-            height: { xs: 440, sm: 520, md: 680 },
-            overflow: 'hidden',
-            alignItems: 'start',
-            pt: '16px', pb: '16px',
-          }}>
-            {COLUMNS.map((col, ci) => (
-              <InfiniteColumn
-                key={ci}
-                cards={col.cards}
-                speed={col.speed}
-                dir={col.dir as 1 | -1}
-                initialOffset={col.initialOffset}
-                parallaxProgress={scrollYProgress}
-                parallaxAmount={ci === 1 ? -80 : ci === 0 ? 50 : 60}  // more subtle parallax
-              />
-            ))}
-          </Box>
+          {ROWS.map((row, ri) => (
+            <InfiniteRow
+              key={ri}
+              cards={row.cards}
+              speed={row.speed}
+              dir={row.dir}
+              initialOffset={row.initialOffset}
+            />
+          ))}
         </Box>
+
       </Container>
     </Box>
   );
