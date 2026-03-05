@@ -10,7 +10,6 @@ import {
   MotionValue,
 } from "framer-motion";
 import { FoundersSection } from "@/components/sections/home/FoundersSection";
-import { FinalCTA } from "@/components/sections/home/FinalCTA";
 
 /* ══════════════════════════════════════════════════════════════════════
    DESIGN TOKENS — Pure black/white, warm gold accent, NO dark blues
@@ -1071,7 +1070,6 @@ export function AboutPageClient() {
     <Box sx={{ fontFamily: FONT_BODY, background: T.offwhite }}>
       <HorizontalScrollSection />
       <FoundersSection />
-      <FinalCTA />
     </Box>
   );
 }
