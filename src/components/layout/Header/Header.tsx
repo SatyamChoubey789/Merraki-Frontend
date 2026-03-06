@@ -19,7 +19,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_LINKS } from "./navLinks";
 import { useCartStore } from "@/lib/stores/cartStore";
-import { CurrencySelector } from "../CurrencySelector/CurrencySelector";
 import { MerrakiLogoAnimated } from "@/components/ui/MerrakiLogo/MerrakiLogo";
 
 /* ══════════════════════════════════════════════════════════
@@ -178,11 +177,6 @@ export function Header() {
 
               {/* Right actions */}
               <Box sx={{ display:"flex", alignItems:"center", gap:0.75, flexShrink:0 }}>
-
-                <Box sx={{ display:{ xs:"none", md:"block" } }}>
-                  <CurrencySelector isDark={false} />
-                </Box>
-
                 {/* Cart */}
                 <motion.div whileHover={{ scale:1.06 }} whileTap={{ scale:0.94 }}>
                   <IconButton onClick={openCart} size="small" sx={{
@@ -428,7 +422,6 @@ function MobileDrawer({
 
         {/* Bottom actions */}
         <Box sx={{ display:"flex", flexDirection:"column", gap:1.25, mt:3 }}>
-          <CurrencySelector isDark={false} />
 
           <motion.button
             onClick={() => { openCart(); onClose(); }}
