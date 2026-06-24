@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { submitFounderLead } from "@/lib/submitFounderLead";
 
 /* ── Types ────────────────────────────────────────── */
 export type QuestionType = "single" | "multiple" | "scale";
@@ -628,10 +629,19 @@ export function useFounderTestEngine() {
       setContact(data);
       setStep("submitting");
       setSubmitting(true);
-      // Compute result locally (server call can replace this)
+
+      // Compute result locally (server can replace this in future)
       await new Promise((r) => setTimeout(r, 5200)); // match animation duration
       const computed = computeResult(answers);
       setResult(computed);
+
+      // Persist lead + scored result to the backend DB.
+      // Fire-and-forget: a backend/network failure must never block the
+      // user from seeing their results.
+      submitFounderLead(data, computed).catch((err) => {
+        console.error("[useFounderTestEngine] submitFounderLead failed:", err);
+      });
+
       setSubmitting(false);
       setStep("results");
     },
