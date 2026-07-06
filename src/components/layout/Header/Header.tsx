@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Box } from "@mui/material";
+import { Box, IconButton, Drawer, Collapse } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   ShoppingCart as CartIcon,
-  KeyboardArrowDown as DropdownIcon,
 } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MerrakiTextLogoAnimated } from "@/components/ui/Merrakitextlogo";
 import { useCartStore } from "@/lib/stores/cartStore";
-
 
 const T = {
   bg: "#F5F7FB",
@@ -59,10 +60,9 @@ export function Header() {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  // Cart store
   const openDrawer = useCartStore((s) => s.openDrawer);
   const itemCount = useCartStore((s) => s.items.length);
 
@@ -74,252 +74,257 @@ export function Header() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const onEnter = (label: string) => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpenMenu(label);
+  const toggleExpand = (label: string) => {
+    setExpanded((prev) => (prev === label ? null : label));
   };
 
-  const onLeave = () => {
-    closeTimer.current = setTimeout(() => setOpenMenu(null), 100);
-  };
-
-  const onDropdownEnter = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
+  const isActive = (href?: string) => {
+    if (!href) return false;
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   return (
-    <Box
-      component="header"
-      sx={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        transform: visible ? "translateY(0)" : "translateY(-100%)",
-        transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
-        background: T.bg,
-        borderBottom: `1px solid ${T.border}`,
-      }}
-    >
+    <>
+      {/* HEADER */}
       <Box
+        component="header"
         sx={{
-          maxWidth: "1200px",
-          mx: "auto",
-          px: { xs: 2, md: 4 },
-          height: "70px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          transform: visible ? "translateY(0)" : "translateY(-100%)",
+          transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
+          background: T.bg,
+          borderBottom: `1px solid ${T.border}`,
         }}
       >
-        {/* LOGO */}
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <MerrakiTextLogoAnimated size="md" color={T.ink} />
-        </Link>
-
-        {/* NAV */}
         <Box
-          component="nav"
           sx={{
-            display: { xs: "none", md: "flex" },
+            maxWidth: "1200px",
+            mx: "auto",
+            px: { xs: 2, md: 4 },
+            height: "70px",
+            display: "flex",
             alignItems: "center",
-            gap: "36px",
+            justifyContent: "space-between",
           }}
         >
-          {NAV_LINKS.map((link) => {
-            const hasDropdown = !!link.children?.length;
+          {/* LOGO */}
+          <Link href="/">
+            <MerrakiTextLogoAnimated size="md" color={T.ink} />
+          </Link>
 
-            const isActive =
-              link.href &&
-              (pathname === link.href || pathname.startsWith(link.href + "/"));
+          {/* DESKTOP NAV */}
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              alignItems: "center",
+              gap: "32px",
+            }}
+          >
+            {NAV_LINKS.map((link) => {
+              const active = isActive(link.href);
 
-            const isOpen = openMenu === link.label;
+              return (
+                <Box key={link.label} sx={{ position: "relative" }}>
+                  <Link
+                    href={link.href || "#"}
+                    style={{
+                      fontFamily: SANS,
+                      fontSize: "0.92rem",
+                      fontWeight: 500,
+                      color: active ? T.ink : T.inkMuted,
+                      textDecoration: "none",
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                </Box>
+              );
+            })}
+          </Box>
 
-            return (
-              <Box
-                key={link.label}
-                onMouseEnter={() => hasDropdown && onEnter(link.label)}
-                onMouseLeave={() => hasDropdown && onLeave()}
-                sx={{
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  height: "70px",
-                }}
-              >
-                {/* NAV ITEM */}
+          {/* RIGHT */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* CART */}
+            <Box
+              onClick={openDrawer}
+              sx={{
+                position: "relative",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                color: T.ink,
+              }}
+            >
+              <CartIcon />
+              {itemCount > 0 && (
                 <Box
                   sx={{
+                    position: "absolute",
+                    top: -6,
+                    right: -8,
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: T.ink,
+                    color: "#fff",
+                    fontSize: 10,
                     display: "flex",
                     alignItems: "center",
-                    gap: "4px",
-                    cursor: "pointer",
+                    justifyContent: "center",
                   }}
                 >
-                  {link.href ? (
-                    <Link
-                      href={link.href}
-                      style={{
-                        fontFamily: SANS,
-                        fontSize: "0.92rem",
-                        fontWeight: 500,
-                        color: isActive ? T.ink : T.inkMuted,
-                        textDecoration: "none",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        lineHeight: 1,
-                      }}
-                    >
-                      {hasDropdown && (
-                        <DropdownIcon
-                          sx={{
-                            fontSize: 18,
-                            transition: "0.2s ease",
-                            transform: isOpen
-                              ? "rotate(180deg)"
-                              : "rotate(0deg)",
-                          }}
-                        />
-                      )}
+                  {itemCount}
+                </Box>
+              )}
+            </Box>
 
-                      {link.label}
-                    </Link>
-                  ) : (
-                    <Box
+            {/* CONTACT */}
+            <Link href="/book-consultation" style={{ textDecoration: "none" }}>
+              <button
+                style={{
+                  border: `1px solid ${T.ink}`,
+                  color: T.ink,
+                  background: "transparent",
+                  fontFamily: SANS,
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                }}
+              >
+                Contact
+              </button>
+            </Link>
+
+            {/* HAMBURGER */}
+            <IconButton
+              onClick={() => setMobileOpen(true)}
+              sx={{
+                display: { xs: "flex", md: "none" },
+                color: T.ink,
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* MOBILE DRAWER (GLASSMORPHIC) */}
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        PaperProps={{
+          sx: {
+            width: "85vw",
+            backdropFilter: "blur(18px)",
+            background: "rgba(245,247,251,0.92)",
+            borderLeft: `1px solid ${T.border}`,
+            px: 2,
+            py: 2,
+          },
+        }}
+      >
+        {/* TOP */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <IconButton onClick={() => setMobileOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {/* LINKS */}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {NAV_LINKS.map((link) => {
+            const hasChildren = !!link.children?.length;
+            const active = isActive(link.href);
+
+            return (
+              <Box key={link.label}>
+                {/* MAIN ITEM */}
+                <Box
+                  onClick={() =>
+                    hasChildren
+                      ? toggleExpand(link.label)
+                      : setMobileOpen(false)
+                  }
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    py: 1.5,
+                    cursor: "pointer",
+                    fontFamily: SANS,
+                    fontWeight: 500,
+                    color: active ? T.ink : T.inkMuted,
+                  }}
+                >
+                  <Link
+                    href={link.href || "#"}
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+
+                  {hasChildren && (
+                    <ExpandMoreIcon
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px",
-                        color: T.inkMuted,
-                        fontFamily: SANS,
-                        fontSize: "0.92rem",
-                        fontWeight: 500,
-                        lineHeight: 1,
+                        transform:
+                          expanded === link.label
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                        transition: "0.2s",
                       }}
-                    >
-                      {hasDropdown && (
-                        <DropdownIcon
-                          sx={{
-                            fontSize: 18,
-                            transition: "0.2s ease",
-                            transform: isOpen
-                              ? "rotate(180deg)"
-                              : "rotate(0deg)",
-                          }}
-                        />
-                      )}
-
-                      {link.label}
-                    </Box>
+                    />
                   )}
                 </Box>
 
-                {/* DROPDOWN */}
-                {hasDropdown && isOpen && (
-                  <Box
-                    onMouseEnter={onDropdownEnter}
-                    onMouseLeave={onLeave}
-                    sx={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      minWidth: "220px",
-                      background: T.card,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "10px",
-                      boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-                      zIndex: 999,
-                      py: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {link.children!.map((child) => (
-                      <Link
-                        key={child.label}
-                        href={child.href!}
-                        style={{
-                          fontFamily: SANS,
-                          fontSize: "0.88rem",
-                          color: T.ink,
-                          textDecoration: "none",
-                          padding: "10px 14px",
-                          transition: "0.2s ease",
-                        }}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </Box>
+                {/* CHILDREN */}
+                {hasChildren && (
+                  <Collapse in={expanded === link.label}>
+                    <Box sx={{ pl: 2, pb: 1 }}>
+                      {link.children!.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href!}
+                          onClick={() => setMobileOpen(false)}
+                          style={{
+                            display: "block",
+                            padding: "8px 0",
+                            fontFamily: SANS,
+                            fontSize: "0.9rem",
+                            color: T.inkMuted,
+                            textDecoration: "none",
+                          }}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </Box>
+                  </Collapse>
                 )}
               </Box>
             );
           })}
         </Box>
-
-        {/* RIGHT */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {/* CART BUTTON */}
-          <Box
-            onClick={openDrawer}
-            sx={{
-              position: "relative",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              color: T.ink,
-            }}
-          >
-            <CartIcon />
-
-            {itemCount > 0 && (
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -6,
-                  right: -8,
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: T.ink,
-                  color: "#fff",
-                  fontSize: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {itemCount}
-              </Box>
-            )}
-          </Box>
-
-          {/* CONTACT BUTTON */}
-          <Link href="/book-consultation" style={{ textDecoration: "none" }}>
-            <button
-              style={{
-                border: `1px solid ${T.ink}`,
-                color: T.ink,
-                background: "transparent",
-                fontFamily: SANS,
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                padding: "8px 16px",
-                cursor: "pointer",
-              }}
-            >
-              Contact
-            </button>
-          </Link>
-        </Box>
-      </Box>
-    </Box>
+      </Drawer>
+    </>
   );
 }
