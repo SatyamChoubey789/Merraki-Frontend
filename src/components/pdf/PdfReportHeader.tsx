@@ -1,24 +1,20 @@
-/**
- * PdfReportHeader.tsx
- *
- * Rendered at the top of every /pdf-preview/* page during Puppeteer capture.
- * Reads `company` and `ts` from the URL search params injected by the API route.
- *
- * Usage in each preview page:
- *   import PdfReportHeader from "@/components/pdf/PdfReportHeader";
- *   ...
- *   <PdfReportHeader calculatorName="Break-Even Calculator" accent="#3B7BF6" />
- */
-
 "use client";
 
 import { useSearchParams } from "next/navigation";
 
 const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
-const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
 
-// Calculator accent colours — keep in sync with each calc page
-const ACCENT_FALLBACK = "#3B7BF6";
+function LogoMark({ accent }: { accent: string }) {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+      <path d="M3 20V14" stroke={accent} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M9 20V10" stroke={accent} strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M15 20V6" stroke={accent} strokeWidth="2.4" strokeLinecap="round" opacity="0.55" />
+      <path d="M3 11L10 5L15 8L21 3" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16.5 3H21V7.5" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 interface PdfReportHeaderProps {
   calculatorName: string;
@@ -27,105 +23,52 @@ interface PdfReportHeaderProps {
 
 export default function PdfReportHeader({
   calculatorName,
-  accent = ACCENT_FALLBACK,
+  accent = "#3B7BF6",
 }: PdfReportHeaderProps) {
   const params = useSearchParams();
   const company = params.get("company") ?? "—";
   const tsRaw = params.get("ts");
 
-  // Format timestamp: "24 Jun 2025, 14:32 IST"
   const formatted = (() => {
     const d = tsRaw ? new Date(Number(tsRaw)) : new Date();
-    return d.toLocaleString("en-IN", {
+    return d.toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Asia/Kolkata",
-      timeZoneName: "short",
     });
   })();
 
   return (
-    <div
-      style={{
-        width: "100%",
-        fontFamily: SANS,
-        borderBottom: "1.5px solid #E5E7EB",
-        marginBottom: 28,
-        paddingBottom: 18,
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
-        gap: 16,
-      }}
-    >
-      {/* Left: branding + calculator name */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        {/* Accent bar */}
-        <div
-          style={{
-            width: 3,
-            height: 40,
-            borderRadius: 2,
-            background: `linear-gradient(180deg, ${accent} 0%, ${accent}55 100%)`,
-            flexShrink: 0,
-          }}
-        />
-        <div>
-          {/* merraki wordmark */}
-          <div
+    <div style={{ width: "100%", fontFamily: SANS, position: "relative", zIndex: 1 }}>
+      <div style={{ textAlign: "right", fontSize: 11, color: "#B7B7C9", marginBottom: 10 }}>
+        {formatted}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1.5px solid #ECECF2",
+          paddingBottom: 16,
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <LogoMark accent={accent} />
+          <span
             style={{
-              fontFamily: SANS,
               fontWeight: 800,
-              fontSize: 11,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase" as const,
+              fontSize: 20,
               color: accent,
-              lineHeight: 1,
-              marginBottom: 4,
-            }}
-          >
-            merraki
-          </div>
-          <div
-            style={{
-              fontFamily: SANS,
-              fontWeight: 700,
-              fontSize: 18,
-              color: "#0A0A0F",
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
             }}
           >
             {calculatorName}
-          </div>
+          </span>
         </div>
-      </div>
-
-      {/* Right: company + timestamp */}
-      <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div
-          style={{
-            fontFamily: SANS,
-            fontWeight: 700,
-            fontSize: 13,
-            color: "#111827",
-            marginBottom: 3,
-          }}
-        >
+        <div style={{ fontWeight: 600, fontSize: 15, color: "#3A3A52" }}>
           {company}
-        </div>
-        <div
-          style={{
-            fontFamily: MONO,
-            fontSize: 10,
-            color: "#6B7280",
-            letterSpacing: "0.01em",
-          }}
-        >
-          Generated: {formatted}
         </div>
       </div>
     </div>

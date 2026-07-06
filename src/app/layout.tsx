@@ -5,6 +5,7 @@ import {
   Caveat,
   Cormorant_Garamond,
 } from "next/font/google";
+import { headers } from "next/headers";
 import { Providers } from "./providers";
 import { PageWrapper } from "@/components/layout/PageWrapper/PageWrapper";
 import { generateOrganizationSchema } from "@/lib/utils/metadata";
@@ -92,11 +93,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Detect PDF preview routes — hide all global chrome for Puppeteer captures
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+  const isPdf = pathname.startsWith("/pdf-preview");
+
   return (
     <html
       lang="en"
@@ -104,17 +110,16 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Structured Data for SEO */}
         <StructuredData data={generateOrganizationSchema()} />
       </head>
       <body>
         <Providers>
-          {/* PageWrapper wraps the main page content */}
-          <PageWrapper>{children}</PageWrapper>
+          <PageWrapper noHeader={isPdf} noFooter={isPdf}>
+            {children}
+          </PageWrapper>
 
-          {/* Global components always available */}
-
-          <WhatsAppWidget />
+          {/* Only render global widgets on non-PDF pages */}
+          {!isPdf && <WhatsAppWidget />}
         </Providers>
       </body>
     </html>
