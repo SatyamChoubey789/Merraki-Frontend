@@ -58,7 +58,7 @@ function compute(i: Params) {
   const operatingExpenses = Number(i.operatingExpenses || 0);
   const interest = Number(i.interest || 0);
   const tax = Number(i.tax || 0);
-
+ 
   const gross = revenue - cogs;
   const gm = revenue > 0 ? (gross / revenue) * 100 : 0;
   const opProfit = gross - operatingExpenses;
@@ -67,6 +67,7 @@ function compute(i: Params) {
   const taxAmt = ebt > 0 ? (ebt * tax) / 100 : 0;
   const net = ebt - taxAmt;
   const nm = revenue > 0 ? (net / revenue) * 100 : 0;
+ 
   return {
     gross,
     gm,
@@ -75,6 +76,15 @@ function compute(i: Params) {
     net,
     nm,
     taxAmt,
+ 
+    // ── ADD: raw inputs so PDF preview can build the full P&L table ──────
+    revenue,
+    cogs,
+    operatingExpenses,
+    interest,
+    tax,
+    // ─────────────────────────────────────────────────────────────────────
+ 
     waterfall: [
       { name: "Revenue", value: revenue, color: ACCENT },
       { name: "COGS", value: -cogs, color: T.red },

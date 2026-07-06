@@ -13,13 +13,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
     formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
   experimental: {
-    
     optimizePackageImports: [
       "@mui/material",
       "@mui/icons-material",
@@ -50,7 +49,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
 
               // Scripts
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.razorpay.com https://assets.calendly.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.razorpay.com https://assets.calendly.com https://static.cloudflareinsights.com",
 
               // Styles
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -61,11 +60,13 @@ const nextConfig: NextConfig = {
               // Images
               "img-src 'self' data: blob: https://api.merrakisolutions.com https://cdn.merrakisolutions.com https://res.cloudinary.com https://images.unsplash.com",
 
-              // Videos / Audio
+              // Media
               "media-src 'self' blob: https://res.cloudinary.com",
 
-              "connect-src 'self' https://api.merrakisolutions.com https://checkout.razorpay.com https://cdn.jsdelivr.net https://unpkg.com",
-              // iframes
+              // API calls / XHR / analytics
+              "connect-src 'self' https://api.merrakisolutions.com https://checkout.razorpay.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com",
+
+              // iFrames
               "frame-src https://calendly.com https://api.razorpay.com",
             ].join("; "),
           },
@@ -83,7 +84,7 @@ const nextConfig: NextConfig = {
         ],
       },
 
-      // API no-cache (optional but recommended)
+      // API no-cache
       {
         source: "/api/(.*)",
         headers: [
