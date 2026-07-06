@@ -5,9 +5,7 @@ import { Box, IconButton, Drawer, Collapse } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import {
-  ShoppingCart as CartIcon,
-} from "@mui/icons-material";
+import { ShoppingCart as CartIcon } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MerrakiTextLogoAnimated } from "@/components/ui/Merrakitextlogo";
@@ -57,15 +55,22 @@ export const NAV_LINKS: NavLink[] = [
 
 export function Header() {
   const pathname = usePathname();
+
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
 
+  // desktop dropdown
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const closeTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // mobile drawer
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const openDrawer = useCartStore((s) => s.openDrawer);
   const itemCount = useCartStore((s) => s.items.length);
 
+  // scroll hide header
   useEffect(() => {
     const handleScroll = () => {
       const current = window.scrollY;
@@ -77,6 +82,21 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // desktop hover
+  const onEnter = (label: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpenMenu(label);
+  };
+
+  const onLeave = () => {
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
+  };
+
+  const onDropdownEnter = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  };
+
+  // mobile accordion
   const toggleExpand = (label: string) => {
     setExpanded((prev) => (prev === label ? null : label));
   };
@@ -128,10 +148,17 @@ export function Header() {
             }}
           >
             {NAV_LINKS.map((link) => {
+              const hasDropdown = !!link.children?.length;
+              const isOpen = openMenu === link.label;
               const active = isActive(link.href);
 
               return (
-                <Box key={link.label} sx={{ position: "relative" }}>
+                <Box
+                  key={link.label}
+                  onMouseEnter={() => hasDropdown && onEnter(link.label)}
+                  onMouseLeave={() => hasDropdown && onLeave()}
+                  sx={{ position: "relative", height: "70px", display: "flex", alignItems: "center" }}
+                >
                   <Link
                     href={link.href || "#"}
                     style={{
@@ -140,10 +167,60 @@ export function Header() {
                       fontWeight: 500,
                       color: active ? T.ink : T.inkMuted,
                       textDecoration: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}
                   >
                     {link.label}
+
+                    {hasDropdown && (
+                      <ExpandMoreIcon
+                        sx={{
+                          fontSize: 18,
+                          transition: "0.2s",
+                          transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        }}
+                      />
+                    )}
                   </Link>
+
+                  {/* DROPDOWN */}
+                  {hasDropdown && isOpen && (
+                    <Box
+                      onMouseEnter={onDropdownEnter}
+                      onMouseLeave={onLeave}
+                      sx={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        minWidth: 220,
+                        background: T.card,
+                        border: `1px solid ${T.border}`,
+                        borderRadius: "12px",
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
+                        py: 1,
+                        zIndex: 9999,
+                      }}
+                    >
+                      {link.children!.map((child) => (
+                        <Link
+                          key={child.label}
+                          href={child.href!}
+                          style={{
+                            display: "block",
+                            padding: "10px 14px",
+                            fontFamily: SANS,
+                            fontSize: "0.88rem",
+                            color: T.ink,
+                            textDecoration: "none",
+                          }}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </Box>
+                  )}
                 </Box>
               );
             })}
@@ -152,16 +229,7 @@ export function Header() {
           {/* RIGHT */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {/* CART */}
-            <Box
-              onClick={openDrawer}
-              sx={{
-                position: "relative",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                color: T.ink,
-              }}
-            >
+            <Box onClick={openDrawer} sx={{ position: "relative", cursor: "pointer" }}>
               <CartIcon />
               {itemCount > 0 && (
                 <Box
@@ -186,7 +254,7 @@ export function Header() {
             </Box>
 
             {/* CONTACT */}
-            <Link href="/book-consultation" style={{ textDecoration: "none" }}>
+            <Link href="/book-consultation">
               <button
                 style={{
                   border: `1px solid ${T.ink}`,
@@ -203,13 +271,10 @@ export function Header() {
               </button>
             </Link>
 
-            {/* HAMBURGER */}
+            {/* MOBILE HAMBURGER */}
             <IconButton
               onClick={() => setMobileOpen(true)}
-              sx={{
-                display: { xs: "flex", md: "none" },
-                color: T.ink,
-              }}
+              sx={{ display: { xs: "flex", md: "none" }, color: T.ink }}
             >
               <MenuIcon />
             </IconButton>
@@ -217,7 +282,7 @@ export function Header() {
         </Box>
       </Box>
 
-      {/* MOBILE DRAWER (GLASSMORPHIC) */}
+      {/* MOBILE DRAWER */}
       <Drawer
         anchor="right"
         open={mobileOpen}
@@ -227,21 +292,13 @@ export function Header() {
             width: "85vw",
             backdropFilter: "blur(18px)",
             background: "rgba(245,247,251,0.92)",
-            borderLeft: `1px solid ${T.border}`,
             px: 2,
             py: 2,
           },
         }}
       >
-        {/* TOP */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
+        {/* CLOSE */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
           <IconButton onClick={() => setMobileOpen(false)}>
             <CloseIcon />
           </IconButton>
@@ -255,7 +312,6 @@ export function Header() {
 
             return (
               <Box key={link.label}>
-                {/* MAIN ITEM */}
                 <Box
                   onClick={() =>
                     hasChildren
@@ -265,24 +321,14 @@ export function Header() {
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
-                    alignItems: "center",
                     py: 1.5,
-                    cursor: "pointer",
                     fontFamily: SANS,
                     fontWeight: 500,
                     color: active ? T.ink : T.inkMuted,
+                    cursor: "pointer",
                   }}
                 >
-                  <Link
-                    href={link.href || "#"}
-                    style={{
-                      textDecoration: "none",
-                      color: "inherit",
-                    }}
-                  >
-                    {link.label}
-                  </Link>
-
+                  <Link href={link.href || "#"}>{link.label}</Link>
                   {hasChildren && (
                     <ExpandMoreIcon
                       sx={{
@@ -290,36 +336,31 @@ export function Header() {
                           expanded === link.label
                             ? "rotate(180deg)"
                             : "rotate(0deg)",
-                        transition: "0.2s",
                       }}
                     />
                   )}
                 </Box>
 
-                {/* CHILDREN */}
-                {hasChildren && (
-                  <Collapse in={expanded === link.label}>
-                    <Box sx={{ pl: 2, pb: 1 }}>
-                      {link.children!.map((child) => (
-                        <Link
-                          key={child.label}
-                          href={child.href!}
-                          onClick={() => setMobileOpen(false)}
-                          style={{
-                            display: "block",
-                            padding: "8px 0",
-                            fontFamily: SANS,
-                            fontSize: "0.9rem",
-                            color: T.inkMuted,
-                            textDecoration: "none",
-                          }}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </Box>
-                  </Collapse>
-                )}
+                <Collapse in={expanded === link.label}>
+                  <Box sx={{ pl: 2 }}>
+                    {link.children?.map((child) => (
+                      <Link
+                        key={child.label}
+                        href={child.href!}
+                        onClick={() => setMobileOpen(false)}
+                        style={{
+                          display: "block",
+                          padding: "8px 0",
+                          fontFamily: SANS,
+                          fontSize: "0.9rem",
+                          color: T.inkMuted,
+                        }}
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </Box>
+                </Collapse>
               </Box>
             );
           })}

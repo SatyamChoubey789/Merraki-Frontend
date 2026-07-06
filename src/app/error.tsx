@@ -5,31 +5,27 @@ import { Box, Container, Typography, Button } from "@mui/material";
 import { Refresh as RetryIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
 
-/* ══ MONOCHROME TOKENS (white + black only) ═════════════ */
+/* ══ MONOCHROME SAAS TOKENS ═════════════ */
 const T = {
-  bg:        "#FFFFFF",
-  bgSection: "#F7F7F7",
+  bg: "#FFFFFF",
+  soft: "#F7F7F7",
 
-  ink:       "#000000",
-  inkDark:   "#111111",
-  inkMid:    "#2A2A2A",
-  inkMuted:  "#555555",
-  inkFaint:  "#9A9A9A",
+  ink: "#000000",
+  inkMid: "#1A1A1A",
+  inkMuted: "#555555",
+  inkFaint: "#9A9A9A",
 
-  border:    "rgba(0,0,0,0.08)",
+  border: "rgba(0,0,0,0.08)",
+  borderSoft: "rgba(0,0,0,0.05)",
 
-  accent:     "#000000",
-  accentSoft: "#111111",
-  accentPale: "#F2F2F2",
-  accentGlow: "rgba(0,0,0,0.08)",
-  accentDim:  "rgba(0,0,0,0.04)",
+  glow: "rgba(0,0,0,0.06)",
+  dim: "rgba(0,0,0,0.03)",
 
-  accentGrad: "linear-gradient(135deg, #000000 0%, #2A2A2A 100%)",
+  grad: "linear-gradient(135deg, #000 0%, #2A2A2A 100%)",
 };
 
 const SANS = `"DM Sans","Mona Sans",system-ui,sans-serif`;
 const MONO = `"DM Mono","JetBrains Mono",ui-monospace,monospace`;
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function GlobalError({
   error,
@@ -46,7 +42,7 @@ export default function GlobalError({
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, ${T.accentPale} 0%, ${T.bgSection} 50%, ${T.accentPale} 100%)`,
+        background: T.bg,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -55,132 +51,138 @@ export default function GlobalError({
         fontFamily: SANS,
       }}
     >
-      {/* Ambient blobs */}
-      <Box
-        sx={{
-          position: "absolute",
-          width: "60vw",
-          height: "60vw",
-          top: "-20vw",
-          left: "-10vw",
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${T.accentGlow} 0%, transparent 60%)`,
-          pointerEvents: "none",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          width: "50vw",
-          height: "50vw",
-          bottom: "-15vw",
-          right: "-10vw",
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${T.accentDim} 0%, transparent 60%)`,
-          pointerEvents: "none",
-        }}
-      />
+      {/* subtle ambient layers */}
+      <Box sx={{
+        position: "absolute",
+        width: "55vw",
+        height: "55vw",
+        top: "-25vw",
+        left: "-15vw",
+        background: `radial-gradient(circle, ${T.dim}, transparent 60%)`,
+        borderRadius: "50%",
+      }} />
+      <Box sx={{
+        position: "absolute",
+        width: "45vw",
+        height: "45vw",
+        bottom: "-20vw",
+        right: "-10vw",
+        background: `radial-gradient(circle, ${T.glow}, transparent 60%)`,
+        borderRadius: "50%",
+      }} />
 
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
         <motion.div
-          initial={{ opacity: 0, y: 32 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: EASE }}
+          transition={{ duration: 0.6 }}
           style={{ textAlign: "center" }}
         >
-          {/* Label */}
-          <Typography
+          {/* status chip */}
+          <Box
             sx={{
-              fontFamily: MONO,
-              fontSize: "0.68rem",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: T.inkFaint,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 1,
+              px: 2,
+              py: 0.8,
+              borderRadius: "999px",
+              border: `1px solid ${T.border}`,
+              background: T.soft,
               mb: 4,
-              fontWeight: 600,
             }}
           >
-            System Interruption
-          </Typography>
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: "#000",
+              }}
+            />
+            <Typography sx={{ fontSize: "0.75rem", color: T.inkMuted }}>
+              System interruption
+            </Typography>
+          </Box>
 
-          {/* Headline */}
+          {/* headline */}
           <Typography
             sx={{
               fontFamily: SANS,
               fontWeight: 800,
-              fontSize: { xs: "2rem", md: "2.75rem" },
+              fontSize: { xs: "2rem", md: "2.6rem" },
               letterSpacing: "-0.03em",
-              lineHeight: 1.1,
               color: T.ink,
-              mb: 2,
+              mb: 1.5,
             }}
           >
-            We encountered an issue.
+            Something went wrong
           </Typography>
 
-          {/* Subtext */}
+          {/* subtext */}
           <Typography
             sx={{
-              fontFamily: SANS,
-              fontWeight: 400,
               fontSize: "1rem",
               color: T.inkMuted,
-              lineHeight: 1.75,
-              maxWidth: 400,
+              lineHeight: 1.7,
+              maxWidth: 420,
               mx: "auto",
-              mb: 4,
+              mb: 3,
             }}
           >
-            Something went wrong on our end. Our systems have been notified.
-            Please try again.
+            Our system ran into an unexpected issue. This has been logged automatically.
+            You can safely retry your request.
           </Typography>
 
-          {/* Reference ID */}
+          {/* digest */}
           {error.digest && (
             <Typography
               sx={{
                 fontFamily: MONO,
                 fontSize: "0.72rem",
-                letterSpacing: "0.08em",
                 color: T.inkFaint,
-                mb: 5,
+                mb: 4,
+                letterSpacing: "0.08em",
               }}
             >
-              Reference ID · {error.digest}
+              REF · {error.digest}
             </Typography>
           )}
 
-          {/* CTA */}
-          <motion.div
-            whileHover={{ scale: 1.03, filter: "brightness(1.05)" }}
-            whileTap={{ scale: 0.97 }}
-            style={{ display: "inline-block" }}
-          >
+          {/* retry button */}
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               onClick={reset}
-              startIcon={<RetryIcon sx={{ fontSize: "1rem !important" }} />}
-              disableElevation
+              startIcon={<RetryIcon />}
               sx={{
-                fontFamily: SANS,
-                fontWeight: 600,
-                fontSize: "1rem",
                 textTransform: "none",
-                letterSpacing: "-0.01em",
+                fontWeight: 600,
                 px: 4,
-                py: 1.75,
+                py: 1.6,
                 borderRadius: "14px",
-                minHeight: 54,
-                color: "#FFFFFF",
-                background: T.accentGrad,
-                boxShadow: `0 8px 28px ${T.accentGlow}`,
+                fontSize: "0.95rem",
+                color: "#fff",
+                background: T.grad,
+                boxShadow: `0 10px 30px ${T.glow}`,
                 "&:hover": {
-                  boxShadow: `0 12px 36px ${T.accentGlow}`,
+                  boxShadow: `0 14px 40px ${T.glow}`,
                 },
               }}
             >
-              Try Again
+              Retry now
             </Button>
           </motion.div>
+
+          {/* footer hint */}
+          <Typography
+            sx={{
+              mt: 5,
+              fontSize: "0.75rem",
+              color: T.inkFaint,
+            }}
+          >
+            If the issue persists, contact support or try again later.
+          </Typography>
         </motion.div>
       </Container>
     </Box>

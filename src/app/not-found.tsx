@@ -5,30 +5,25 @@ import { Home as HomeIcon, ArrowForward as ArrowIcon } from "@mui/icons-material
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-/* ══ MONOCHROME TOKENS (white + black only) ═════════════ */
+/* ══ SaaS TOKENS (premium minimal startup style) ═════════════ */
 const T = {
-  bg:        "#FFFFFF",
-  bgSection: "#F7F7F7",
+  bg: "#F6F7FB",
+  card: "rgba(255,255,255,0.75)",
+  cardBorder: "rgba(15, 23, 42, 0.08)",
 
-  ink:       "#000000",
-  inkMid:    "#2A2A2A",
-  inkMuted:  "#555555",
-  inkFaint:  "#9A9A9A",
+  ink: "#0B0F19",
+  inkMuted: "#5B6475",
+  inkFaint: "#8A93A6",
 
-  border:    "rgba(0,0,0,0.08)",
-  borderMid: "rgba(0,0,0,0.14)",
+  accent: "#111827",
+  accentSoft: "#1F2937",
+  accentGlow: "rgba(17,24,39,0.08)",
 
-  accent:    "#000000",
-  accentSoft:"#111111",
-  accentPale:"#F2F2F2",
-  accentGlow:"rgba(0,0,0,0.08)",
-  accentDim: "rgba(0,0,0,0.04)",
-
-  accentGrad:"linear-gradient(135deg, #000000 0%, #2A2A2A 100%)",
+  bgGlow1: "rgba(17,24,39,0.06)",
+  bgGlow2: "rgba(59,130,246,0.05)",
 };
 
-const SANS = `"DM Sans","Mona Sans",system-ui,sans-serif`;
-const MONO = `"DM Mono","JetBrains Mono",ui-monospace,monospace`;
+const SANS = `"DM Sans","Inter",system-ui,sans-serif`;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function NotFound() {
@@ -36,174 +31,154 @@ export default function NotFound() {
     <Box
       sx={{
         minHeight: "100vh",
-        background: `linear-gradient(135deg, ${T.accentPale} 0%, ${T.bgSection} 50%, ${T.accentPale} 100%)`,
+        background: `
+          radial-gradient(circle at 20% 20%, ${T.bgGlow2}, transparent 40%),
+          radial-gradient(circle at 80% 80%, ${T.bgGlow1}, transparent 45%),
+          ${T.bg}
+        `,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
         overflow: "hidden",
         fontFamily: SANS,
+        px: { xs: 2, md: 0 },
       }}
     >
-      {/* Ambient blobs */}
-      <Box
-        sx={{
-          position: "absolute",
-          width: "60vw",
-          height: "60vw",
-          top: "-20vw",
-          left: "-10vw",
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${T.accentGlow} 0%, transparent 60%)`,
-          pointerEvents: "none",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          width: "50vw",
-          height: "50vw",
-          bottom: "-15vw",
-          right: "-10vw",
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, ${T.accentDim} 0%, transparent 60%)`,
-          pointerEvents: "none",
-        }}
-      />
+      {/* Soft floating blobs */}
+      <Box sx={{ position: "absolute", width: 400, height: 400, top: -120, left: -120, borderRadius: "50%", background: T.bgGlow1, filter: "blur(40px)" }} />
+      <Box sx={{ position: "absolute", width: 450, height: 450, bottom: -160, right: -160, borderRadius: "50%", background: T.bgGlow2, filter: "blur(50px)" }} />
 
-      {/* Background 404 watermark */}
-      <Box
-        sx={{
-          position: "absolute",
-          right: { xs: -40, md: -80 },
-          bottom: -120,
-          fontSize: { xs: "40vw", md: "28vw" },
-          color: "rgba(0,0,0,0.04)",
-          lineHeight: 1,
-          fontWeight: 800,
-          fontFamily: SANS,
-          userSelect: "none",
-          letterSpacing: "-0.04em",
-        }}
-      >
-        404
-      </Box>
-
-      <Container
-        maxWidth="sm"
-        sx={{ textAlign: "center", position: "relative", zIndex: 1 }}
-      >
+      <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
         <motion.div
-          initial={{ opacity: 0, y: 32 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: EASE }}
+          transition={{ duration: 0.6, ease: EASE }}
         >
-          {/* Headline */}
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontWeight: 800,
-              fontSize: { xs: "2rem", md: "2.75rem" },
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
-              color: T.ink,
-              mb: 2,
-            }}
-          >
-            This page doesn't exist.
-          </Typography>
-
-          {/* Subtext */}
-          <Typography
-            sx={{
-              fontFamily: SANS,
-              fontWeight: 400,
-              fontSize: "1rem",
-              color: T.inkMuted,
-              lineHeight: 1.75,
-              maxWidth: 420,
-              mx: "auto",
-              mb: 5,
-            }}
-          >
-            The content you're looking for may have been moved, archived, or never published.
-            Let's return you somewhere useful.
-          </Typography>
-
-          {/* CTAs */}
+          {/* Card */}
           <Box
             sx={{
-              display: "flex",
-              gap: 2,
-              justifyContent: "center",
-              flexWrap: "wrap",
+              background: T.card,
+              border: `1px solid ${T.cardBorder}`,
+              backdropFilter: "blur(14px)",
+              borderRadius: "20px",
+              p: { xs: 3, md: 5 },
+              textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.06)",
             }}
           >
-            {/* Primary */}
-            <motion.div
-              whileHover={{ scale: 1.03, filter: "brightness(1.05)" }}
-              whileTap={{ scale: 0.97 }}
-              style={{ display: "inline-block" }}
+            {/* 404 Badge */}
+            <Typography
+              sx={{
+                fontSize: "0.75rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: T.inkFaint,
+                mb: 3,
+              }}
             >
-              <Button
-                component={Link}
-                href="/"
-                startIcon={<HomeIcon sx={{ fontSize: "1rem !important" }} />}
-                disableElevation
-                sx={{
-                  fontFamily: SANS,
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  textTransform: "none",
-                  letterSpacing: "-0.01em",
-                  px: 4,
-                  py: 1.75,
-                  borderRadius: "14px",
-                  minHeight: 54,
-                  color: "#FFFFFF",
-                  background: T.accentGrad,
-                  boxShadow: `0 8px 28px ${T.accentGlow}`,
-                  "&:hover": {
-                    boxShadow: `0 12px 36px ${T.accentGlow}`,
-                  },
-                }}
-              >
-                Return Home
-              </Button>
-            </motion.div>
+              Error · Not Found
+            </Typography>
 
-            {/* Secondary */}
-            <motion.div
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              style={{ display: "inline-block" }}
+            {/* Headline */}
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: "1.9rem", md: "2.6rem" },
+                letterSpacing: "-0.03em",
+                color: T.ink,
+                mb: 1.5,
+                lineHeight: 1.1,
+              }}
             >
-              <Button
-                component={Link}
-                href="/templates"
-                endIcon={<ArrowIcon sx={{ fontSize: "1rem !important" }} />}
-                disableElevation
-                sx={{
-                  fontFamily: SANS,
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  textTransform: "none",
-                  letterSpacing: "-0.01em",
-                  px: 4,
-                  py: 1.75,
-                  borderRadius: "14px",
-                  minHeight: 54,
-                  color: T.ink,
-                  background: "transparent",
-                  border: `1.5px solid rgba(0,0,0,0.2)`,
-                  "&:hover": {
-                    background: T.accentPale,
-                  },
-                }}
-              >
-                Browse Templates
-              </Button>
-            </motion.div>
+              This page doesn’t exist
+            </Typography>
+
+            {/* Subtext */}
+            <Typography
+              sx={{
+                fontSize: { xs: "0.95rem", md: "1rem" },
+                color: T.inkMuted,
+                lineHeight: 1.7,
+                maxWidth: 420,
+                mx: "auto",
+                mb: 4,
+              }}
+            >
+              The page may have been moved, deleted, or never existed.
+              Let’s get you back to something useful.
+            </Typography>
+
+            {/* CTA buttons */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 2,
+                justifyContent: "center",
+              }}
+            >
+              {/* Primary */}
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  component={Link}
+                  href="/"
+                  startIcon={<HomeIcon />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 3.5,
+                    py: 1.6,
+                    borderRadius: "14px",
+                    color: "#fff",
+                    background: T.accent,
+                    minWidth: 180,
+                    boxShadow: `0 10px 30px ${T.accentGlow}`,
+                    "&:hover": {
+                      background: T.accentSoft,
+                    },
+                  }}
+                >
+                  Go Home
+                </Button>
+              </motion.div>
+
+              {/* Secondary */}
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  component={Link}
+                  href="/templates"
+                  endIcon={<ArrowIcon />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 3.5,
+                    py: 1.6,
+                    borderRadius: "14px",
+                    color: T.ink,
+                    border: `1px solid ${T.cardBorder}`,
+                    background: "transparent",
+                    minWidth: 180,
+                    "&:hover": {
+                      background: "rgba(0,0,0,0.03)",
+                    },
+                  }}
+                >
+                  Explore
+                </Button>
+              </motion.div>
+            </Box>
+
+            {/* Footer hint */}
+            <Typography
+              sx={{
+                mt: 4,
+                fontSize: "0.8rem",
+                color: T.inkFaint,
+              }}
+            >
+              Need help? Contact support or try searching again.
+            </Typography>
           </Box>
         </motion.div>
       </Container>
