@@ -59,6 +59,7 @@ async function launchBrowser(): Promise<Browser> {
   }) as unknown as Browser;
 }
 
+
 function resolveBaseUrl(req: NextRequest): string {
   if (process.env.VERCEL) {
     // Derive the URL from the incoming request's own host so Puppeteer
