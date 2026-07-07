@@ -1,9 +1,24 @@
 /**
  * app/api/export-pdf/route.ts
+ *
+ * Vercel deployment notes:
+ * - Uses puppeteer-core + @sparticuz/chromium in production (Vercel's
+ *   filesystem/runtime can't handle full `puppeteer`'s bundled Chromium).
+ * - Falls back to full `puppeteer` for local dev, so you don't need the
+ *   sparticuz binary during development.
+ * - Must run on the Node.js runtime (not Edge) and needs a longer timeout
+ *   than the platform default — see `maxDuration` export below and the
+ *   accompanying vercel.json.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
+import type { Browser } from "puppeteer-core";
+
+export const runtime = "nodejs";
+// Vercel's default function timeout (10s on Hobby) is too short for a full
+// page render + PDF capture. Raise it; note the platform ceiling is 60s on
+// Pro (unless you're on Fluid Compute), so tune this to your plan.
+export const maxDuration = 60;
 
 const PREVIEW_PATHS: Record<string, string> = {
   breakeven: "/pdf-preview/breakeven",
@@ -12,8 +27,57 @@ const PREVIEW_PATHS: Record<string, string> = {
   runway: "/pdf-preview/runway",
 };
 
+// Keep this in sync with the viewport passed to page.setViewport() below.
+const VIEWPORT = { width: 1240, height: 1754, deviceScaleFactor: 2 };
+
+async function launchBrowser(): Promise<Browser> {
+  // VERCEL is automatically set to "1" in Vercel's build/runtime environment,
+  // including preview deployments — use it to branch, not NODE_ENV, since
+  // NODE_ENV is "production" for local production builds too.
+  if (process.env.VERCEL) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    const puppeteerCore = await import("puppeteer-core");
+
+    // As of @sparticuz/chromium v121+, `defaultViewport` and a boolean
+    // `headless` are no longer exposed on the module — args must be merged
+    // via puppeteer's own defaultArgs(), headless is the literal "shell",
+    // and viewport is supplied directly rather than read off chromium.
+    return puppeteerCore.launch({
+      args: await puppeteerCore.defaultArgs({ args: chromium.args, headless: "shell" }),
+      defaultViewport: VIEWPORT,
+      executablePath: await chromium.executablePath(),
+      headless: "shell",
+    }) as unknown as Browser;
+  }
+
+  // Local dev: use full puppeteer (already downloads its own Chromium).
+  const puppeteer = await import("puppeteer");
+  return puppeteer.launch({
+    headless: true,
+    defaultViewport: VIEWPORT,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+  }) as unknown as Browser;
+}
+
+function resolveBaseUrl(req: NextRequest): string {
+  if (process.env.VERCEL) {
+    // Derive the URL from the incoming request's own host so Puppeteer
+    // always hits the SAME deployment (production or a specific preview)
+    // that is currently handling this request. Don't use
+    // NEXT_PUBLIC_APP_URL here: on a preview deployment it would point at
+    // production instead of the preview's own /pdf-preview/* routes.
+    const host = req.headers.get("host") ?? process.env.VERCEL_URL;
+    if (!host) {
+      throw new Error("Unable to resolve request host on Vercel");
+    }
+    return `https://${host}`;
+  }
+
+  return `https://www.merrakisolutions.com`;
+}
+
 export async function POST(req: NextRequest) {
-  let body: { calculatorSlug: string; result: unknown; companyName: string };
+  let body: { calculatorSlug: string; result: unknown; companyName?: string };
 
   try {
     body = await req.json();
@@ -33,38 +97,25 @@ export async function POST(req: NextRequest) {
     return new NextResponse("No result data provided", { status: 400 });
   }
 
-  // PDF_PREVIEW_BASE_URL must always point to the local dev/prod server
-  // so Puppeteer can reach the /pdf-preview/* pages internally.
-  // NEVER use NEXT_PUBLIC_APP_URL here — that points to the public domain
-  // which won't have the preview pages until they are deployed.
-  const baseUrl =
-    process.env.PDF_PREVIEW_BASE_URL ??
-    `https://www.merrakisolutions.com`;
+  const baseUrl = resolveBaseUrl(req);
 
   const resultB64 = Buffer.from(JSON.stringify(result)).toString("base64");
-  const companyEncoded = encodeURIComponent(companyName.trim());
+  const companyEncoded = encodeURIComponent((companyName ?? "").trim());
   const ts = Date.now();
 
   const previewUrl = `${baseUrl}${PREVIEW_PATHS[calculatorSlug]}?company=${companyEncoded}&ts=${ts}&data=${resultB64}`;
 
   console.log("[export-pdf] Opening:", previewUrl.slice(0, 120) + "…");
 
-  let browser;
+  let browser: Browser | undefined;
   try {
-    browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--font-render-hinting=none",
-      ],
-    });
+    browser = await launchBrowser();
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
+    // Redundant with `defaultViewport` at launch, but harmless and keeps
+    // this explicit in case launch options change.
+    await page.setViewport(VIEWPORT);
 
-    // Capture console messages from the preview page to help debug
     page.on("console", (msg) =>
       console.log("[preview-page]", msg.type(), msg.text()),
     );
@@ -84,13 +135,11 @@ export async function POST(req: NextRequest) {
     console.log("[export-pdf] Page URL:", page.url());
     console.log("[export-pdf] Page title:", await page.title());
 
-    // Log the page HTML so we can see what actually rendered
     const bodyText = await page.evaluate(
       () => document.body?.innerText?.slice(0, 300) ?? "(empty body)",
     );
     console.log("[export-pdf] Body preview:", bodyText);
 
-    // Check if sentinel was already set by SSR/early render
     const alreadyHydrated = await page.evaluate(
       () => document.documentElement.dataset.hydrated === "true",
     );
@@ -105,7 +154,6 @@ export async function POST(req: NextRequest) {
         );
         console.log("[export-pdf] Sentinel detected.");
       } catch (sentinelErr) {
-        // Sentinel never fired — log DOM state and fall back to a small delay
         const html = await page.evaluate(() =>
           document.documentElement.outerHTML.slice(0, 600),
         );
@@ -119,11 +167,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Inject CSS to hide global site UI (navbar, footer, chatbot)
-    // This works regardless of layout structure — Puppeteer hides them before capture.
     await page.addStyleTag({
       content: `
-        /* Hide site navbar */
         header,
         nav,
         [class*="navbar"],
@@ -135,13 +180,11 @@ export async function POST(req: NextRequest) {
         [data-testid="navbar"],
         [data-testid="header"] { display: none !important; }
 
-        /* Hide site footer */
         footer,
         [class*="footer"],
         [class*="Footer"],
         [data-testid="footer"] { display: none !important; }
 
-        /* Hide chatbot / live chat widgets */
         [id*="chat"],
         [class*="chat"],
         [class*="Chat"],
@@ -158,13 +201,11 @@ export async function POST(req: NextRequest) {
         iframe[src*="chat"],
         iframe[src*="widget"] { display: none !important; }
 
-        /* Hide newsletter / subscribe sections */
         [class*="newsletter"],
         [class*="Newsletter"],
         [class*="subscribe"],
         [class*="Subscribe"] { display: none !important; }
 
-        /* Remove top padding added for fixed navbar */
         body > *:first-child { padding-top: 0 !important; margin-top: 0 !important; }
       `,
     });
