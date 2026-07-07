@@ -1,7 +1,6 @@
 {
   "functions": {
     "app/api/export-pdf/route.ts": {
-      "memory": 2049,
       "maxDuration": 60
     }
   }
