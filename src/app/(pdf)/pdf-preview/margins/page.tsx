@@ -1,10 +1,3 @@
-/**
- * app/pdf-preview/margins/page.tsx
- *
- * Puppeteer capture target for the Profit Margin Calculator PDF.
- * URL: /pdf-preview/margins?company=…&ts=…&data=<base64-result>
- */
-
 "use client";
 
 import { Suspense } from "react";
@@ -24,7 +17,7 @@ import {
 const ACCENT = "#0D7A5F";
 const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
 const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
-const AX = { fill: "#9898AE", fontSize: 9, fontFamily: MONO };
+const AX = { fill: "#9898AE", fontSize: 10, fontFamily: MONO };
 
 interface WaterfallEntry {
   name: string;
@@ -35,7 +28,6 @@ interface MarginEntry {
   name: string;
   margin: number;
 }
-
 interface MarginsResult {
   gross: number;
   gm: number;
@@ -60,7 +52,6 @@ function fmtINR(n: number) {
     maximumFractionDigits: 0,
   }).format(n);
 }
-
 function pct(n: number, total: number) {
   return total > 0 ? `${((n / total) * 100).toFixed(1)}%` : "0.0%";
 }
@@ -78,7 +69,7 @@ function Metric({
     <div
       style={{
         flex: 1,
-        padding: "14px 16px",
+        padding: "16px 18px",
         borderRadius: 10,
         background: highlight ? `${ACCENT}0D` : "#F5F7FB",
         border: `1.5px solid ${highlight ? ACCENT + "33" : "#E5E7EB"}`,
@@ -86,20 +77,20 @@ function Metric({
     >
       <div
         style={{
-          width: 20,
-          height: 2.5,
+          width: 22,
+          height: 3,
           borderRadius: 2,
           background: highlight ? ACCENT : "#D1D5DB",
-          marginBottom: 8,
+          marginBottom: 10,
         }}
       />
       <div
         style={{
           fontFamily: SANS,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: 500,
           color: "#9898AE",
-          marginBottom: 4,
+          marginBottom: 5,
         }}
       >
         {label}
@@ -108,7 +99,7 @@ function Metric({
         style={{
           fontFamily: MONO,
           fontWeight: 700,
-          fontSize: 17,
+          fontSize: 18,
           color: highlight ? ACCENT : "#0A0A0F",
           letterSpacing: "-0.025em",
         }}
@@ -121,7 +112,6 @@ function Metric({
 
 function MarginsPreviewInner() {
   const result = usePdfPreviewData<MarginsResult>();
-
   if (!result)
     return (
       <div style={{ padding: 40, fontFamily: SANS, color: "#9898AE" }}>
@@ -130,7 +120,6 @@ function MarginsPreviewInner() {
     );
 
   const rev = result.revenue ?? 0;
-
   const plRows: [string, string, string][] = [
     ["Revenue", fmtINR(rev), "100.0%"],
     [
@@ -153,7 +142,7 @@ function MarginsPreviewInner() {
   return (
     <div
       style={{
-        padding: "32px 36px",
+        padding: "28px 32px",
         fontFamily: SANS,
         background: "#fff",
         minHeight: "100vh",
@@ -164,7 +153,6 @@ function MarginsPreviewInner() {
         accent={ACCENT}
       />
 
-      {/* Metrics */}
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
         <Metric
           label="Gross Margin"
@@ -176,121 +164,110 @@ function MarginsPreviewInner() {
         <Metric label="Tax Paid" value={fmtINR(result.taxAmt)} />
       </div>
 
-      {/* Charts */}
-      <div style={{ display: "flex", gap: 20, marginBottom: 8 }}>
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontFamily: SANS,
-              fontWeight: 700,
-              fontSize: 12,
-              color: "#3A3A52",
-              marginBottom: 10,
-            }}
-          >
-            P&amp;L Waterfall
-          </div>
-          <ResponsiveContainer width="100%" height={230}>
-            <ComposedChart
-              data={result.waterfall}
-              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="2 4"
-                stroke="#E5E7EB"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="name"
-                tick={AX}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={(v) =>
-                  v >= 1e6
-                    ? `₹${(v / 1e6).toFixed(1)}M`
-                    : `₹${(v / 1000).toFixed(0)}K`
-                }
-                tick={AX}
-                tickLine={false}
-                axisLine={false}
-                width={54}
-              />
-              <Bar
-                dataKey="value"
-                name="Amount"
-                radius={[3, 3, 0, 0]}
-                barSize={28}
-                fill={`${ACCENT}28`}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontFamily: SANS,
-              fontWeight: 700,
-              fontSize: 12,
-              color: "#3A3A52",
-              marginBottom: 10,
-            }}
-          >
-            Margin Comparison
-          </div>
-          <ResponsiveContainer width="100%" height={230}>
-            <ComposedChart
-              data={result.margins}
-              margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="2 4"
-                stroke="#E5E7EB"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="name"
-                tick={AX}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tickFormatter={(v) => `${v}%`}
-                tick={AX}
-                tickLine={false}
-                axisLine={false}
-                width={38}
-              />
-              <Bar
-                dataKey="margin"
-                name="Margin %"
-                fill={`${ACCENT}22`}
-                radius={[3, 3, 0, 0]}
-                barSize={38}
-              />
-              <Line
-                type="monotone"
-                dataKey="margin"
-                stroke={ACCENT}
-                strokeWidth={2}
-                dot={{ fill: ACCENT, r: 3, strokeWidth: 0 }}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Full P&L table */}
-      <div style={{ marginTop: 24 }}>
+      {/* Chart 1 — P&L Waterfall full width */}
+      <div style={{ marginBottom: 24 }}>
         <div
           style={{
             fontFamily: SANS,
             fontWeight: 700,
             fontSize: 13,
+            color: "#3A3A52",
+            marginBottom: 10,
+          }}
+        >
+          P&amp;L Waterfall
+        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          <ComposedChart
+            data={result.waterfall}
+            margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="2 4"
+              stroke="#E5E7EB"
+              vertical={false}
+            />
+            <XAxis dataKey="name" tick={AX} tickLine={false} axisLine={false} />
+            <YAxis
+              tickFormatter={(v) =>
+                v >= 1e6
+                  ? `₹${(v / 1e6).toFixed(1)}M`
+                  : `₹${(v / 1000).toFixed(0)}K`
+              }
+              tick={AX}
+              tickLine={false}
+              axisLine={false}
+              width={64}
+            />
+            <Bar
+              dataKey="value"
+              name="Amount"
+              radius={[3, 3, 0, 0]}
+              barSize={40}
+              fill={`${ACCENT}28`}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Chart 2 — Margin Comparison full width */}
+      <div style={{ marginBottom: 24 }}>
+        <div
+          style={{
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: 13,
+            color: "#3A3A52",
+            marginBottom: 10,
+          }}
+        >
+          Margin Comparison
+        </div>
+        <ResponsiveContainer width="100%" height={200}>
+          <ComposedChart
+            data={result.margins}
+            margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="2 4"
+              stroke="#E5E7EB"
+              vertical={false}
+            />
+            <XAxis dataKey="name" tick={AX} tickLine={false} axisLine={false} />
+            <YAxis
+              tickFormatter={(v) => `${v}%`}
+              tick={AX}
+              tickLine={false}
+              axisLine={false}
+              width={40}
+            />
+            <Bar
+              dataKey="margin"
+              name="Margin %"
+              fill={`${ACCENT}22`}
+              radius={[3, 3, 0, 0]}
+              barSize={60}
+            />
+            <Line
+              type="monotone"
+              dataKey="margin"
+              stroke={ACCENT}
+              strokeWidth={2.5}
+              dot={{ fill: ACCENT, r: 5, strokeWidth: 0 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* P&L Table */}
+      <div style={{ marginTop: 8 }}>
+        <div
+          style={{
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: 14,
             color: "#0A0A0F",
-            marginBottom: 8,
+            marginBottom: 10,
           }}
         >
           P&amp;L Summary
@@ -300,7 +277,7 @@ function MarginsPreviewInner() {
             width: "100%",
             borderCollapse: "collapse",
             border: "1px solid #E5E7EB",
-            fontSize: 11,
+            fontSize: 12,
             fontFamily: MONO,
           }}
         >
@@ -310,11 +287,11 @@ function MarginsPreviewInner() {
                 <th
                   key={c}
                   style={{
-                    padding: "9px 11px",
+                    padding: "10px 12px",
                     textAlign: "left",
                     fontFamily: SANS,
                     fontWeight: 700,
-                    fontSize: 10,
+                    fontSize: 11,
                     color: "#3A3A52",
                     borderBottom: "1px solid #E5E7EB",
                   }}
@@ -347,7 +324,7 @@ function MarginsPreviewInner() {
                 >
                   <td
                     style={{
-                      padding: "8px 11px",
+                      padding: "9px 12px",
                       fontFamily: SANS,
                       color: "#3A3A52",
                       fontWeight: isSubtotal ? 700 : 400,
@@ -357,7 +334,7 @@ function MarginsPreviewInner() {
                   </td>
                   <td
                     style={{
-                      padding: "8px 11px",
+                      padding: "9px 12px",
                       color: isNegContext
                         ? "#DC2626"
                         : isSubtotal
@@ -368,7 +345,7 @@ function MarginsPreviewInner() {
                   >
                     {amount}
                   </td>
-                  <td style={{ padding: "8px 11px", color: "#6B7280" }}>
+                  <td style={{ padding: "9px 12px", color: "#6B7280" }}>
                     {share}
                   </td>
                 </tr>

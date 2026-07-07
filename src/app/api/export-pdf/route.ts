@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   // which won't have the preview pages until they are deployed.
   const baseUrl =
     process.env.PDF_PREVIEW_BASE_URL ??
-    `http://localhost:${process.env.PORT ?? 3000}`;
+    `https://www.merrakisolutions.com`;
 
   const resultB64 = Buffer.from(JSON.stringify(result)).toString("base64");
   const companyEncoded = encodeURIComponent(companyName.trim());
@@ -62,18 +62,13 @@ export async function POST(req: NextRequest) {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({
-      width: 1024, // wider canvas for real 2-column layouts
-      height: 1448, // A4 height at 96dpi
-      deviceScaleFactor: 1.5, // crisp after zoom-out
-    });
+    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
 
-    await page.emulateMediaType("screen");
     // Capture console messages from the preview page to help debug
     page.on("console", (msg) =>
       console.log("[preview-page]", msg.type(), msg.text()),
     );
-    page.on("pageerror", (err) =>
+    page.on("pageerror", (err: unknown) =>
       console.error(
         "[preview-page] JS error:",
         err instanceof Error ? err.message : String(err),
@@ -174,14 +169,9 @@ export async function POST(req: NextRequest) {
       `,
     });
 
-    await page.evaluate(() => {
-      document.querySelector("[data-nextjs-toast], nextjs-portal")?.remove();
-    });
-
     const pdfUint8 = await page.pdf({
       format: "A4",
       printBackground: true,
-      scale: 0.85, // zoom out to fit more content on page
       margin: { top: "14mm", right: "14mm", bottom: "14mm", left: "14mm" },
     });
 
