@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { CheckoutFormValues } from "@/components/sections/checkout/checkout.schema";
-import { Field } from "@/components/sections/checkout/field";
+import { Field } from "@/components/sections/checkout/Field";
 import { BtnNext } from "@/components/sections/checkout/buttons";
 
 interface StepContactProps {

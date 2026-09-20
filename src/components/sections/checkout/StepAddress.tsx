@@ -4,8 +4,9 @@ import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { UseFormRegister, FieldErrors } from "react-hook-form";
 import { CheckoutFormValues } from "@/components/sections/checkout/checkout.schema";
-import { Field } from "@/components/sections/checkout/field";
 import { BtnNext, BtnBack } from "@/components/sections/checkout/buttons";
+import { Field } from "./Field";
+
 
 interface StepAddressProps {
   register: UseFormRegister<CheckoutFormValues>;
