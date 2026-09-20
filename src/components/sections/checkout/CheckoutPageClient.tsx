@@ -16,7 +16,7 @@ import { checkoutSchema, type CheckoutFormValues } from "@/components/sections/c
 import { T, SANS, type CartItemForCheckout } from "@/components/sections/checkout/checkout.types";
 
 // Hook
-import { useCheckout } from "@/lib/hooks/Usecheckout";
+
 
 // Components
 import { StepBar } from "@/components/sections/checkout/StepBar";
@@ -25,6 +25,7 @@ import { OrderSummary } from "@/components/sections/checkout/OrderSummary";
 import { StepContact } from "@/components/sections/checkout/StepContact";
 import { StepAddress } from "@/components/sections/checkout/StepAddress";
 import { StepPayment } from "@/components/sections/checkout/StepPayment";
+import { useCheckout } from "@/lib/hooks/Usecheckout";
 
 // ─── Animation ────────────────────────────────────────────────────────────────
 
