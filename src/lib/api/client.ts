@@ -1,5 +1,5 @@
 const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "https://api.merrakisolutions.com/api";
+    process.env.NEXT_PUBLIC_API_URL;
 
 export interface ApiError {
     success: false;
