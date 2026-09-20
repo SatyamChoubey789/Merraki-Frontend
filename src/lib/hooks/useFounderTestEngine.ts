@@ -626,24 +626,23 @@ export function useFounderTestEngine() {
 
   const handleContactSubmit = useCallback(
     async (data: any) => {
-      setContact(data);
-      setStep("submitting");
-      setSubmitting(true);
+      setContact(data)
+      setStep("submitting")
+      setSubmitting(true)
 
-      // Compute result locally (server can replace this in future)
-      await new Promise((r) => setTimeout(r, 5200)); // match animation duration
-      const computed = computeResult(answers);
-      setResult(computed);
+      // Compute result locally — no backend round-trip needed
+      await new Promise((r) => setTimeout(r, 5200))
+      const computed = computeResult(answers)
+      setResult(computed)
 
-      // Persist lead + scored result to the backend DB.
-      // Fire-and-forget: a backend/network failure must never block the
-      // user from seeing their results.
-      submitFounderLead(data, computed).catch((err) => {
-        console.error("[useFounderTestEngine] submitFounderLead failed:", err);
-      });
+      // Persist to backend — fire and forget
+      // Pass raw answers so submitFounderLead can resolve option labels
+      submitFounderLead(data, computed, answers).catch((err) => {
+        console.error("[useFounderTestEngine] submitFounderLead failed:", err)
+      })
 
-      setSubmitting(false);
-      setStep("results");
+      setSubmitting(false)
+      setStep("results")
     },
     [answers],
   );

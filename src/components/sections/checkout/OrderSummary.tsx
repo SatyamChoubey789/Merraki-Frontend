@@ -6,20 +6,31 @@ import {
   FlashOnOutlined as FlashIcon,
   ReplayOutlined as RefundIcon,
 } from "@mui/icons-material";
-import { T, SANS, MONO, formatUSD, CartItemForCheckout } from "@/components/sections/checkout/checkout.types";
+import {
+  T,
+  SANS,
+  MONO,
+  formatUSD,
+  type CartItemForCheckout,
+} from "@/components/sections/checkout/checkout.types";
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface OrderSummaryProps {
   items: CartItemForCheckout[];
 }
 
 const TRUST = [
-  { Icon: LockIcon, text: "256-bit SSL encryption" },
-  { Icon: FlashIcon, text: "Instant delivery to email" },
+  { Icon: LockIcon,   text: "256-bit SSL encryption" },
+  { Icon: FlashIcon,  text: "Instant delivery to email" },
   { Icon: RefundIcon, text: "7-day refund guarantee" },
 ] as const;
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function OrderSummary({ items }: OrderSummaryProps) {
-  const subtotalCents = items.reduce((sum, i) => sum + i.price_usd_cents, 0);
+  // priceCents is already an integer — sum directly, no conversion needed
+  const subtotalCents = items.reduce((sum, i) => sum + i.priceCents, 0);
 
   return (
     <Box
@@ -55,93 +66,70 @@ export function OrderSummary({ items }: OrderSummaryProps) {
 
       {/* Items */}
       <Box sx={{ px: 3, py: 2.5, display: "flex", flexDirection: "column", gap: 2 }}>
-        {items.map((item) => {
-          const hasDiscount = item.price_usd_cents < item.original_price_usd_cents;
-          return (
-            <Box key={item.id} sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
-              {/* Thumbnail */}
-              <Box
+        {items.map((item) => (
+          <Box
+            key={item.id}
+            sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}
+          >
+            {/* Thumbnail — previewImage is string | null */}
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: "8px",
+                flexShrink: 0,
+                border: `1px solid ${T.border}`,
+                background: T.bg,
+                overflow: "hidden",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {item.previewImage ? (
+                <img
+                  src={item.previewImage}
+                  alt={item.title}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <Typography sx={{ fontSize: "1rem", color: T.inkFaint }}>
+                  ◈
+                </Typography>
+              )}
+            </Box>
+
+            {/* Title — field is "title" not "name" */}
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
                 sx={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "8px",
-                  flexShrink: 0,
-                  border: `1px solid ${T.border}`,
-                  background: T.bg,
+                  fontFamily: SANS,
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                  color: T.ink,
                   overflow: "hidden",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {item.image ? (
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <Typography sx={{ fontSize: "1rem", color: T.inkFaint }}>◈</Typography>
-                )}
-              </Box>
-
-              {/* Name + category */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontWeight: 600,
-                    fontSize: "0.8rem",
-                    color: T.ink,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.name}
-                </Typography>
-                {item.category && (
-                  <Typography
-                    sx={{
-                      fontFamily: SANS,
-                      fontSize: "0.68rem",
-                      color: T.inkFaint,
-                      mt: 0.25,
-                    }}
-                  >
-                    {item.category}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Price */}
-              <Box sx={{ textAlign: "right", flexShrink: 0 }}>
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontWeight: 700,
-                    fontSize: "0.8rem",
-                    color: T.ink,
-                  }}
-                >
-                  {formatUSD(item.price_usd_cents)}
-                </Typography>
-                {hasDiscount && (
-                  <Typography
-                    sx={{
-                      fontFamily: MONO,
-                      fontSize: "0.68rem",
-                      color: T.inkFaint,
-                      textDecoration: "line-through",
-                    }}
-                  >
-                    {formatUSD(item.original_price_usd_cents)}
-                  </Typography>
-                )}
-              </Box>
+                {item.title}
+              </Typography>
             </Box>
-          );
-        })}
+
+            {/* Price — priceCents is already integer */}
+            <Typography
+              sx={{
+                fontFamily: MONO,
+                fontWeight: 700,
+                fontSize: "0.8rem",
+                color: T.ink,
+                flexShrink: 0,
+              }}
+            >
+              {formatUSD(item.priceCents)}
+            </Typography>
+          </Box>
+        ))}
       </Box>
 
       {/* Totals */}
@@ -157,21 +145,36 @@ export function OrderSummary({ items }: OrderSummaryProps) {
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted }}>
+          <Typography
+            sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted }}
+          >
             Subtotal
           </Typography>
-          <Typography sx={{ fontFamily: MONO, fontSize: "0.8rem", fontWeight: 600, color: T.ink }}>
+          <Typography
+            sx={{
+              fontFamily: MONO,
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              color: T.ink,
+            }}
+          >
             {formatUSD(subtotalCents)}
           </Typography>
         </Box>
+
         <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted }}>
+          <Typography
+            sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkMuted }}
+          >
             Tax
           </Typography>
-          <Typography sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkFaint }}>
+          <Typography
+            sx={{ fontFamily: SANS, fontSize: "0.8rem", color: T.inkFaint }}
+          >
             Included
           </Typography>
         </Box>
+
         <Box
           sx={{
             mt: 1,
@@ -183,7 +186,12 @@ export function OrderSummary({ items }: OrderSummaryProps) {
           }}
         >
           <Typography
-            sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "0.875rem", color: T.ink }}
+            sx={{
+              fontFamily: SANS,
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              color: T.ink,
+            }}
           >
             Total
           </Typography>
@@ -214,9 +222,14 @@ export function OrderSummary({ items }: OrderSummaryProps) {
         }}
       >
         {TRUST.map(({ Icon, text }) => (
-          <Box key={text} sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+          <Box
+            key={text}
+            sx={{ display: "flex", alignItems: "center", gap: 1.25 }}
+          >
             <Icon sx={{ fontSize: "0.85rem", color: T.inkMuted }} />
-            <Typography sx={{ fontFamily: SANS, fontSize: "0.72rem", color: T.inkMuted }}>
+            <Typography
+              sx={{ fontFamily: SANS, fontSize: "0.72rem", color: T.inkMuted }}
+            >
               {text}
             </Typography>
           </Box>

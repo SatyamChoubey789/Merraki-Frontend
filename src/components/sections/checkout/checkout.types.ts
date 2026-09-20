@@ -1,4 +1,4 @@
-// ─── Brand tokens ────────────────────────────────────────────────────────────
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
 // Exactly as given: bg #f5f7fb, text #253957
 
 export const T = {
@@ -50,23 +50,30 @@ export interface CheckoutFormValues {
 export interface CreateOrderResponse {
   orderId: string;
   razorpayOrderId: string;
-  amount: number;       // smallest unit (paise for INR, cents for USD)
+  amount: number;      // smallest unit (paise for INR, cents for USD)
   currency: "INR" | "USD";
   keyId: string;
   guestName: string;
   guestEmail: string;
 }
 
-// Cart item shape used in the checkout summary
+// ─── CartItemForCheckout ──────────────────────────────────────────────────────
+// Matches the real CartItem shape from useCartStore (fixed version):
+//   id: string          (UUID)
+//   slug: string        (used as templateId in checkout payload)
+//   title: string       (NOT "name")
+//   priceCents: number  (already converted from priceUsd string)
+//   previewImage: string | null
+//   categoryId: string | null
+
 export interface CartItemForCheckout {
-  id: number;
-  templateId: string;
-  name: string;
+  id: string;
+  templateId: string;       // = slug, what backend expects
+  title: string;            // display name
   slug: string;
-  price_usd_cents: number;
-  original_price_usd_cents: number;
-  image?: string;
-  category?: string;
+  priceCents: number;       // integer cents — Math.round(parseFloat(priceUsd) * 100)
+  previewImage: string | null;
+  categoryId: string | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 
-// Store
+// Store — real CartItem shape: id:string, slug, title, priceCents, previewImage, categoryId
 import { useCartItems, useCartTotalItems } from "@/lib/stores/useCartStore";
 
 // Schema + types
@@ -26,22 +26,22 @@ import { StepContact } from "@/components/sections/checkout/StepContact";
 import { StepAddress } from "@/components/sections/checkout/StepAddress";
 import { StepPayment } from "@/components/sections/checkout/StepPayment";
 
-// ─── Slide animation ──────────────────────────────────────────────────────────
+// ─── Animation ────────────────────────────────────────────────────────────────
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const slide = {
   enter: (d: number) => ({ x: d > 0 ? "40%" : "-40%", opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (d: number) => ({ x: d > 0 ? "-40%" : "40%", opacity: 0 }),
+  exit:  (d: number) => ({ x: d > 0 ? "-40%" : "40%", opacity: 0 }),
 };
 
-// ─── Step field groups for validation ────────────────────────────────────────
+// ─── Step config ──────────────────────────────────────────────────────────────
 
 const STEP_FIELDS: (keyof CheckoutFormValues)[][] = [
   ["guestName", "guestEmail"],
   ["billingAddress"],
-  [],
+  [], // payment — no extra fields, validated on submit
 ];
 
 const STEP_TITLES = ["Your details", "Billing address", "Review & pay"];
@@ -49,33 +49,41 @@ const STEP_TITLES = ["Your details", "Billing address", "Review & pay"];
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CheckoutPageClient() {
-  const router = useRouter();
-  const rawItems = useCartItems();
+  const router   = useRouter();
+  const rawItems = useCartItems();      // CartItem[] from store
   const itemCount = useCartTotalItems();
 
-  // Map cart store items → checkout-typed items
-  // slug is the UUID the backend expects as templateId
+  // ── Map store CartItem → CartItemForCheckout ──────────────────────────────
+  // CartItem (store):           CartItemForCheckout (checkout):
+  //   id: string         →        id: string
+  //   slug: string       →        slug + templateId (same value)
+  //   title: string      →        title             (NOT "name")
+  //   priceCents: number →        priceCents        (already cents, no conversion)
+  //   previewImage: string|null → previewImage
+  //   categoryId: string|null   → categoryId
+
   const items: CartItemForCheckout[] = rawItems.map((i) => ({
-    id: i.id,
-    templateId: i.slug,
-    name: i.name,
-    slug: i.slug,
-    price_usd_cents: i.price_usd_cents,
-    original_price_usd_cents: i.original_price_usd_cents,
-    image: i.image,
-    category: i.category,
+    id:           i.id,
+    templateId:   i.slug,          // backend expects templateId = slug (UUID)
+    title:        i.title,         // correct field name
+    slug:         i.slug,
+    priceCents:   i.priceCents,    // already integer cents, no conversion needed
+    previewImage: i.previewImage,  // string | null
+    categoryId:   i.categoryId,    // string | null
   }));
 
-  const totalCents = items.reduce((sum, i) => sum + i.price_usd_cents, 0);
+  // priceCents is already integer — sum directly
+  const totalCents = items.reduce((sum, i) => sum + i.priceCents, 0);
 
   // ── Step state ─────────────────────────────────────────────────────────────
-  const [step, setStep] = useState(0);
-  const [dir, setDir] = useState(1);
+  const [step,      setStep]      = useState(0);
+  const [dir,       setDir]       = useState(1);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
-  const [mounted, setMounted] = useState(false);
+  const [mounted,   setMounted]   = useState(false);
 
   useEffect(() => setMounted(true), []);
 
+  // Redirect if cart empties (e.g. user navigated back and cleared cart)
   useEffect(() => {
     if (mounted && itemCount === 0) router.replace("/templates");
   }, [mounted, itemCount, router]);
@@ -96,7 +104,7 @@ export function CheckoutPageClient() {
     defaultValues: {
       paymentMethod: "card",
       billingAddress: { country: "India" },
-      items: [],
+      items: [], // injected at submit time from cart
     },
   });
 
@@ -114,7 +122,9 @@ export function CheckoutPageClient() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  // ── Submit — inject cart items at submit time ──────────────────────────────
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  // Cart items are injected here — never stored in the form fields.
+  // slug === templateId — what POST /checkout/create-order expects.
   const onSubmit = handleSubmit((data) =>
     initiateCheckout({
       ...data,
@@ -135,6 +145,7 @@ export function CheckoutPageClient() {
       }}
     >
       <Container maxWidth="lg">
+        {/* Heading */}
         <Box sx={{ textAlign: "center", mb: 5 }}>
           <Typography
             sx={{
@@ -155,9 +166,11 @@ export function CheckoutPageClient() {
           </Typography>
         </Box>
 
+        {/* Step indicator */}
         <StepBar current={step} completed={completed} />
 
         <Grid container spacing={{ xs: 3, md: 5 }} alignItems="flex-start">
+          {/* Form */}
           <Grid size={{ xs: 12, md: 7 }}>
             <Box sx={{ position: "relative", overflow: "hidden" }}>
               <AnimatePresence mode="wait" custom={dir}>
@@ -206,6 +219,7 @@ export function CheckoutPageClient() {
             </Box>
           </Grid>
 
+          {/* Order summary */}
           <Grid size={{ xs: 12, md: 5 }}>
             <OrderSummary items={items} />
           </Grid>

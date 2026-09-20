@@ -1,59 +1,55 @@
-"use client";
-
-import type { TestResult } from "@/lib/hooks/useFounderTestEngine";
+import { apiClient } from "./api/client"
+import type { TestResult } from "./hooks/useFounderTestEngine"
+import { QUESTIONS } from "./hooks/useFounderTestEngine"
 
 interface ContactInfo {
-  name: string;
-  email: string;
-  company?: string;
-  role?: string;
+  name: string
+  email: string
+  company?: string
+  role?: string
 }
 
-const API_BASE = "https://api.merrakisolutions.com/api/v1/public";
+interface SubmitPayload {
+  leadName: string
+  leadEmail: string
+  leadCompany?: string
+  answers: Record<string, string>
+  resultType: string
+  score: number
+}
 
-/**
- * Persists the completed founder test (contact + scored result) to the
- * backend DB via POST /founders-test/submit.
- *
- * Throws on failure — caller should treat this as fire-and-forget so a
- * backend hiccup never blocks the user from seeing their results.
- */
 export async function submitFounderLead(
   contact: ContactInfo,
   result: TestResult,
-) {
-  const payload = {
-    name: contact.name,
-    email: contact.email,
-    company: contact.company || "",
-    role: contact.role || "",
-    total_score: result.totalScore,
-    total_max: result.totalMax,
-    personality_type: result.personalityType,
-    personality_title: result.personalityTitle,
-    personality_badge: result.personalityBadge,
-    personality_color: result.personalityColor,
-    personality_description: result.personalityDescription,
-    section_scores: result.scores.map((s) => ({
-      dimension: s.dimension,
-      label: s.label,
-      score: s.score,
-      max: s.max,
-      percentage: s.percentage,
-    })),
-  };
+  rawAnswers: Record<string, string[]>
+): Promise<void> {
+  const flatAnswers: Record<string, string> = {}
 
-  const res = await fetch(`${API_BASE}/founders-test/submit`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-    keepalive: true,
-  });
+  Object.entries(rawAnswers).forEach(([qId, selectedIds]) => {
+    if (selectedIds.length === 0) return
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`submitFounderLead failed: ${res.status} ${text}`);
+    const question = QUESTIONS.find((q) => q.id === qId)
+    if (!question) return
+
+    if (question.type === "scale") {
+      // Scale: store the numeric value (1–10)
+      const opt = question.options.find((o) => o.id === selectedIds[0])
+      flatAnswers[qId] = opt?.value ?? selectedIds[0]
+    } else {
+      // Single / multiple: store full option label text for readability
+      const opt = question.options.find((o) => o.id === selectedIds[0])
+      flatAnswers[qId] = opt?.label ?? selectedIds[0]
+    }
+  })
+
+  const payload: SubmitPayload = {
+    leadName: contact.name,
+    leadEmail: contact.email,
+    leadCompany: contact.company || undefined,
+    answers: flatAnswers,
+    resultType: result.personalityType,
+    score: result.totalScore,
   }
 
-  return res.json() as Promise<{ success: boolean; data: unknown }>;
+  await apiClient.post("/founder-test/submit", payload)
 }
