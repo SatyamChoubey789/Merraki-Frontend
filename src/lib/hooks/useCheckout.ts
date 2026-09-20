@@ -1,147 +1,180 @@
 "use client";
-import { useState, useCallback } from "react";
-import { useCartStore } from "@/lib/stores/cartStore";
-import { checkoutApi } from "@/lib/api/orders";
-import { loadRazorpayScript, initRazorpay } from "@/lib/utils/razorpay";
-import type { CheckoutFormValues } from "@/lib/schemas/checkout.schema";
-import type { RazorpayPaymentResponse } from "@/lib/utils/razorpay";
-import type { Order } from "@/types/order.types";
 
-export type CheckoutStep = "form" | "processing" | "success" | "failure";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCartStore } from "@/lib/stores/useCartStore";
+import type { CheckoutFormValues } from "@/components/sections/checkout/checkout.schema";
+import type { CreateOrderResponse } from "@/components/sections/checkout/checkout.types";
 
-interface CheckoutState {
-  step: CheckoutStep;
-  order: Order | null;
-  error: string | null;
+// ─── Razorpay SDK types ───────────────────────────────────────────────────────
+
+declare global {
+  interface Window {
+    Razorpay: new (opts: RazorpayOptions) => RazorpayInstance;
+  }
 }
 
-export function useCheckout() {
-  // ✅ Separate selectors — returning a new object `{ items, clearCart }`
-  // from a single selector creates a new reference every render, which
-  // breaks useSyncExternalStore's snapshot cache and causes an infinite loop.
-  const items = useCartStore((s) => s.items);
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  order_id: string;
+  name: string;
+  description: string;
+  prefill: { name: string; email: string };
+  handler: (response: RazorpayPaymentResponse) => void;
+  modal: { ondismiss: () => void };
+  theme: { color: string };
+}
+
+interface RazorpayPaymentResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayInstance {
+  open(): void;
+}
+
+// ─── Hook state ───────────────────────────────────────────────────────────────
+
+type CheckoutPhase =
+  | "idle"        // form visible
+  | "creating"    // POST /checkout/create-order in flight
+  | "paying"      // Razorpay modal open
+  | "verifying"   // POST /payments/verify in flight
+  | "done";       // redirect imminent
+
+interface UseCheckoutReturn {
+  phase: CheckoutPhase;
+  isProcessing: boolean;   // true during creating | paying | verifying
+  error: string | null;
+  initiateCheckout: (data: CheckoutFormValues) => Promise<void>;
+}
+
+// ─── Helper: load Razorpay SDK once ──────────────────────────────────────────
+
+let sdkReady = false;
+
+async function loadRazorpay(): Promise<void> {
+  if (sdkReady || window.Razorpay) {
+    sdkReady = true;
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => {
+      sdkReady = true;
+      resolve();
+    };
+    script.onerror = () => reject(new Error("Razorpay SDK failed to load"));
+    document.body.appendChild(script);
+  });
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useCheckout(): UseCheckoutReturn {
+  const router = useRouter();
   const clearCart = useCartStore((s) => s.clearCart);
 
-  const [state, setState] = useState<CheckoutState>({
-    step: "form",
-    order: null,
-    error: null,
-  });
+  const [phase, setPhase] = useState<CheckoutPhase>("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  const setStep = useCallback((step: CheckoutStep) => {
-    setState((s) => ({ ...s, step }));
-  }, []);
+  const isProcessing = phase === "creating" || phase === "paying" || phase === "verifying";
 
-  const initiateCheckout = useCallback(
-    async (formValues: CheckoutFormValues) => {
-      if (items.length === 0) {
-        setState({ step: "failure", order: null, error: "Your cart is empty" });
-        return;
+  const initiateCheckout = async (data: CheckoutFormValues) => {
+    setError(null);
+    setPhase("creating");
+
+    try {
+      // ── 1. Create Razorpay order on backend ──────────────────────────────
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/checkout/create-order`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error?.message ?? `Order failed (${res.status})`);
       }
 
-      setState({ step: "processing", order: null, error: null });
+      const { data: order }: { data: CreateOrderResponse } = await res.json();
 
-      try {
-        // ── 1. Load Razorpay ─────────────────────────
-        const loaded = await loadRazorpayScript();
-        if (!loaded) {
-          throw new Error("Payment gateway failed to load. Please try again.");
-        }
+      // ── 2. Load SDK ───────────────────────────────────────────────────────
+      await loadRazorpay();
+      setPhase("paying");
 
-        // ── 2. Billing address ───────────────────────
-        const billingAddress = {
-          name: formValues.name,
-          email: formValues.email,
-          phone: formValues.phone ?? "",
-          address_line1: formValues.address_line1,
-          address_line2: formValues.address_line2 ?? "",
-          city: formValues.city,
-          state: formValues.state,
-          country: formValues.country ?? "IN",
-          postal_code: formValues.postal_code,
-        };
+      // ── 3. Open Razorpay modal ────────────────────────────────────────────
+      await new Promise<void>((resolve, reject) => {
+        const rzp = new window.Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          order_id: order.razorpayOrderId,
+          name: "Merraki Solutions",
+          description: `${data.items.length} template${data.items.length !== 1 ? "s" : ""}`,
+          prefill: { name: order.guestName, email: order.guestEmail },
+          theme: { color: "#253957" },
 
-        // ── 3. Create order ──────────────────────────
-        const createRes = await checkoutApi.createOrder({
-          customer_email: formValues.email,
-          customer_name: formValues.name,
-          customer_phone: formValues.phone,
-          billing_address: billingAddress,
-          idempotency_key: crypto.randomUUID(),
-          items: items.map((i) => ({
-            template_id: i.templateId,
-            quantity: i.quantity,
-          })),
-        });
-
-        const order = createRes.order;
-
-        // ── 4. Initiate payment ──────────────────────
-        const paymentData = await checkoutApi.initiatePayment({
-          order_id: order.id,
-        });
-
-        // ── 5. Open Razorpay ─────────────────────────
-        const rzp = initRazorpay(
-          paymentData,
-          {
-            name: formValues.name,
-            email: formValues.email,
-            phone: formValues.phone,
-          },
-
-          // ✅ Success handler
-          async (paymentResponse: RazorpayPaymentResponse) => {
+          // ── 4. Payment captured — verify signature ──────────────────────
+          handler: async (response: RazorpayPaymentResponse) => {
             try {
-              setState((s) => ({ ...s, step: "processing" }));
+              setPhase("verifying");
+              router.push("/checkout/processing");
 
-              const verifyRes = await checkoutApi.verifyPayment({
-                order_id: order.id,
-                razorpay_order_id: paymentResponse.razorpay_order_id,
-                razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                razorpay_signature: paymentResponse.razorpay_signature,
-                idempotency_key: crypto.randomUUID(),
-              });
+              const verifyRes = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/payments/verify`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                  }),
+                },
+              );
 
-              if (verifyRes.success) {
-                clearCart();
-                setState({ step: "success", order: verifyRes.order, error: null });
-              } else {
-                setState({ step: "failure", order: null, error: "Payment verification failed" });
+              if (!verifyRes.ok) {
+                const body = await verifyRes.json().catch(() => ({}));
+                throw new Error(body?.error?.message ?? "Verification failed");
               }
-            } catch (err: unknown) {
-              setState({
-                step: "failure",
-                order: null,
-                error: err instanceof Error ? err.message : "Verification failed",
-              });
+
+              // ── 5. Success — clear cart and redirect ──────────────────
+              clearCart();
+              setPhase("done");
+              router.push(`/checkout/success?order=${order.orderId}`);
+              resolve();
+            } catch (err: any) {
+              reject(err);
             }
           },
 
-          // ❌ Dismiss handler
-          () => {
-            setState({ step: "failure", order: null, error: "Payment was cancelled" });
-          }
-        );
+          modal: {
+            ondismiss: () => {
+              // User closed modal without paying — back to form
+              setPhase("idle");
+              resolve(); // resolve so the outer promise doesn't hang
+            },
+          },
+        });
 
         rzp.open();
-      } catch (err: unknown) {
-        setState({
-          step: "failure",
-          order: null,
-          error: err instanceof Error ? err.message : "Checkout failed",
-        });
-      }
-    },
-    [items, clearCart]
-  );
-
-  return {
-    step: state.step,
-    order: state.order,
-    error: state.error,
-    isProcessing: state.step === "processing",
-    setStep,
-    initiateCheckout,
+      });
+    } catch (err: any) {
+      const message = err?.message ?? "Something went wrong";
+      setError(message);
+      setPhase("idle");
+      router.push(`/checkout/failure?reason=${encodeURIComponent(message)}`);
+    }
   };
+
+  return { phase, isProcessing, error, initiateCheckout };
 }

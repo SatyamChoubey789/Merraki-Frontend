@@ -9,8 +9,8 @@ import {
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { useNewsletterSubscribe } from "@/lib/hooks/useNewsletter";
 import { MerrakiTextLogoAnimated } from "@/components/ui/Merrakitextlogo";
+import { subscribeToNewsletter } from "@/lib/api/newsletter";
 
 /* ── Dark footer tokens ── */
 const D = {
@@ -91,15 +91,53 @@ const SOCIALS = [
   },
 ];
 
-/* ══ NEWSLETTER — full bright white band ════════════════ */
-function NewsletterStrip({ inView }: { inView: boolean }) {
-  const mutation = useNewsletterSubscribe();
-  const [email, setEmail] = useState("");
+/* ══ NEWSLETTER ══════════════════════════════════════════════════════════════ */
 
-  const handleSubscribe = () => {
-    if (!email.trim()) return;
-    mutation.mutate({ email }, { onSuccess: () => setEmail("") });
+type SubscribeState = "idle" | "loading" | "success" | "error";
+
+function NewsletterStrip({ inView }: { inView: boolean }) {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<SubscribeState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const isValidEmail = (v: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  const handleSubscribe = async () => {
+    // Basic client-side email check before hitting backend
+    if (!email.trim()) {
+      setState("error");
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setState("error");
+      setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+
+    setState("loading");
+    setErrorMsg("");
+
+    try {
+      await subscribeToNewsletter({ email: email.trim() });
+      setEmail("");
+      setState("success");
+    } catch (err) {
+      setState("error");
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
+      );
+    }
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSubscribe();
+  };
+
+  const isLoading = state === "loading";
 
   return (
     <Box
@@ -177,93 +215,169 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
             style={{ flexShrink: 0 }}
           >
             <Box sx={{ width: { xs: "100%", md: 440 } }}>
-              {/* Input + button row */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  border: `1.5px solid ${W.borderMid}`,
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  height: 54,
-                  background: W.bg,
-                  transition: "border-color 0.2s, box-shadow 0.2s",
-                  "&:focus-within": {
-                    borderColor: W.blue,
-                    boxShadow: `0 0 0 3px ${W.blueDim}`,
-                  },
-                }}
-              >
-                <Box
-                  component="input"
-                  value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setEmail(e.target.value)
-                  }
-                  onKeyDown={(e: React.KeyboardEvent) =>
-                    e.key === "Enter" && handleSubscribe()
-                  }
-                  placeholder="your@email.com"
-                  sx={{
-                    flex: 1,
-                    height: "100%",
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    px: "18px",
-                    color: W.ink,
-                    fontFamily: SANS,
-                    fontSize: "0.9375rem",
-                    "::placeholder": { color: W.inkFaint },
-                  }}
-                />
-                <motion.button
-                  onClick={handleSubscribe}
-                  whileHover={{ filter: "brightness(1.08)" }}
-                  whileTap={{ scale: 0.97 }}
-                  style={{
-                    flexShrink: 0,
-                    height: "100%",
-                    padding: "0 26px",
-                    border: "none",
-                    background: "#253957",
-                    color: "#FFFFFF",
-                    fontFamily: SANS,
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    letterSpacing: "-0.01em",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    boxShadow: `0 4px 18px ${W.blueGlow}`,
-                  }}
+              {/* Success state */}
+              {state === "success" ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: EASE }}
                 >
-                  {mutation.isPending ? "…" : "Subscribe →"}
-                </motion.button>
-              </Box>
-              {mutation.isSuccess && (
-                <Typography
-                  sx={{
-                    mt: 1,
-                    fontSize: "0.8rem",
-                    color: "#16A34A",
-                    fontFamily: SANS,
-                    fontWeight: 500,
-                  }}
-                >
-                  ✓ You're in! Check your inbox
-                </Typography>
-              )}
-              {mutation.isError && (
-                <Typography
-                  sx={{
-                    mt: 1,
-                    fontSize: "0.8rem",
-                    color: "#DC2626",
-                    fontFamily: SANS,
-                  }}
-                >
-                  Something went wrong. Please try again
-                </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 2,
+                      p: "18px 20px",
+                      borderRadius: "12px",
+                      background: "#F0FDF4",
+                      border: "1.5px solid #BBF7D0",
+                    }}
+                  >
+                    <Typography sx={{ fontSize: "1.25rem", lineHeight: 1 }}>
+                      ✅
+                    </Typography>
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontWeight: 700,
+                          fontSize: "0.9375rem",
+                          color: "#14532D",
+                          mb: 0.25,
+                        }}
+                      >
+                        Check your inbox!
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "0.8125rem",
+                          color: "#166534",
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        We sent a confirmation email. Click the link to complete
+                        your subscription.
+                      </Typography>
+                    </Box>
+                  </Box>
+                </motion.div>
+              ) : (
+                <>
+                  {/* Input + button row */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "stretch",
+                      border: `1.5px solid ${
+                        state === "error" ? "#FECACA" : W.borderMid
+                      }`,
+                      borderRadius: "12px",
+                      overflow: "hidden",
+                      height: 54,
+                      background: W.bg,
+                      transition: "border-color 0.2s, box-shadow 0.2s",
+                      "&:focus-within": {
+                        borderColor: state === "error" ? "#FECACA" : W.blue,
+                        boxShadow: `0 0 0 3px ${
+                          state === "error" ? "rgba(239,68,68,0.08)" : W.blueDim
+                        }`,
+                      },
+                    }}
+                  >
+                    <Box
+                      component="input"
+                      value={email}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setEmail(e.target.value);
+                        // Clear error when user starts typing again
+                        if (state === "error") {
+                          setState("idle");
+                          setErrorMsg("");
+                        }
+                      }}
+                      onKeyDown={handleKeyDown}
+                      placeholder="your@email.com"
+                      disabled={isLoading}
+                      sx={{
+                        flex: 1,
+                        height: "100%",
+                        background: "transparent",
+                        border: "none",
+                        outline: "none",
+                        px: "18px",
+                        color: W.ink,
+                        fontFamily: SANS,
+                        fontSize: "0.9375rem",
+                        opacity: isLoading ? 0.6 : 1,
+                        "::placeholder": { color: W.inkFaint },
+                      }}
+                    />
+                    <motion.button
+                      onClick={handleSubscribe}
+                      whileHover={
+                        !isLoading ? { filter: "brightness(1.08)" } : {}
+                      }
+                      whileTap={!isLoading ? { scale: 0.97 } : {}}
+                      disabled={isLoading}
+                      style={{
+                        flexShrink: 0,
+                        height: "100%",
+                        padding: "0 26px",
+                        border: "none",
+                        background: isLoading ? "#6B7B8E" : "#253957",
+                        color: "#FFFFFF",
+                        fontFamily: SANS,
+                        fontWeight: 700,
+                        fontSize: "0.9rem",
+                        letterSpacing: "-0.01em",
+                        cursor: isLoading ? "not-allowed" : "pointer",
+                        whiteSpace: "nowrap",
+                        boxShadow: isLoading
+                          ? "none"
+                          : `0 4px 18px ${W.blueGlow}`,
+                        transition: "background 0.2s",
+                        minWidth: 110,
+                      }}
+                    >
+                      {isLoading ? "Sending..." : "Subscribe"}
+                    </motion.button>
+                  </Box>
+
+                  {/* Error message — conditional */}
+                  {state === "error" && errorMsg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Typography
+                        sx={{
+                          fontFamily: SANS,
+                          fontSize: "0.8125rem",
+                          color: "#DC2626",
+                          mt: 1,
+                          pl: 0.5,
+                        }}
+                      >
+                        {errorMsg}
+                      </Typography>
+                    </motion.div>
+                  )}
+
+                  {/* Privacy note */}
+                  <Typography
+                    sx={{
+                      fontFamily: SANS,
+                      fontSize: "0.75rem",
+                      color: W.inkFaint,
+                      mt: 1.25,
+                      pl: 0.5,
+                    }}
+                  >
+                    No spam. Unsubscribe anytime.
+                  </Typography>
+                </>
               )}
             </Box>
           </motion.div>
@@ -273,7 +387,8 @@ function NewsletterStrip({ inView }: { inView: boolean }) {
   );
 }
 
-/* ══ FOOTER — dark black ═════════════════════════════════ */
+/* ══ FOOTER ══════════════════════════════════════════════════════════════════ */
+
 export function Footer() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { once: true, amount: 0.05 });

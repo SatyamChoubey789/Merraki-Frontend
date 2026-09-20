@@ -4,7 +4,7 @@ import { Box, Alert, IconButton } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUiStore } from "@/lib/stores/uiStore";
-import { colorTokens, shadowTokens } from "@/theme";
+import { shadowTokens } from "@/theme";
 
 export function ToastContainer() {
   const { toasts, removeToast } = useUiStore();

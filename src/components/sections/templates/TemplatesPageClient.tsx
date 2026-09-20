@@ -1,52 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Box, Container, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material";
-import { motion, AnimatePresence } from "framer-motion";
-import { TemplateGrid } from "./TemplateGrid";
-import {
-  FilterSidebar,
-  FilterDrawer,
-  FilterTriggerButton,
-} from "./TemplateFilters";
+import { motion } from "framer-motion";
 import { useSearchFilter } from "@/lib/hooks/useSearchFilter";
+import { TemplateGrid } from "./TemplateGrid";
+import { FilterSidebar, FilterDrawer, FilterTriggerButton } from "./TemplateFilters";
 
-/* THEME */
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+
 const T = {
-  bg: "#f5f7fb",
-  bgSection: "#F5F7FB",
-  ink: "#0A0A0F",
-  inkMuted: "#5A5A72",
-  inkFaint: "#9898AE",
-  border: "rgba(10,10,20,0.08)",
-
+  bg: "#F5F7FB",
+  surface: "#FFFFFF",
+  ink: "#253957",
+  inkMid: "rgba(37,57,87,0.75)",
+  inkMuted: "rgba(37,57,87,0.55)",
+  inkFaint: "rgba(37,57,87,0.35)",
+  border: "rgba(37,57,87,0.10)",
+  borderFocus: "rgba(37,57,87,0.40)",
   primary: "#253957",
-  primarySoft: "#E9EEF5",
-  primaryGlow: "rgba(37,57,87,0.12)",
-};
+  primaryLight: "rgba(37,57,87,0.06)",
+  primaryGlow: "rgba(37,57,87,0.10)",
+} as const;
 
-const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
-const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
+const SANS = `"DM Sans", system-ui, sans-serif`;
+const MONO = `"DM Mono", ui-monospace, monospace`;
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-const TAGS = [
+// Quick-search tags — these map to the backend's `search` param
+const QUICK_TAGS = [
   "Financial Modelling",
   "Cash Flow",
   "DCF",
-  "Excel Dashboards",
+  "Excel Dashboard",
   "Runway",
   "Unit Economics",
 ];
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function TemplatesPageClient() {
-  const filter = useSearchFilter({ initialSort: "popular", defaultLimit: 12 });
+  const filter = useSearchFilter({ initialSort: "newest", defaultLimit: 12 });
   const { searchQuery, handleSearchChange } = filter;
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -55,36 +50,36 @@ export function TemplatesPageClient() {
 
   return (
     <Box sx={{ minHeight: "100vh", background: T.bg }}>
-      {/* HEADER */}
+      {/* ── Hero / Search header ── */}
       <Box
         sx={{
           pt: { xs: 11, md: 14 },
-          pb: { xs: 5, md: 6 },
+          pb: { xs: 6, md: 8 },
           borderBottom: `1px solid ${T.border}`,
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* soft grid */}
+        {/* Dot grid background */}
         <Box
           sx={{
             position: "absolute",
             inset: 0,
             backgroundImage:
-              "radial-gradient(circle, rgba(37,57,87,0.06) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
+              "radial-gradient(circle, rgba(37,57,87,0.07) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
             pointerEvents: "none",
           }}
         />
 
-        {/* glow */}
+        {/* Radial glow */}
         <Box
           sx={{
             position: "absolute",
-            width: "55vw",
-            height: "28vw",
-            top: "-12vw",
-            left: "22vw",
+            width: "50vw",
+            height: "25vw",
+            top: "-10vw",
+            left: "25vw",
             borderRadius: "50%",
             background: `radial-gradient(ellipse, ${T.primaryGlow} 0%, transparent 70%)`,
             pointerEvents: "none",
@@ -95,161 +90,221 @@ export function TemplatesPageClient() {
           maxWidth="sm"
           sx={{ position: "relative", zIndex: 1, textAlign: "center" }}
         >
-          {/* badge */}
-          <Box
-            sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 1,
-              px: "12px",
-              py: "5px",
-              borderRadius: "100px",
-              border: `1px solid ${T.border}`,
-              background: T.primarySoft,
-              mb: 4,
-            }}
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
           >
             <Box
               sx={{
-                width: 5,
-                height: 5,
-                borderRadius: "50%",
-                background: T.primary,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 1,
+                px: "12px",
+                py: "5px",
+                borderRadius: "100px",
+                border: `1px solid ${T.border}`,
+                background: T.surface,
+                mb: 3,
               }}
-            />
+            >
+              <Box
+                sx={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: "50%",
+                  background: T.primary,
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: MONO,
+                  fontSize: "0.55rem",
+                  letterSpacing: "0.18em",
+                  color: T.primary,
+                }}
+              >
+                Template Store
+              </Typography>
+            </Box>
+          </motion.div>
+
+          {/* Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.45, ease: EASE }}
+          >
             <Typography
               sx={{
-                fontFamily: MONO,
-                fontSize: "0.55rem",
-                letterSpacing: "0.18em",
-                color: T.primary,
-              }}
-            >
-              Template Store
-            </Typography>
-          </Box>
-
-          {/* SEARCH */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              background: T.bg,
-              border: `1.5px solid ${T.border}`,
-              borderRadius: "16px",
-              height: 58,
-              overflow: "hidden",
-              transition: "all 0.2s ease",
-              "&:focus-within": {
-                borderColor: T.primary,
-                boxShadow: `0 0 0 4px ${T.primaryGlow}`,
-              },
-            }}
-          >
-            <Box
-              sx={{ pl: 2.25, pr: 1.5, display: "flex", alignItems: "center" }}
-            >
-              <SearchIcon sx={{ fontSize: "1.1rem", color: T.inkFaint }} />
-            </Box>
-
-            <Box
-              component="input"
-              value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleSearchChange(e.target.value)
-              }
-              placeholder="Search templates…"
-              sx={{
-                flex: 1,
-                border: "none",
-                outline: "none",
-                background: "transparent",
                 fontFamily: SANS,
-                fontSize: "0.95rem",
+                fontWeight: 800,
+                fontSize: { xs: "1.875rem", md: "2.5rem" },
                 color: T.ink,
-                "&::placeholder": { color: T.inkFaint },
-              }}
-            />
-
-            {searchQuery && (
-              <Box
-                component="button"
-                onClick={() => handleSearchChange("")}
-                sx={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: "50%",
-                  background: T.primarySoft,
-                  border: "none",
-                  mr: 1,
-                  cursor: "pointer",
-                }}
-              >
-                <CloseIcon sx={{ fontSize: "0.7rem", color: T.primary }} />
-              </Box>
-            )}
-
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              style={{
-                height: "100%",
-                padding: "0 26px",
-                border: "none",
-                background: T.primary,
-                color: "#fff",
-                fontFamily: SANS,
-                fontWeight: 700,
-                cursor: "pointer",
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+                mb: 1,
               }}
             >
-              Search
-            </motion.button>
-          </Box>
+              Financial templates
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontWeight: 300,
+                fontSize: { xs: "1.875rem", md: "2.5rem" },
+                color: T.inkMuted,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+                mb: 4,
+              }}
+            >
+              built for founders.
+            </Typography>
+          </motion.div>
 
-          {/* TAGS */}
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1,
-              justifyContent: "center",
-              mt: 3,
-            }}
+          {/* Search bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.45, ease: EASE }}
           >
-            {TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => handleSearchChange(tag)}
-                style={{
-                  padding: "5px 13px",
-                  borderRadius: "100px",
-                  border: `1px solid ${T.border}`,
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                background: T.surface,
+                border: `1.5px solid ${T.border}`,
+                borderRadius: "14px",
+                height: 54,
+                overflow: "hidden",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+                "&:focus-within": {
+                  borderColor: T.borderFocus,
+                  boxShadow: `0 0 0 3px ${T.primaryLight}`,
+                },
+              }}
+            >
+              <Box sx={{ pl: 2, pr: 1, display: "flex", alignItems: "center" }}>
+                <SearchIcon sx={{ fontSize: "1rem", color: T.inkFaint }} />
+              </Box>
+
+              <Box
+                component="input"
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleSearchChange(e.target.value)
+                }
+                placeholder="Search templates…"
+                sx={{
+                  flex: 1,
+                  border: "none",
+                  outline: "none",
                   background: "transparent",
                   fontFamily: SANS,
-                  fontSize: "0.78rem",
-                  color: T.inkMuted,
+                  fontSize: "0.9rem",
+                  color: T.ink,
+                  "&::placeholder": { color: T.inkFaint },
+                }}
+              />
+
+              {searchQuery && (
+                <Box
+                  component="button"
+                  onClick={() => handleSearchChange("")}
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    mr: 1,
+                    borderRadius: "50%",
+                    border: "none",
+                    background: T.bg,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: "0.7rem", color: T.inkMuted }} />
+                </Box>
+              )}
+
+              <Box
+                component="button"
+                sx={{
+                  height: "100%",
+                  px: { xs: 2, sm: 3 },
+                  border: "none",
+                  borderLeft: `1px solid ${T.border}`,
+                  background: T.primary,
+                  color: "#fff",
+                  fontFamily: SANS,
+                  fontWeight: 700,
+                  fontSize: "0.875rem",
                   cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    T.primarySoft;
-                  (e.currentTarget as HTMLElement).style.color = T.primary;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.background =
-                    "transparent";
-                  (e.currentTarget as HTMLElement).style.color = T.inkMuted;
+                  whiteSpace: "nowrap",
+                  transition: "filter 0.18s",
+                  "&:hover": { filter: "brightness(1.08)" },
                 }}
               >
-                {tag}
-              </button>
-            ))}
-          </Box>
+                Search
+              </Box>
+            </Box>
+          </motion.div>
+
+          {/* Quick-search tags */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.25, duration: 0.4 }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 0.875,
+                justifyContent: "center",
+                mt: 2.5,
+              }}
+            >
+              {QUICK_TAGS.map((tag) => (
+                <Box
+                  key={tag}
+                  component="button"
+                  onClick={() => handleSearchChange(tag)}
+                  sx={{
+                    px: "12px",
+                    py: "5px",
+                    borderRadius: "100px",
+                    border: `1px solid ${T.border}`,
+                    background:
+                      searchQuery === tag ? T.primaryLight : "transparent",
+                    color: searchQuery === tag ? T.ink : T.inkMuted,
+                    fontFamily: SANS,
+                    fontSize: "0.78rem",
+                    fontWeight: searchQuery === tag ? 600 : 400,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                    "&:hover": {
+                      background: T.primaryLight,
+                      color: T.ink,
+                      borderColor: "rgba(37,57,87,0.2)",
+                    },
+                  }}
+                >
+                  {tag}
+                </Box>
+              ))}
+            </Box>
+          </motion.div>
         </Container>
       </Box>
 
-      {/* MAIN */}
+      {/* ── Main content ── */}
       <Container maxWidth="xl" sx={{ pt: { xs: 5, md: 8 }, pb: 16 }}>
+        {/* Mobile filter trigger */}
         {!isDesktop && (
           <Box sx={{ mb: 3 }}>
             <FilterTriggerButton
@@ -259,14 +314,18 @@ export function TemplatesPageClient() {
           </Box>
         )}
 
-        <Box sx={{ display: "flex", gap: 5 }}>
+        <Box sx={{ display: "flex", gap: { md: 6 }, alignItems: "flex-start" }}>
+          {/* Sidebar — desktop only */}
           {isDesktop && <FilterSidebar filter={filter} />}
-          <Box sx={{ flex: 1 }}>
+
+          {/* Grid */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             <TemplateGrid filter={filter} />
           </Box>
         </Box>
       </Container>
 
+      {/* Mobile filter drawer */}
       <FilterDrawer
         filter={filter}
         open={mobileFilterOpen}

@@ -1,42 +1,83 @@
 "use client";
 
-import { useCartStore } from "@/lib/stores/cartStore";
-import type { TemplateWithRelations } from "@/types/template.types";
+import {
+    useCartItems,
+    useCartIsOpen,
+    useCartActions,
+    useCartTotalItems,
+    useCartSubtotalCents,
+    type CartItem,
+} from "@/lib/stores/useCartStore";
+import type { TemplateListItem, TemplateFull } from "@/types/templatesTypes";
+import { priceToCents, getPrimaryImage } from "@/types/templatesTypes";
 
-export function useCart() {
-  const store = useCartStore();
+// ─── Adapter ──────────────────────────────────────────────────────────────────
+// Converts a backend template shape → CartItem.
+// Called inside addToCart so no component ever has to do this manually.
 
-  const itemCount = store.getItemCount();
+export function templateToCartItem(
+    template: TemplateListItem | TemplateFull,
+): CartItem {
+    return {
+        id: template.id,
+        slug: template.slug,
+        title: template.title,
+        priceCents: priceToCents(template.priceUsd),
+        previewImage: getPrimaryImage(template.previewImages)?.url ?? null,
+        categoryId: template.categoryId,
+    };
+}
 
-  const subtotalUSD = store.getSubtotalUSD();
-  const subtotalUSDCents = store.getSubtotalUSDCents();
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
-  const subtotalFormatted = subtotalUSD.toFixed(2);
+interface UseCartReturn {
+    items: CartItem[];
+    totalItems: number;
+    subtotalCents: number;
+    isOpen: boolean;
 
-  const isInCart = (templateId: number) =>
-    store.items.some((i) => i.templateId === templateId);
+    // Takes a full template object — converts and adds to cart
+    addToCart: (template: TemplateListItem | TemplateFull) => void;
+    removeFromCart: (id: string) => void;
+    clearCart: () => void;
+    isInCart: (id: string) => boolean;
 
-  const getItemQuantity = (templateId: number) =>
-    store.items.find((i) => i.templateId === templateId)?.quantity ?? 0;
+    openCart: () => void;
+    closeCart: () => void;
+    toggleCart: () => void;
+}
 
-  return {
-    items: store.items,
-    isDrawerOpen: store.isDrawerOpen,
+export function useCart(): UseCartReturn {
+    const items = useCartItems();
+    const totalItems = useCartTotalItems();
+    const subtotalCents = useCartSubtotalCents();
+    const isOpen = useCartIsOpen();
+    const {
+        addItem,
+        removeItem,
+        clearCart,
+        isInCart,
+        openCart,
+        closeCart,
+        toggleCart,
+    } = useCartActions();
 
-    itemCount,
+    const addToCart = (template: TemplateListItem | TemplateFull) => {
+        addItem(templateToCartItem(template));
+        openCart(); // open drawer immediately after adding
+    };
 
-    subtotalUSD,
-    subtotalUSDCents,
-    subtotalFormatted,
-
-    isInCart,
-    getItemQuantity,
-
-    addItem: (t: TemplateWithRelations) => store.addItem(t),
-    removeItem: store.removeItem,
-    updateQuantity: store.updateQuantity,
-    clearCart: store.clearCart,
-    openDrawer: store.openDrawer,
-    closeDrawer: store.closeDrawer,
-  };
+    return {
+        items,
+        totalItems,
+        subtotalCents,
+        isOpen,
+        addToCart,
+        removeFromCart: removeItem,
+        clearCart,
+        isInCart,
+        openCart,
+        closeCart,
+        toggleCart,
+    };
 }

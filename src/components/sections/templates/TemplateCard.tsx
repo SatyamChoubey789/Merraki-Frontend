@@ -2,93 +2,115 @@
 
 import { useState } from "react";
 import { Box, Typography } from "@mui/material";
-import { Download as DownloadIcon } from "@mui/icons-material";
 import { motion } from "framer-motion";
 import { useCart } from "@/lib/hooks/useCart";
+import { priceToCents, uuidToIndex, getPrimaryImage } from "@/types/templatesTypes";
+import type { TemplateListItem } from "@/types/templatesTypes";
 import { TemplateDetailDrawer } from "./TemplateDetailDrawer";
-import type { TemplateWithRelations } from "@/types/template.types";
 
-/* NEW THEME */
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+
 const T = {
-  bg: "#f5f7fb",
-  ink: "#0A0A0F",
-  inkMuted: "#5A5A72",
-  inkFaint: "#9898AE",
-  border: "rgba(10,10,20,0.09)",
-
+  bg: "#F5F7FB",
+  surface: "#FFFFFF",
+  ink: "#253957",
+  inkMid: "rgba(37,57,87,0.75)",
+  inkMuted: "rgba(37,57,87,0.55)",
+  inkFaint: "rgba(37,57,87,0.35)",
+  border: "rgba(37,57,87,0.10)",
+  borderMid: "rgba(37,57,87,0.16)",
   primary: "#253957",
-  primaryPale: "rgba(37,57,87,0.12)",
+  primaryLight: "rgba(37,57,87,0.06)",
   primaryBorder: "rgba(37,57,87,0.22)",
-  primaryGrad: "linear-gradient(135deg,#253957 0%,#3a4f6a 100%)",
+} as const;
 
-  imgBg: "#F0F4FF",
-};
+const SANS = `"DM Sans", system-ui, sans-serif`;
+const MONO = `"DM Mono", ui-monospace, monospace`;
 
-const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
-const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
-const EASE = [0.16, 1, 0.3, 1] as const;
+const ICONS = ["◈", "△", "◆", "◎", "◇", "✦", "⬡", "○"];
 
-const ICONS = ["◈", "△", "◆", "◎", "◇", "✦", "⬡", "⬢", "○"];
-
-const formatPrice = (cents: number) => (cents / 100).toFixed(2);
-
-interface Props {
-  template: TemplateWithRelations;
-  index?: number;
+function formatUSD(cents: number): string {
+  return cents === 0 ? "Free" : `$${(cents / 100).toFixed(2)}`;
 }
 
-export function TemplateCard({ template, index = 0 }: Props) {
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface TemplateCardProps {
+  template: TemplateListItem;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function TemplateCard({ template }: TemplateCardProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  const { addItem, isInCart } = useCart();
+  const { addToCart, isInCart, openCart } = useCart();
+
+  // All derived from real backend fields
   const inCart = isInCart(template.id);
+  const icon = ICONS[uuidToIndex(template.id, ICONS.length)];
+  const primaryImage = getPrimaryImage(template.previewImages);
+  const priceCents = priceToCents(template.priceUsd); // priceUsd is "9.99"
 
-  const icon = ICONS[template.id % ICONS.length] ?? "◈";
-
-  const hasDiscount =
-    template.sale_price_usd_cents != null && template.sale_price_usd_cents > 0;
-
-  const displayPrice = hasDiscount
-    ? template.sale_price_usd_cents!
-    : template.price_usd_cents;
-
-  const originalPrice = template.price_usd_cents;
-
-  const primaryImage =
-    template.images?.find((img) => img.is_primary) ?? template.images?.[0];
+  const handleAddToCart = () => {
+    if (inCart) {
+      openCart();
+      return;
+    }
+    addToCart(template); // adapter inside useCart handles conversion
+  };
 
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.04, duration: 0.45, ease: EASE }}
-        onHoverStart={() => setHovered(true)}
-        onHoverEnd={() => setHovered(false)}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         style={{ height: "100%" }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          {/* IMAGE */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            background: T.surface,
+            borderRadius: "16px",
+            border: `1px solid ${T.border}`,
+            overflow: "hidden",
+            transition: "border-color 0.2s, box-shadow 0.2s",
+            "&:hover": {
+              borderColor: T.borderMid,
+              boxShadow: "0 4px 24px rgba(37,57,87,0.08)",
+            },
+          }}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+        >
+          {/* ── Preview image ── */}
           <Box
             onClick={() => setDrawerOpen(true)}
             sx={{
               position: "relative",
-              height: 220,
-              borderRadius: "14px",
-              overflow: "hidden",
-              background: T.imgBg,
-              border: `1px solid ${T.border}`,
-              mb: 1.75,
+              height: 200,
+              background: T.bg,
+              borderBottom: `1px solid ${T.border}`,
               cursor: "pointer",
+              overflow: "hidden",
+              flexShrink: 0,
             }}
           >
             {primaryImage ? (
-              <Box
-                component="img"
+              <img
                 src={primaryImage.url}
-                alt={primaryImage.alt_text ?? template.name}
-                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                alt={primaryImage.alt}          // backend field is "alt" not "alt_text"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transition: "transform 0.3s ease",
+                  transform: hovered ? "scale(1.03)" : "scale(1)",
+                }}
               />
             ) : (
               <Box
@@ -97,130 +119,217 @@ export function TemplateCard({ template, index = 0 }: Props) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  fontSize: "2.25rem",
                   color: T.inkFaint,
-                  fontSize: "1.4rem",
                 }}
               >
                 {icon}
               </Box>
             )}
 
-            {/* Hover */}
-            <motion.div
-              animate={{ opacity: hovered ? 1 : 0 }}
-              style={{
+            {/* Quick view overlay */}
+            <Box
+              sx={{
                 position: "absolute",
                 inset: 0,
-                background: "rgba(0,0,0,0.35)",
+                background: "rgba(37,57,87,0.5)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                opacity: hovered ? 1 : 0,
+                transition: "opacity 0.2s",
               }}
             >
-              <Typography sx={{ color: "#fff", fontWeight: 700 }}>
-                Quick view
-              </Typography>
-            </motion.div>
-          </Box>
-
-          {/* CONTENT */}
-          <Box sx={{ flex: 1 }}>
-            {/* CATEGORY */}
-            {template.category && (
-              <Typography
+              <Box
                 sx={{
-                  fontFamily: MONO,
-                  fontSize: "0.6rem",
-                  color: T.primary,
+                  px: 2,
+                  py: 0.875,
+                  borderRadius: "8px",
+                  background: "rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.25)",
                 }}
               >
-                {template.category.name}
-              </Typography>
-            )}
-
-            {/* NAME + PRICE */}
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography
-                onClick={() => setDrawerOpen(true)}
-                sx={{
-                  fontFamily: SANS,
-                  fontWeight: 700,
-                  fontSize: "0.95rem",
-                  cursor: "pointer",
-                }}
-              >
-                {template.name}
-              </Typography>
-
-              <Box sx={{ textAlign: "right" }}>
-                <Typography sx={{ fontWeight: 700 }}>
-                  {template.price_usd_cents === 0
-                    ? "Free"
-                    : `$${formatPrice(displayPrice)}`}
+                <Typography
+                  sx={{
+                    fontFamily: SANS,
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    color: "#fff",
+                  }}
+                >
+                  Quick view
                 </Typography>
-
-                {hasDiscount && (
-                  <Typography
-                    sx={{
-                      fontSize: "0.7rem",
-                      textDecoration: "line-through",
-                      color: T.inkFaint,
-                    }}
-                  >
-                    ${formatPrice(originalPrice)}
-                  </Typography>
-                )}
               </Box>
             </Box>
 
-            {/* DESCRIPTION */}
+            {/* Featured badge */}
+            {template.featured && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 10,
+                  left: 10,
+                  px: 1.25,
+                  py: "3px",
+                  borderRadius: "6px",
+                  background: T.primary,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: MONO,
+                    fontSize: "0.58rem",
+                    fontWeight: 700,
+                    color: "#fff",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  FEATURED
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          {/* ── Content ── */}
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              p: 2.5,
+            }}
+          >
+            {/* Tags */}
+            {template.tags.length > 0 && (
+              <Box
+                sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1.25 }}
+              >
+                {template.tags.slice(0, 2).map((tag) => (
+                  <Box
+                    key={tag}
+                    sx={{
+                      px: 1,
+                      py: "2px",
+                      borderRadius: "5px",
+                      background: T.primaryLight,
+                      border: `1px solid ${T.border}`,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontFamily: MONO,
+                        fontSize: "0.58rem",
+                        color: T.inkMid,
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      {tag}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+
+            {/* Title — backend field is "title" not "name" */}
             <Typography
+              onClick={() => setDrawerOpen(true)}
               sx={{
-                fontSize: "0.85rem",
-                color: T.inkMuted,
-                mt: 1,
-                display: "-webkit-box",
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
+                fontFamily: SANS,
+                fontWeight: 700,
+                fontSize: "0.9375rem",
+                color: T.ink,
+                lineHeight: 1.3,
+                cursor: "pointer",
+                mb: 0.75,
+                "&:hover": { color: T.inkMid },
+                transition: "color 0.15s",
               }}
             >
-              {template.tagline ?? template.description}
+              {template.title}
             </Typography>
 
-            {/* DOWNLOADS */}
-            <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-              <DownloadIcon sx={{ fontSize: 14, mr: 0.5, color: T.primary }} />
-              <Typography sx={{ fontSize: "0.7rem", color: T.inkFaint }}>
-                {(template.downloads_count ?? 0).toLocaleString()} downloads
+            {/* Description */}
+            {template.description && (
+              <Typography
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "0.8125rem",
+                  color: T.inkMuted,
+                  lineHeight: 1.6,
+                  display: "-webkit-box",
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  mb: 1.5,
+                }}
+              >
+                {template.description}
               </Typography>
-            </Box>
+            )}
 
-            {/* CTA */}
-            <motion.button
-              onClick={() => {
-                if (!inCart) addItem(template);
-              }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                marginTop: 10,
-                padding: "8px 14px",
-                borderRadius: 8,
-                border: inCart ? `1px solid ${T.primary}` : "none",
-                background: inCart ? T.primaryPale : T.primaryGrad,
-                color: inCart ? T.primary : "#fff",
-                fontWeight: 700,
-                cursor: inCart ? "default" : "pointer",
+            {/* Spacer */}
+            <Box sx={{ flex: 1 }} />
+
+            {/* Price + CTA */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1.5,
+                mt: 2,
+                pt: 2,
+                borderTop: `1px solid ${T.border}`,
               }}
             >
-              {inCart ? "✓ Added" : "Add to cart"}
-            </motion.button>
+              {/* Price — priceUsd is a string from backend */}
+              <Typography
+                sx={{
+                  fontFamily: MONO,
+                  fontWeight: 800,
+                  fontSize: "1.0625rem",
+                  color: T.ink,
+                  letterSpacing: "-0.01em",
+                  flexShrink: 0,
+                }}
+              >
+                {formatUSD(priceCents)}
+              </Typography>
+
+              {/* Add to cart / View in cart */}
+              <Box
+                component="button"
+                onClick={handleAddToCart}
+                sx={{
+                  px: 2,
+                  py: "8px",
+                  borderRadius: "9px",
+                  border: `1.5px solid ${inCart ? T.primaryBorder : T.primary}`,
+                  background: inCart ? T.primaryLight : T.primary,
+                  color: inCart ? T.primary : "#fff",
+                  fontFamily: SANS,
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.18s",
+                  "&:hover": {
+                    filter: inCart ? "none" : "brightness(1.08)",
+                    background: inCart ? "rgba(37,57,87,0.10)" : T.primary,
+                  },
+                }}
+              >
+                {inCart ? "✓ In cart" : "Add to cart"}
+              </Box>
+            </Box>
           </Box>
         </Box>
       </motion.div>
 
+      {/* Detail drawer — only renders when open */}
       <TemplateDetailDrawer
-        slug={template.slug}
+        slug={drawerOpen ? template.slug : null}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />

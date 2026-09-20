@@ -2,196 +2,225 @@
 
 import { Box, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTemplates, useTemplateSearch } from "@/lib/hooks/useTemplates";
 import { TemplateCard } from "./TemplateCard";
-import type { useSearchFilter } from "@/lib/hooks/useSearchFilter";
+import { useTemplates } from "@/lib/hooks/useTemplates";
+import type { SearchFilterState } from "@/lib/hooks/useSearchFilter";
 
-/* THEME (UPDATED) */
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+
 const T = {
-  bg: "#f5f7fb",
-  bgSection: "#F5F7FB",
-  ink: "#0A0A0F",
-  inkMuted: "#5A5A72",
-  inkFaint: "#9898AE",
-  border: "rgba(10,10,20,0.09)",
-
-  // PRIMARY BRAND COLOR (your requested)
+  bg: "#F5F7FB",
+  surface: "#FFFFFF",
+  ink: "#253957",
+  inkMid:" rgba(37,57,87,0.75)",
+  inkMuted: "rgba(37,57,87,0.55)",
+  inkFaint: "rgba(37,57,87,0.35)",
+  border: "rgba(37,57,87,0.10)",
   primary: "#253957",
-  primaryPale: "#E9EEF5",
-  primaryGrad: "linear-gradient(135deg,#253957 0%,#3A4F6A 100%)",
-};
+  primaryLight: "rgba(37,57,87,0.06)",
+  primaryBorder: "rgba(37,57,87,0.20)",
+} as const;
 
-const SANS = '"DM Sans","Mona Sans",system-ui,sans-serif';
-const MONO = '"DM Mono","JetBrains Mono",ui-monospace,monospace';
+const SANS = `"DM Sans", system-ui, sans-serif`;
+const MONO = `"DM Mono", ui-monospace, monospace`;
 
-type FilterState = ReturnType<typeof useSearchFilter>;
+// ─── Skeleton card ────────────────────────────────────────────────────────────
 
-interface Props {
-  filter: FilterState;
-}
-
-/* Skeleton */
-function Skel() {
+function SkeletonCard() {
   return (
     <Box
       sx={{
+        background: T.surface,
+        borderRadius: "16px",
+        border: `1px solid ${T.border}`,
+        overflow: "hidden",
         "@keyframes pulse": {
           "0%,100%": { opacity: 1 },
-          "50%": { opacity: 0.5 },
+          "50%": { opacity: 0.45 },
         },
       }}
     >
       <Box
         sx={{
-          height: 220,
-          borderRadius: "14px",
-          mb: 1.75,
-          background: T.primaryPale,
+          height: 200,
+          background: T.bg,
           animation: "pulse 1.8s ease-in-out infinite",
         }}
       />
-      <Box
-        sx={{
-          height: 13,
-          width: "72%",
-          mb: 1,
-          animation: "pulse 1.8s ease-in-out infinite",
-          background: T.bgSection,
-          borderRadius: "4px",
-        }}
-      />
-      <Box
-        sx={{
-          height: 11,
-          width: "52%",
-          mb: 1.5,
-          animation: "pulse 1.8s ease-in-out infinite",
-          background: T.bgSection,
-          borderRadius: "4px",
-        }}
-      />
-      <Box
-        sx={{
-          height: 11,
-          width: "88%",
-          animation: "pulse 1.8s ease-in-out infinite",
-          background: T.bgSection,
-          borderRadius: "4px",
-        }}
-      />
+      <Box sx={{ p: 2.5 }}>
+        <Box
+          sx={{
+            height: 11,
+            width: "40%",
+            borderRadius: "4px",
+            background: T.bg,
+            mb: 1,
+            animation: "pulse 1.8s ease-in-out infinite",
+          }}
+        />
+        <Box
+          sx={{
+            height: 14,
+            width: "75%",
+            borderRadius: "4px",
+            background: T.bg,
+            mb: 0.75,
+            animation: "pulse 1.8s ease-in-out infinite",
+          }}
+        />
+        <Box
+          sx={{
+            height: 11,
+            width: "90%",
+            borderRadius: "4px",
+            background: T.bg,
+            mb: 0.5,
+            animation: "pulse 1.8s ease-in-out infinite",
+          }}
+        />
+        <Box
+          sx={{
+            height: 11,
+            width: "65%",
+            borderRadius: "4px",
+            background: T.bg,
+            animation: "pulse 1.8s ease-in-out infinite",
+          }}
+        />
+      </Box>
     </Box>
   );
 }
 
-export function TemplateGrid({ filter }: Props) {
-  const {
-    debouncedQuery,
-    selectedCategory,
-    sortBy,
-    page,
-    limit,
-    isSearching,
-    goToPage,
-  } = filter;
+// ─── Grid ─────────────────────────────────────────────────────────────────────
 
-  const listQ = useTemplates({
-    page,
-    limit,
-    category_id: selectedCategory ?? undefined,
-    sort: sortBy as any,
-  });
+interface TemplateGridProps {
+  filter: SearchFilterState;
+}
 
-  const searchQ = useTemplateSearch(debouncedQuery, isSearching);
+const GRID_SX = {
+  display: "grid",
+  gridTemplateColumns: {
+    xs: "1fr",
+    sm: "repeat(2, 1fr)",
+    lg: "repeat(3, 1fr)",
+  },
+  gap: 3,
+} as const;
 
-  const active = isSearching ? searchQ : listQ;
-  const { data, isLoading, isError, refetch } = active;
+export function TemplateGrid({ filter }: TemplateGridProps) {
+  const { page, limit, goToPage, debouncedQuery, apiParams } = filter;
 
-  const templates = (data as any)?.templates ?? [];
-  const total = (data as any)?.total ?? templates.length;
-  const pages = !isSearching && limit ? Math.ceil(total / limit) : 1;
+  // useTemplates receives the fully-composed apiParams from the filter hook
+  // params shape matches TemplateListParams exactly — no transformation needed
+  const { templates, pagination, isLoading, error } = useTemplates(apiParams);
 
-  if (isLoading)
+  // ── Loading ──────────────────────────────────────────────────────────────
+
+  if (isLoading) {
     return (
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "1fr 1fr",
-            lg: "repeat(3,1fr)",
-          },
-          gap: 3.5,
-        }}
-      >
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skel key={i} />
+      <Box sx={GRID_SX}>
+        {Array.from({ length: limit }).map((_, i) => (
+          <SkeletonCard key={i} />
         ))}
       </Box>
     );
+  }
 
-  if (isError)
+  // ── Error ────────────────────────────────────────────────────────────────
+
+  if (error) {
     return (
       <Box sx={{ textAlign: "center", py: 16 }}>
         <Typography
-          sx={{ fontFamily: SANS, fontWeight: 700, color: T.inkMuted, mb: 2 }}
+          sx={{
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: "1rem",
+            color: T.inkMuted,
+            mb: 2,
+          }}
         >
-          Something went wrong.
+          Something went wrong loading templates.
         </Typography>
-
         <Box
           component="button"
-          onClick={() => refetch()}
+          onClick={() => window.location.reload()}
           sx={{
             fontFamily: SANS,
             fontWeight: 600,
             fontSize: "0.875rem",
             color: T.primary,
-            border: `1px solid ${T.primary}`,
-            borderRadius: "8px",
+            border: `1.5px solid ${T.primaryBorder}`,
+            borderRadius: "9px",
             px: 3,
             py: 1.25,
             cursor: "pointer",
             background: "transparent",
-            "&:hover": { background: T.primaryPale },
+            "&:hover": { background: T.primaryLight },
           }}
         >
-          Try again
+          Retry
         </Box>
       </Box>
     );
+  }
 
-  if (templates.length === 0)
+  // ── Empty ────────────────────────────────────────────────────────────────
+
+  if (templates.length === 0) {
     return (
       <Box sx={{ textAlign: "center", py: 16 }}>
         <Typography
-          sx={{ fontFamily: SANS, fontWeight: 700, color: T.inkFaint, mb: 1 }}
+          sx={{
+            fontFamily: SANS,
+            fontWeight: 700,
+            fontSize: "1rem",
+            color: T.inkFaint,
+            mb: 0.75,
+          }}
         >
-          {isSearching
+          {debouncedQuery
             ? `No results for "${debouncedQuery}"`
             : "No templates found."}
         </Typography>
-
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "0.875rem",
+            color: T.inkFaint,
+            mb: 3,
+          }}
+        >
+          Try adjusting your filters.
+        </Typography>
         <Box
           component="button"
-          onClick={() => filter.clearFilters()}
+          onClick={filter.clearFilters}
           sx={{
             fontFamily: SANS,
             fontWeight: 600,
+            fontSize: "0.875rem",
             color: T.primary,
-            border: `1px solid ${T.primary}`,
-            borderRadius: "8px",
+            border: `1.5px solid ${T.primaryBorder}`,
+            borderRadius: "9px",
             px: 3,
             py: 1.25,
             cursor: "pointer",
             background: "transparent",
-            mt: 2,
-            "&:hover": { background: T.primaryPale },
+            "&:hover": { background: T.primaryLight },
           }}
         >
           Clear filters
         </Box>
       </Box>
     );
+  }
+
+  // ── Results ──────────────────────────────────────────────────────────────
+
+  const total = pagination?.total ?? templates.length;
+  const totalPages = pagination?.totalPages ?? 1;
 
   return (
     <Box>
@@ -201,69 +230,111 @@ export function TemplateGrid({ filter }: Props) {
           fontFamily: MONO,
           fontSize: "0.6rem",
           letterSpacing: "0.12em",
+          textTransform: "uppercase",
           color: T.inkFaint,
           mb: 3,
-          textTransform: "uppercase",
         }}
       >
-        {isSearching
-          ? `${templates.length} result(s) for "${debouncedQuery}"`
-          : `${total.toLocaleString()} template(s)`}
+        {debouncedQuery
+          ? `${total.toLocaleString()} result${total !== 1 ? "s" : ""} for "${debouncedQuery}"`
+          : `${total.toLocaleString()} template${total !== 1 ? "s" : ""}`}
       </Typography>
 
-      {/* GRID */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "1fr 1fr",
-              lg: "repeat(3,1fr)",
-            },
-            gap: 3.5,
-          }}
-        >
-          <AnimatePresence mode="popLayout">
-            {templates.map((t: any, i: number) => (
-              <TemplateCard key={t.id} template={t} index={i} />
-            ))}
-          </AnimatePresence>
-        </Box>
-      </motion.div>
+      {/* Grid */}
+      <Box sx={GRID_SX}>
+        <AnimatePresence mode="popLayout">
+          {templates.map((template) => (
+            <TemplateCard key={template.id} template={template} />
+          ))}
+        </AnimatePresence>
+      </Box>
 
       {/* Pagination */}
-      {pages > 1 && (
+      {totalPages > 1 && (
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
+            alignItems: "center",
             gap: 1,
             mt: 10,
             pt: 5,
             borderTop: `1px solid ${T.border}`,
           }}
         >
-          {Array.from({ length: pages }).map((_, i) => (
-            <motion.button
-              key={i}
-              onClick={() => goToPage(i + 1)}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.94 }}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 9,
-                border: `1px solid ${page === i + 1 ? T.primary : T.border}`,
-                background: page === i + 1 ? T.primaryPale : "transparent",
-                color: page === i + 1 ? T.primary : T.inkFaint,
-                fontFamily: MONO,
+          {/* Prev */}
+          {pagination?.hasPrev && (
+            <Box
+              component="button"
+              onClick={() => goToPage(page - 1)}
+              sx={{
+                px: 2,
+                py: "8px",
+                borderRadius: "9px",
+                border: `1px solid ${T.border}`,
+                background: T.surface,
+                color: T.inkMid,
+                fontFamily: SANS,
+                fontSize: "0.8rem",
                 cursor: "pointer",
+                "&:hover": { borderColor: T.primary, color: T.primary },
+                transition: "all 0.15s",
               }}
             >
-              {i + 1}
-            </motion.button>
-          ))}
+              ← Prev
+            </Box>
+          )}
+
+          {/* Page numbers */}
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const p = i + 1;
+            const active = p === page;
+            return (
+              <motion.button
+                key={p}
+                onClick={() => goToPage(p)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "9px",
+                  border: `1.5px solid ${active ? T.primary : T.border}`,
+                  background: active ? T.primary : "transparent",
+                  color: active ? "#fff" : T.inkFaint,
+                  fontFamily: MONO,
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {p}
+              </motion.button>
+            );
+          })}
+
+          {/* Next */}
+          {pagination?.hasNext && (
+            <Box
+              component="button"
+              onClick={() => goToPage(page + 1)}
+              sx={{
+                px: 2,
+                py: "8px",
+                borderRadius: "9px",
+                border: `1px solid ${T.border}`,
+                background: T.surface,
+                color: T.inkMid,
+                fontFamily: SANS,
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                "&:hover": { borderColor: T.primary, color: T.primary },
+                transition: "all 0.15s",
+              }}
+            >
+              Next →
+            </Box>
+          )}
         </Box>
       )}
     </Box>

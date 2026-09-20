@@ -1,46 +1,53 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,
+
+  // ─── Image optimisation ───────────────────────────────────────────────────
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "api.merrakisolutions.com" },
       { protocol: "https", hostname: "cdn.merrakisolutions.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "images.unsplash.com" },
+      // Dev — local backend
+      ...(isDev
+        ? [{ protocol: "http" as const, hostname: "localhost" }]
+        : []),
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
+
   experimental: {
     optimizePackageImports: [
-      "@mui/material",
-      "@mui/icons-material",
+      "lucide-react",
       "recharts",
       "framer-motion",
       "date-fns",
     ],
   },
-  transpilePackages: ["three"],
 
-  // --- PDF export (puppeteer-core + @sparticuz/chromium) support ---
-  // Prevent Next's bundler from relocating/rewriting this package; it reads
-  // its Chromium binary from a path relative to the installed package at
-  // runtime, so bundling breaks that lookup. Required per Sparticuz's docs:
-  // https://github.com/Sparticuz/chromium#bundler-configuration
+  transpilePackages: ["three"],
   serverExternalPackages: ["@sparticuz/chromium"],
-  // Next's output file tracing only follows JS imports, so it won't know
-  // the export-pdf route needs this binary directory (it's read from disk,
-  // not imported) unless it's explicitly included here.
+
   outputFileTracingIncludes: {
     "/api/export-pdf": ["./node_modules/@sparticuz/chromium/bin/**/*"],
   },
 
+  // ─── Security headers ─────────────────────────────────────────────────────
   async headers() {
+    // Dev allows localhost:8000, prod uses real domain
+    const apiOrigin = isDev
+      ? "http://localhost:8000"
+      : "https://api.merrakisolutions.com";
+
     return [
       {
         source: "/(.*)",
@@ -57,25 +64,17 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Scripts
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.razorpay.com https://assets.calendly.com https://static.cloudflareinsights.com",
-              // Styles
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              // Fonts
-              "font-src 'self' https://fonts.gstatic.com",
-              // Images
-              "img-src 'self' data: blob: https://api.merrakisolutions.com https://cdn.merrakisolutions.com https://res.cloudinary.com https://images.unsplash.com",
-              // Media
+              "font-src 'self' data: https://fonts.gstatic.com",
+              `img-src 'self' data: blob: ${apiOrigin} https://api.merrakisolutions.com https://cdn.merrakisolutions.com https://res.cloudinary.com https://images.unsplash.com`,
               "media-src 'self' blob: https://res.cloudinary.com",
-              // API calls / XHR / analytics
-              "connect-src 'self' https://api.merrakisolutions.com https://checkout.razorpay.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com",
-              // iFrames
+              `connect-src 'self' ${apiOrigin} https://api.merrakisolutions.com https://checkout.razorpay.com https://cdn.jsdelivr.net https://unpkg.com https://static.cloudflareinsights.com`,
               "frame-src https://calendly.com https://api.razorpay.com",
             ].join("; "),
           },
         ],
       },
-      // Static assets cache
       {
         source: "/(.*)\\.(ico|png|jpg|jpeg|svg|webp|avif|woff2)",
         headers: [
@@ -85,18 +84,13 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // API no-cache
       {
         source: "/api/(.*)",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "no-store",
-          },
-        ],
+        headers: [{ key: "Cache-Control", value: "no-store" }],
       },
     ];
   },
+
   async redirects() {
     return [
       {
@@ -106,6 +100,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
   ...(process.env.ANALYZE === "true" && {
     webpack(config: any) {
       const { BundleAnalyzerPlugin } = require("@next/bundle-analyzer")({
@@ -116,4 +111,5 @@ const nextConfig: NextConfig = {
     },
   }),
 };
+
 export default nextConfig;

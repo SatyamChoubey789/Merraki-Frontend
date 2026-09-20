@@ -9,7 +9,6 @@ import { ShoppingCart as CartIcon } from "@mui/icons-material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MerrakiTextLogoAnimated } from "@/components/ui/Merrakitextlogo";
-import { useCartStore } from "@/lib/stores/cartStore";
 
 const T = {
   bg: "#F5F7FB",
@@ -66,9 +65,6 @@ export function Header() {
   // mobile drawer
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-
-  const openDrawer = useCartStore((s) => s.openDrawer);
-  const itemCount = useCartStore((s) => s.items.length);
 
   // scroll hide header
   useEffect(() => {
@@ -157,7 +153,12 @@ export function Header() {
                   key={link.label}
                   onMouseEnter={() => hasDropdown && onEnter(link.label)}
                   onMouseLeave={() => hasDropdown && onLeave()}
-                  sx={{ position: "relative", height: "70px", display: "flex", alignItems: "center" }}
+                  sx={{
+                    position: "relative",
+                    height: "70px",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
                 >
                   <Link
                     href={link.href || "#"}
@@ -229,28 +230,24 @@ export function Header() {
           {/* RIGHT */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {/* CART */}
-            <Box onClick={openDrawer} sx={{ position: "relative", cursor: "pointer" }}>
+            <Box sx={{ position: "relative", cursor: "pointer" }}>
               <CartIcon />
-              {itemCount > 0 && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: -6,
-                    right: -8,
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    background: T.ink,
-                    color: "#fff",
-                    fontSize: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {itemCount}
-                </Box>
-              )}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -6,
+                  right: -8,
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: T.ink,
+                  color: "#fff",
+                  fontSize: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              ></Box>
             </Box>
 
             {/* CONTACT */}

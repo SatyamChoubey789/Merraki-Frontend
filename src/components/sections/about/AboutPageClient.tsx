@@ -3,7 +3,6 @@
 import { Box, Typography, Button } from "@mui/material";
 
 const SANS = `"DM Sans","Mona Sans",system-ui,sans-serif`;
-const SERIF = `"Georgia","Times New Roman",serif`;
 
 const FOUNDERS = [
   {
@@ -48,82 +47,332 @@ const FOUNDERS = [
 
 const para = {
   fontFamily: SANS,
-  fontSize: { xs: "1rem", md: "1.05rem" },
-  lineHeight: 1.9,
+  fontSize: {
+    xs: "0.92rem",
+    sm: "0.98rem",
+    md: "1.05rem",
+  },
+  lineHeight: {
+    xs: 1.75,
+    sm: 1.8,
+    md: 1.9,
+  },
   color: "#111",
-  mb: 4,
+  mb: {
+    xs: 3,
+    sm: 3.5,
+    md: 4,
+  },
   textAlign: "center" as const,
+};
+
+const sectionTitle = {
+  textAlign: "center",
+  fontFamily: SANS,
+  fontWeight: 600,
+  fontSize: {
+    xs: "2rem",
+    sm: "2.5rem",
+    md: "3.5rem",
+    lg: "4rem",
+  },
+  lineHeight: 1.15,
+  color: "#000",
+  mb: {
+    xs: 5,
+    sm: 6,
+    md: 8,
+  },
+};
+
+const nameStyle = {
+  fontFamily: SANS,
+  fontWeight: 700,
+  fontSize: {
+    xs: "1.3rem",
+    sm: "1.45rem",
+    md: "1.6rem",
+  },
+  lineHeight: 1.3,
+};
+
+const roleStyle = {
+  fontFamily: SANS,
+  color: "#666",
+  fontSize: {
+    xs: "0.9rem",
+    sm: "0.95rem",
+    md: "1rem",
+  },
+  mt: 0.5,
+  mb: {
+    xs: 2,
+    sm: 2.5,
+    md: 3,
+  },
+};
+
+const bioStyle = {
+  fontFamily: SANS,
+  fontSize: {
+    xs: "0.9rem",
+    sm: "0.95rem",
+    md: "1rem",
+  },
+  lineHeight: {
+    xs: 1.7,
+    sm: 1.75,
+    md: 1.8,
+  },
+  color: "#222",
+  width: "100%",
+  maxWidth: 420,
+  mx: "auto",
+  mb: {
+    xs: 3,
+    sm: 3.5,
+    md: 4,
+  },
+};
+
+const buttonStyle = {
+  background: "#253957",
+  color: "#fff",
+  textTransform: "none",
+  fontFamily: SANS,
+  fontSize: {
+    xs: "0.85rem",
+    sm: "0.9rem",
+    md: "0.95rem",
+  },
+  px: {
+    xs: 3,
+    sm: 3.5,
+    md: 4,
+  },
+  py: {
+    xs: 1,
+    sm: 1.1,
+    md: 1.2,
+  },
+  minWidth: 110,
+  borderRadius: "4px",
+  "&:hover": {
+    background: "#1e2f47",
+  },
 };
 
 export function AboutPageClient() {
   return (
-    <Box sx={{ background: "#f5f7fb" }}>
+    <Box
+      sx={{
+        background: "#f5f7fb",
+        width: "100%",
+        minHeight: "100vh",
+        overflowX: "hidden",
+      }}
+    >
       {/* ================= HERO ================= */}
-      <Box sx={{ pt: 0, pb: { xs: 2, md: 4 }, px: { xs: 1, md: 2 } }}>
+      <Box
+        sx={{
+          width: "100%",
+          pt: {
+            xs: 0,
+            sm: 1,
+            md: 2,
+          },
+          pb: {
+            xs: 1,
+            sm: 2,
+            md: 4,
+          },
+          px: {
+            xs: 0.75,
+            sm: 1.5,
+            md: 2,
+            lg: 3,
+          },
+        }}
+      >
         <Box
           sx={{
             position: "relative",
-            height: { xs: "75vh", md: "85vh" },
-            maxWidth: "1400px",
+            width: "100%",
+            maxWidth: "1600px",
             mx: "auto",
-            borderRadius: "20px",
+
+            // More reliable than vh on mobile browsers.
+            height: {
+              xs: "clamp(420px, 72svh, 620px)",
+              sm: "clamp(500px, 75svh, 700px)",
+              md: "clamp(580px, 82svh, 820px)",
+              lg: "clamp(650px, 84svh, 900px)",
+            },
+
+            minHeight: {
+              xs: 420,
+              sm: 500,
+              md: 580,
+            },
+
+            borderRadius: {
+              xs: "12px",
+              sm: "16px",
+              md: "20px",
+            },
+
             overflow: "hidden",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+            boxShadow: {
+              xs: "0 10px 30px rgba(0,0,0,0.07)",
+              md: "0 20px 60px rgba(0,0,0,0.08)",
+            },
+
             display: "flex",
             alignItems: "center",
           }}
         >
+          {/* HERO IMAGE */}
           <Box
             component="img"
             src="https://res.cloudinary.com/dalsvy7qk/image/upload/v1778273916/about_gmkbxe.png"
+            alt="Merraki"
             sx={{
               position: "absolute",
+              inset: 0,
               width: "100%",
               height: "100%",
               objectFit: "cover",
+              objectPosition: {
+                xs: "center center",
+                sm: "center center",
+                md: "center center",
+              },
             }}
           />
+
+          {/* OVERLAY */}
           <Box
             sx={{
               position: "absolute",
               inset: 0,
-              background:
-                "linear-gradient(270deg, rgba(37,57,87,0.7) 0%, rgba(37,57,87,0.35) 40%, rgba(37,57,87,0.05) 100%)",
+              background: {
+                xs: `
+                  linear-gradient(
+                    180deg,
+                    rgba(37,57,87,0.05) 0%,
+                    rgba(37,57,87,0.25) 45%,
+                    rgba(37,57,87,0.78) 100%
+                  )
+                `,
+                md: `
+                  linear-gradient(
+                    270deg,
+                    rgba(37,57,87,0.7) 0%,
+                    rgba(37,57,87,0.35) 40%,
+                    rgba(37,57,87,0.05) 100%
+                  )
+                `,
+              },
             }}
           />
+
+          {/* HERO CONTENT */}
           <Box
             sx={{
               position: "absolute",
-              bottom: { xs: 40, md: 64 },
-              right: { xs: 24, md: 56 },
+              bottom: {
+                xs: 24,
+                sm: 32,
+                md: 52,
+                lg: 64,
+              },
+              right: {
+                xs: 16,
+                sm: 24,
+                md: 48,
+                lg: 64,
+              },
+              left: {
+                xs: 16,
+                sm: "auto",
+              },
+
               zIndex: 2,
+
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-end",
-              maxWidth: { xs: "90%", md: 480 },
+              alignItems: {
+                xs: "center",
+                sm: "flex-end",
+              },
+
+              width: {
+                xs: "calc(100% - 32px)",
+                sm: "auto",
+              },
+
+              maxWidth: {
+                xs: "100%",
+                sm: 430,
+                md: 480,
+                lg: 520,
+              },
             }}
           >
             <Typography
               sx={{
                 fontFamily: SANS,
                 fontWeight: 400,
-                fontSize: { xs: "2.2rem", md: "3.5rem" },
+                fontSize: {
+                  xs: "1.8rem",
+                  sm: "2.2rem",
+                  md: "3.2rem",
+                  lg: "3.5rem",
+                },
+                lineHeight: {
+                  xs: 1.15,
+                  md: 1.15,
+                },
                 color: "#fff",
-                lineHeight: 1.15,
-                textAlign: "right",
-                mb: 2,
-                "& span": { fontWeight: 700 },
+                textAlign: {
+                  xs: "center",
+                  sm: "right",
+                },
+                mb: {
+                  xs: 1.5,
+                  sm: 1.75,
+                  md: 2,
+                },
+
+                // Prevent text from becoming too large
+                // on very wide screens.
+                maxWidth: "100%",
+
+                "& span": {
+                  fontWeight: 700,
+                },
               }}
             >
               Hi, We&apos;re <span>Merraki</span>
             </Typography>
+
             <Typography
               sx={{
                 fontFamily: SANS,
-                fontSize: { xs: "0.95rem", md: "1.05rem" },
-                color: "rgba(255,255,255,0.92)",
-                lineHeight: 1.7,
+                fontSize: {
+                  xs: "0.82rem",
+                  sm: "0.9rem",
+                  md: "1.02rem",
+                  lg: "1.05rem",
+                },
+                color: "rgba(255,255,255,0.94)",
+                lineHeight: {
+                  xs: 1.6,
+                  sm: 1.65,
+                  md: 1.7,
+                },
                 textAlign: "center",
+                width: "100%",
               }}
             >
               &lsquo;Meraki&rsquo; means{" "}
@@ -144,27 +393,56 @@ export function AboutPageClient() {
       {/* ================= STORY ================= */}
       <Box
         sx={{
-          py: { xs: 8, md: 12 },
-          px: 3,
+          py: {
+            xs: 6,
+            sm: 8,
+            md: 11,
+            lg: 13,
+          },
+          px: {
+            xs: 2,
+            sm: 3,
+            md: 4,
+          },
           textAlign: "center",
           background: "#f5f7fb",
         }}
       >
-        {/* "Our Story" — serif, regular weight, matching screenshot */}
         <Typography
           sx={{
             fontFamily: SANS,
             fontWeight: 600,
-            fontSize: { xs: "2.8rem", md: "4rem" },
+            fontSize: {
+              xs: "2rem",
+              sm: "2.6rem",
+              md: "3.5rem",
+              lg: "4rem",
+            },
+            lineHeight: 1.15,
             color: "#000",
-            mb: 6,
+            mb: {
+              xs: 4,
+              sm: 5,
+              md: 6,
+            },
             letterSpacing: "-0.01em",
           }}
         >
           Our Story
         </Typography>
 
-        <Box sx={{ maxWidth: "780px", mx: "auto" }}>
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: {
+              xs: "100%",
+              sm: 680,
+              md: 780,
+              lg: 820,
+            },
+            mx: "auto",
+          }}
+        >
           <Typography sx={para}>
             Merraki didn&apos;t begin in a boardroom. It began in conversations.
             <br />
@@ -195,36 +473,104 @@ export function AboutPageClient() {
       </Box>
 
       {/* ================= FOUNDERS ================= */}
-      <Box sx={{ py: { xs: 8, md: 12 }, px: 3 }}>
+      <Box
+        sx={{
+          py: {
+            xs: 6,
+            sm: 8,
+            md: 11,
+            lg: 13,
+          },
+          px: {
+            xs: 2,
+            sm: 3,
+            md: 4,
+            lg: 5,
+          },
+          width: "100%",
+        }}
+      >
         <Typography sx={sectionTitle}>Our Leadership</Typography>
 
         <Box
           sx={{
+            width: "100%",
             maxWidth: "1100px",
             mx: "auto",
+
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            gap: { xs: 8, md: 6 },
+
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "1fr",
+              md: "repeat(2, minmax(0, 1fr))",
+            },
+
+            columnGap: {
+              md: 5,
+              lg: 8,
+            },
+
+            rowGap: {
+              xs: 7,
+              sm: 8,
+              md: 6,
+            },
           }}
         >
           {FOUNDERS.map((f, i) => (
-            <Box key={i} sx={{ textAlign: "center" }}>
+            <Box
+              key={i}
+              sx={{
+                textAlign: "center",
+                width: "100%",
+                minWidth: 0,
+                px: {
+                  xs: 0,
+                  sm: 2,
+                  md: 1,
+                },
+              }}
+            >
               <Box
                 component="img"
                 src={f.photo}
+                alt={f.name}
                 sx={{
-                  width: 120,
-                  height: 120,
+                  width: {
+                    xs: 90,
+                    sm: 105,
+                    md: 120,
+                  },
+                  height: {
+                    xs: 90,
+                    sm: 105,
+                    md: 120,
+                  },
                   borderRadius: "50%",
                   objectFit: "cover",
+                  display: "block",
                   mx: "auto",
-                  mb: 3,
+                  mb: {
+                    xs: 2,
+                    sm: 2.5,
+                    md: 3,
+                  },
                 }}
               />
+
               <Typography sx={nameStyle}>{f.name}</Typography>
+
               <Typography sx={roleStyle}>{f.role}</Typography>
+
               <Typography sx={bioStyle}>{f.bio}</Typography>
-              <Button href={f.linkedIn} target="_blank" sx={buttonStyle}>
+
+              <Button
+                href={f.linkedIn}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={buttonStyle}
+              >
                 LinkedIn
               </Button>
             </Box>
@@ -234,47 +580,5 @@ export function AboutPageClient() {
     </Box>
   );
 }
-
-/* STYLES */
-const sectionTitle = {
-  textAlign: "center",
-  fontFamily: SANS,
-  fontWeight: 600,
-  fontSize: { xs: "2.2rem", md: "3.5rem" },
-  color: "#000",
-  mb: 8,
-};
-
-const nameStyle = {
-  fontFamily: SANS,
-  fontWeight: 700,
-  fontSize: "1.6rem",
-};
-
-const roleStyle = {
-  fontFamily: SANS,
-  color: "#666",
-  mb: 3,
-};
-
-const bioStyle = {
-  fontFamily: SANS,
-  fontSize: "1rem",
-  lineHeight: 1.8,
-  color: "#222",
-  maxWidth: 420,
-  mx: "auto",
-  mb: 4,
-};
-
-const buttonStyle = {
-  background: "#253957",
-  color: "#fff",
-  textTransform: "none",
-  px: 4,
-  py: 1.2,
-  borderRadius: "4px",
-  "&:hover": { background: "#1e2f47" },
-};
 
 export default AboutPageClient;

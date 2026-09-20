@@ -348,7 +348,7 @@ export function PricingSection() {
             },
           }}
         >
-          OUR PRICING →
+          OUR PlANS →
         </Button>
       </Box>
     </Box>

@@ -1,74 +1,110 @@
-// Aligned to public handler routes:
-// GET /api/v1/templates?category_id=&featured=&search=&sort=&page=&limit=
-// GET /api/v1/templates/:slug
-// GET /api/v1/templates/search?q=&limit=
-// GET /api/v1/templates/featured?limit=
-// GET /api/v1/templates/bestsellers?limit=
-// GET /api/v1/templates/new?limit=
-// GET /api/v1/categories
-// GET /api/v1/categories/:slug
-
+import { apiFetch } from "./client";
 import type {
-  TemplatesListResponse,
-  TemplateSingleResponse,
-  CategoriesResponse,
-  SearchResponse,
-  TemplateListParams,
-} from "@/types/template.types";
+    TemplateListResponse,
+    TemplateSingleResponse,
+    CategoryListResponse,
+    TemplateListParams,
+    TemplateListItem,
+    TemplateFull,
+    TemplateCategory,
+    Pagination,
+} from "@/types/templatesTypes";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+// ─── Categories ───────────────────────────────────────────────────────────────
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    next: { revalidate: 60 },
-  });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
-  return res.json();
+export async function getTemplateCategories(): Promise<TemplateCategory[]> {
+    try {
+        const res = await apiFetch<CategoryListResponse>("/template-categories", {
+            revalidate: 300,
+            tags: ["template-categories"],
+        });
+        return res.data;
+    } catch {
+        return [];
+    }
 }
 
-export const templateApi = {
-  // GET /api/v1/templates
-  getAll(params: TemplateListParams = {}): Promise<TemplatesListResponse> {
-    const q = new URLSearchParams();
-    if (params.page)        q.set("page",        String(params.page));
-    if (params.limit)       q.set("limit",       String(params.limit));
-    if (params.category_id) q.set("category_id", String(params.category_id));
-    if (params.sort)        q.set("sort",        params.sort);
-    if (params.search)      q.set("search",      params.search);
-    if (params.featured)    q.set("featured",    "true");
-    const qs = q.toString();
-    return get<TemplatesListResponse>(`/templates${qs ? `?${qs}` : ""}`);
-  },
+// ─── Public list ──────────────────────────────────────────────────────────────
 
-  // GET /api/v1/templates/:slug
-  getBySlug(slug: string): Promise<TemplateSingleResponse> {
-    return get<TemplateSingleResponse>(`/templates/${slug}`);
-  },
+export async function getTemplates(params?: TemplateListParams): Promise<{
+    templates: TemplateListItem[];
+    pagination: Pagination;
+}> {
+    const res = await apiFetch<TemplateListResponse>("/templates", {
+        revalidate: 60,
+        tags: ["templates"],
+        params: {
+            page: params?.page ?? 1,
+            limit: params?.limit ?? 12,
+            search: params?.search,
+            category: params?.category,
+            tag: params?.tag,
+            featured: params?.featured,
+            minPrice: params?.minPrice,
+            maxPrice: params?.maxPrice,
+            sort: params?.sort ?? "newest",
+        },
+    });
 
-  // GET /api/v1/templates/search?q=&limit=
-  search(params: { q: string; limit?: number }): Promise<SearchResponse> {
-    const q = new URLSearchParams({ q: params.q });
-    if (params.limit) q.set("limit", String(params.limit));
-    return get<SearchResponse>(`/templates/search?${q}`);
-  },
+    return {
+        templates: res.data,
+        pagination: res.pagination,
+    };
+}
 
-  // GET /api/v1/templates/featured?limit=
-  getFeatured(limit = 6): Promise<{ templates: TemplateSingleResponse["template"][] }> {
-    return get(`/templates/featured?limit=${limit}`);
-  },
+// ─── Public single (by slug) ──────────────────────────────────────────────────
 
-  // GET /api/v1/templates/bestsellers?limit=
-  getPopular(limit = 6): Promise<{ templates: TemplateSingleResponse["template"][] }> {
-    return get(`/templates/bestsellers?limit=${limit}`);
-  },
+export async function getTemplateBySlug(
+    slug: string,
+): Promise<TemplateFull | null> {
+    try {
+        const res = await apiFetch<TemplateSingleResponse>(`/templates/${slug}`, {
+            revalidate: 60,
+            tags: [`template-${slug}`],
+        });
+        return res.data;
+    } catch {
+        return null;
+    }
+}
 
-  // GET /api/v1/categories
-  getCategories(): Promise<CategoriesResponse> {
-    return get<CategoriesResponse>("/categories");
-  },
+// ─── Client-side fetchers (for hooks / SWR) ───────────────────────────────────
+// These hit the API directly without Next.js ISR caching —
+// used inside useTemplate / useTemplates hooks on the client.
 
-  // GET /api/v1/categories/:slug
-  getCategoryBySlug(slug: string): Promise<{ category: import("@/types/template.types").Category }> {
-    return get(`/categories/${slug}`);
-  },
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+
+async function clientFetch<T>(path: string, params?: Record<string, any>): Promise<T> {
+    const url = new URL(`${API_URL}${path}`);
+    if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && v !== "") {
+                url.searchParams.set(k, String(v));
+            }
+        });
+    }
+    const res = await fetch(url.toString(), {
+        headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error?.message ?? `API error ${res.status}`);
+    }
+    return res.json();
+}
+
+export async function fetchTemplates(
+    params?: TemplateListParams,
+): Promise<TemplateListResponse> {
+    return clientFetch<TemplateListResponse>("/templates", params);
+}
+
+export async function fetchTemplateBySlug(
+    slug: string,
+): Promise<TemplateSingleResponse> {
+    return clientFetch<TemplateSingleResponse>(`/templates/${slug}`);
+}
+
+export async function fetchCategories(): Promise<CategoryListResponse> {
+    return clientFetch<CategoryListResponse>("/template-categories");
+}

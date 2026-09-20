@@ -1,468 +1,578 @@
 "use client";
 
-import { Box, Container, Typography } from "@mui/material";
-import { Search as SearchIcon } from "@mui/icons-material";
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { Box, Container, Typography, InputBase } from "@mui/material";
+import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useCallback, useState, useTransition } from "react";
+import { BlogCard } from "./BlogCard";
 import {
-  useBlogPosts,
-  useBlogSearch,
-  useBlogCategories,
-} from "@/lib/hooks/useBlogPosts";
-import { useSearchFilter } from "@/lib/hooks/useSearchFilter";
-import { formatDate } from "@/lib/utils/formatters";
+  Search as SearchIcon,
+  ArrowBack,
+  ArrowForward,
+} from "@mui/icons-material";
 
 const T = {
-  bg:       "#FFFFFF",
-  bgPage:   "#F9FAFB",
-  ink:      "#111118",
-  inkMid:   "#3A3A52",
-  inkMuted: "#6B6B80",
-  inkFaint: "#A0A0B0",
-  border:   "rgba(10,10,20,0.07)",
-  blue:     "#2563EB",
+  bg: "#FFFFFF",
+  page: "#F9FAFB",
+  text: "#111118",
+  muted: "#6B6B80",
+  faint: "#A0A0B0",
+  border: "rgba(10,10,20,0.07)",
+  blue: "#2563EB",
   bluePale: "#EFF6FF",
-  blueDim:  "rgba(37,99,235,0.07)",
+  blueDim: "rgba(37,99,235,0.06)",
 };
 
 const SANS = '"DM Sans", system-ui, sans-serif';
-const EASE = [0.16, 1, 0.3, 1] as const;
 
-/* ── Skeleton pulse ─────────────────────────────── */
-const pulse = {
-  "@keyframes pulse": {
-    "0%,100%": { opacity: 1 },
-    "50%": { opacity: 0.4 },
-  },
-};
-
-function Bone({ w = "100%", h = 14, r = 6 }: { w?: string | number; h?: number; r?: number }) {
-  return (
-    <Box sx={{
-      width: w, height: h, borderRadius: r,
-      background: "#E5E7EB",
-      animation: "pulse 1.5s ease-in-out infinite",
-      ...pulse,
-    }} />
-  );
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
 }
 
-/* ── Featured card ──────────────────────────────── */
-function FeaturedCard({ post }: { post: any }) {
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+interface Props {
+  posts: any[];
+  pagination?: Pagination;
+  categories?: Category[];
+  activeCategory?: string;
+  searchQuery?: string;
+}
+
+// ── Category filter tabs ───────────────────────────────────────────────────────
+
+function CategoryTabs({
+  categories,
+  activeCategory,
+  onSelect,
+}: {
+  categories: Category[];
+  activeCategory?: string;
+  onSelect: (slug: string | undefined) => void;
+}) {
+  if (!categories.length) return null;
+
+  const all = [{ id: "all", name: "All", slug: "" }, ...categories];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: EASE }}
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1,
+        flexWrap: "wrap",
+        mt: 3,
+      }}
     >
-      <Link href={`/blog/${post.slug}`} style={{ textDecoration: "none", display: "block" }}>
-        <Box sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "5fr 4fr" },
-          borderRadius: "16px",
-          overflow: "hidden",
-          border: `1px solid ${T.border}`,
-          background: T.bg,
-          transition: "border-color 0.2s, box-shadow 0.2s",
-          "&:hover": {
-            borderColor: "rgba(37,99,235,0.2)",
-            boxShadow: "0 8px 40px rgba(37,99,235,0.1)",
-            "& .feat-img": { transform: "scale(1.03)" },
-            "& .feat-title": { color: T.blue },
-          },
-        }}>
-          {/* Image */}
-          <Box sx={{ aspectRatio: "16/9", overflow: "hidden", background: T.bgPage, flexShrink: 0 }}>
-            {post.coverImage ? (
-              <Box className="feat-img" component="img" src={post.coverImage} alt={post.title}
-                sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.6s ease" }} />
-            ) : (
-              <Box sx={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${T.bluePale}, #DBEAFE)` }} />
-            )}
+      {all.map((cat) => {
+        const isActive =
+          cat.slug === "" ? !activeCategory : cat.slug === activeCategory;
+        return (
+          <Box
+            key={cat.id}
+            component="button"
+            onClick={() => onSelect(cat.slug || undefined)}
+            sx={{
+              fontFamily: SANS,
+              fontSize: "0.8125rem",
+              fontWeight: isActive ? 600 : 500,
+              color: isActive ? T.blue : T.muted,
+              background: isActive ? T.bluePale : "transparent",
+              border: `1px solid ${isActive ? "rgba(37,99,235,0.25)" : T.border}`,
+              borderRadius: "100px",
+              px: 2,
+              py: 0.75,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+              "&:hover": {
+                borderColor: "rgba(37,99,235,0.25)",
+                color: T.blue,
+                background: T.bluePale,
+              },
+            }}
+          >
+            {cat.name}
           </Box>
-          {/* Text */}
-          <Box sx={{
-            p: { xs: "24px", md: "36px 40px" },
-            display: "flex", flexDirection: "column", justifyContent: "center", gap: 2,
-          }}>
-            {post.category?.name && (
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.68rem", fontWeight: 600, color: T.blue, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                {post.category.name}
-              </Typography>
-            )}
-            <Typography className="feat-title" sx={{
-              fontFamily: SANS, fontWeight: 700,
-              fontSize: { xs: "1.25rem", md: "1.625rem" },
-              color: T.ink, letterSpacing: "-0.02em", lineHeight: 1.25,
-              transition: "color 0.18s",
-            }}>
-              {post.title}
-            </Typography>
-            {post.excerpt && (
-              <Typography sx={{
-                fontFamily: SANS, fontSize: "0.9rem", color: T.inkMuted, lineHeight: 1.7,
-                display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
-              }}>
-                {post.excerpt}
-              </Typography>
-            )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.78rem", color: T.inkFaint, fontWeight: 500 }}>
-                {formatDate(post.publishedAt)}
-              </Typography>
-              <Box sx={{ width: 2, height: 2, borderRadius: "50%", background: T.inkFaint }} />
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.78rem", color: T.inkFaint, fontWeight: 500 }}>
-                {post.readingTime} min read
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Link>
-    </motion.div>
-  );
-}
-
-/* ── Regular card ───────────────────────────────── */
-function PostCard({ post, index = 0 }: { post: any; index?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.35, ease: EASE }}
-      style={{ height: "100%" }}
-    >
-      <Link href={`/blog/${post.slug}`} style={{ textDecoration: "none", display: "block", height: "100%" }}>
-        <Box sx={{
-          display: "flex", flexDirection: "column", height: "100%",
-          borderRadius: "12px", overflow: "hidden",
-          border: `1px solid ${T.border}`,
-          background: T.bg,
-          transition: "border-color 0.2s, box-shadow 0.2s",
-          "&:hover": {
-            borderColor: "rgba(37,99,235,0.2)",
-            boxShadow: "0 4px 24px rgba(37,99,235,0.09)",
-            "& .card-img": { transform: "scale(1.04)" },
-            "& .card-title": { color: T.blue },
-          },
-        }}>
-          {/* Image */}
-          <Box sx={{ aspectRatio: "16/9", overflow: "hidden", background: T.bgPage, flexShrink: 0 }}>
-            {post.coverImage ? (
-              <Box className="card-img" component="img" src={post.coverImage} alt={post.title}
-                sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease" }} />
-            ) : (
-              <Box sx={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${T.bluePale}, #DBEAFE)` }} />
-            )}
-          </Box>
-          {/* Text */}
-          <Box sx={{ p: "16px 18px 20px", display: "flex", flexDirection: "column", flex: 1, gap: 1 }}>
-            {post.category?.name && (
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.64rem", fontWeight: 600, color: T.blue, letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                {post.category.name}
-              </Typography>
-            )}
-            <Typography className="card-title" sx={{
-              fontFamily: SANS, fontWeight: 600, fontSize: "0.9375rem",
-              color: T.ink, lineHeight: 1.4, letterSpacing: "-0.01em",
-              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-              transition: "color 0.18s",
-            }}>
-              {post.title}
-            </Typography>
-            {post.excerpt && (
-              <Typography sx={{
-                fontFamily: SANS, fontSize: "0.8125rem", color: T.inkMuted, lineHeight: 1.65,
-                display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-              }}>
-                {post.excerpt}
-              </Typography>
-            )}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mt: "auto", pt: 1.5 }}>
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.7rem", color: T.inkFaint, fontWeight: 500 }}>
-                {formatDate(post.publishedAt)}
-              </Typography>
-              <Box sx={{ width: 2, height: 2, borderRadius: "50%", background: T.inkFaint }} />
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.7rem", color: T.inkFaint, fontWeight: 500 }}>
-                {post.readingTime} min read
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-      </Link>
-    </motion.div>
-  );
-}
-
-/* ── Skeletons ──────────────────────────────────── */
-function FeaturedSkeleton() {
-  return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "5fr 4fr" }, borderRadius: "16px", overflow: "hidden", border: `1px solid ${T.border}`, background: T.bg }}>
-      <Box sx={{ aspectRatio: "16/9", background: "#E5E7EB", animation: "pulse 1.5s ease-in-out infinite", ...pulse }} />
-      <Box sx={{ p: { xs: "24px", md: "36px 40px" }, display: "flex", flexDirection: "column", gap: 2, justifyContent: "center" }}>
-        <Bone w="40%" h={11} />
-        <Bone w="85%" h={24} />
-        <Bone w="65%" h={24} />
-        <Bone w="90%" h={14} />
-        <Bone w="70%" h={14} />
-        <Bone w="30%" h={11} />
-      </Box>
+        );
+      })}
     </Box>
   );
 }
 
-function CardSkeleton() {
+// ── Search input ───────────────────────────────────────────────────────────────
+
+function SearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
-    <Box sx={{ borderRadius: "12px", overflow: "hidden", border: `1px solid ${T.border}`, background: T.bg }}>
-      <Box sx={{ aspectRatio: "16/9", background: "#E5E7EB", animation: "pulse 1.5s ease-in-out infinite", ...pulse }} />
-      <Box sx={{ p: "16px 18px 20px", display: "flex", flexDirection: "column", gap: 1.25 }}>
-        <Bone w="35%" h={10} />
-        <Bone w="90%" h={14} />
-        <Bone w="65%" h={14} />
-        <Bone w="30%" h={10} />
-      </Box>
-    </Box>
-  );
-}
-
-/* ── Main ───────────────────────────────────────── */
-export function BlogPageClient() {
-  const filter = useSearchFilter({ initialSort: "newest" });
-  const {
-    searchQuery,
-    debouncedQuery,
-    selectedCategory,
-    page,
-    isSearching,
-    handleSearchChange,
-    handleCategoryChange,
-    selectedCategorySlug,
-    goToPage,
-  } = filter;
-
-  const { data: categoriesData } = useBlogCategories();
-  const { data: listData, isLoading: listLoading } = useBlogPosts({
-    page,
-    limit: 12,
-    category: selectedCategorySlug || undefined,
-  });
-  const { data: searchData, isLoading: searchLoading } = useBlogSearch(
-    debouncedQuery,
-    isSearching,
-  );
-
-  const posts = isSearching
-    ? (searchData?.data?.results ?? [])
-    : (listData?.data ?? []);
-  const pagination =
-    !isSearching && listData && "pagination" in listData
-      ? (listData as any).pagination
-      : null;
-  const isLoading = isSearching ? searchLoading : listLoading;
-  const categories = categoriesData?.data ?? [];
-  const featured = !isSearching && page === 1 && posts.length > 0 ? posts[0] : null;
-  const rest = !isSearching && page === 1 ? posts.slice(1) : posts;
-
-  return (
-    <Box sx={{ minHeight: "100vh", background: T.bgPage, fontFamily: SANS }}>
-
-      {/* ── Header ── */}
-      <Box sx={{
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
         background: T.bg,
-        borderBottom: `1px solid ${T.border}`,
-        pt: { xs: 12, md: 16 },
-        pb: 0,
-      }}>
+        border: `1px solid ${T.border}`,
+        borderRadius: "10px",
+        px: 1.5,
+        py: 1,
+        mt: 2,
+        maxWidth: 380,
+        transition: "border-color 0.2s",
+        "&:focus-within": {
+          borderColor: "rgba(37,99,235,0.35)",
+        },
+      }}
+    >
+      <SearchIcon sx={{ fontSize: "1rem", color: T.faint, flexShrink: 0 }} />
+      <InputBase
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search articles..."
+        sx={{
+          fontFamily: SANS,
+          fontSize: "0.875rem",
+          color: T.text,
+          flex: 1,
+          "& input::placeholder": { color: T.faint },
+        }}
+      />
+      {value && (
+        <Box
+          component="button"
+          onClick={() => onChange("")}
+          sx={{
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+            color: T.faint,
+            display: "flex",
+            p: 0,
+            "&:hover": { color: T.text },
+          }}
+        >
+          ✕
+        </Box>
+      )}
+    </Box>
+  );
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
+
+function PaginationBar({
+  pagination,
+  onPageChange,
+}: {
+  pagination: Pagination;
+  onPageChange: (page: number) => void;
+}) {
+  if (pagination.totalPages <= 1) return null;
+
+  const { page, totalPages, hasNext, hasPrev, total } = pagination;
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 2,
+        mt: 6,
+        pt: 4,
+        borderTop: `1px solid ${T.border}`,
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "0.8125rem",
+          color: T.faint,
+        }}
+      >
+        {total} article{total !== 1 ? "s" : ""}
+      </Typography>
+
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box
+          component="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={!hasPrev}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            fontFamily: SANS,
+            fontSize: "0.8125rem",
+            fontWeight: 500,
+            color: hasPrev ? T.text : T.faint,
+            background: "none",
+            border: `1px solid ${T.border}`,
+            borderRadius: "8px",
+            px: 1.5,
+            py: 0.75,
+            cursor: hasPrev ? "pointer" : "default",
+            transition: "all 0.15s",
+            "&:hover": hasPrev
+              ? { borderColor: "rgba(37,99,235,0.3)", color: T.blue }
+              : {},
+          }}
+        >
+          <ArrowBack sx={{ fontSize: "0.875rem" }} />
+          Prev
+        </Box>
+
+        {/* Page numbers */}
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum: number;
+            if (totalPages <= 5) pageNum = i + 1;
+            else if (page <= 3) pageNum = i + 1;
+            else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+            else pageNum = page - 2 + i;
+
+            return (
+              <Box
+                key={pageNum}
+                component="button"
+                onClick={() => onPageChange(pageNum)}
+                sx={{
+                  fontFamily: SANS,
+                  fontSize: "0.8125rem",
+                  fontWeight: page === pageNum ? 700 : 400,
+                  color: page === pageNum ? T.blue : T.muted,
+                  background: page === pageNum ? T.bluePale : "none",
+                  border: `1px solid ${page === pageNum ? "rgba(37,99,235,0.25)" : T.border}`,
+                  borderRadius: "8px",
+                  width: 36,
+                  height: 36,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  "&:hover":
+                    page !== pageNum
+                      ? { borderColor: "rgba(37,99,235,0.3)", color: T.blue }
+                      : {},
+                }}
+              >
+                {pageNum}
+              </Box>
+            );
+          })}
+        </Box>
+
+        <Box
+          component="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={!hasNext}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+            fontFamily: SANS,
+            fontSize: "0.8125rem",
+            fontWeight: 500,
+            color: hasNext ? T.text : T.faint,
+            background: "none",
+            border: `1px solid ${T.border}`,
+            borderRadius: "8px",
+            px: 1.5,
+            py: 0.75,
+            cursor: hasNext ? "pointer" : "default",
+            transition: "all 0.15s",
+            "&:hover": hasNext
+              ? { borderColor: "rgba(37,99,235,0.3)", color: T.blue }
+              : {},
+          }}
+        >
+          Next
+          <ArrowForward sx={{ fontSize: "0.875rem" }} />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+// ── Empty state ────────────────────────────────────────────────────────────────
+
+function EmptyState({ search }: { search?: string }) {
+  return (
+    <Box
+      sx={{
+        textAlign: "center",
+        py: 12,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1.5,
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: "2.5rem",
+          lineHeight: 1,
+        }}
+      >
+        📝
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontWeight: 600,
+          fontSize: "1rem",
+          color: T.text,
+        }}
+      >
+        {search ? `No results for "${search}"` : "No articles yet"}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "0.875rem",
+          color: T.muted,
+        }}
+      >
+        {search
+          ? "Try a different search term or browse all articles."
+          : "Check back soon — new content is on the way."}
+      </Typography>
+    </Box>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
+export function BlogPageClient({
+  posts,
+  pagination,
+  categories = [],
+  activeCategory,
+  searchQuery = "",
+}: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  // Update URL params — triggers server re-fetch via RSC
+  const updateParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+      });
+
+      // Always reset to page 1 when filters change
+      if (!updates.page) params.delete("page");
+
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+      });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleCategorySelect = (slug: string | undefined) => {
+    updateParams({ category: slug });
+  };
+
+  const handleSearch = (value: string) => {
+    setLocalSearch(value);
+    // Debounce — only update URL after user stops typing
+    const timer = setTimeout(() => {
+      updateParams({ search: value || undefined });
+    }, 450);
+    return () => clearTimeout(timer);
+  };
+
+  const handlePageChange = (page: number) => {
+    updateParams({ page: String(page) });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const featured = posts[0];
+  const rest = posts.slice(1);
+
+  return (
+    <Box sx={{ minHeight: "100vh", background: T.page, fontFamily: SANS }}>
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          background: T.bg,
+          borderBottom: `1px solid ${T.border}`,
+          pt: { xs: 10, md: 14 },
+          pb: 4,
+        }}
+      >
         <Container maxWidth="lg">
-          {/* Title + search */}
-          <Box sx={{
-            display: "flex", alignItems: "flex-end",
-            justifyContent: "space-between",
-            flexWrap: "wrap", gap: 2.5, pb: 3,
-          }}>
-            <Box>
-              <Typography sx={{
-                fontFamily: SANS, fontWeight: 700,
-                fontSize: { xs: "1.75rem", md: "2.25rem" },
-                color: T.ink, letterSpacing: "-0.03em", lineHeight: 1, mb: 0.5,
-              }}>
-                Blog
-              </Typography>
-              <Typography sx={{ fontFamily: SANS, fontSize: "0.9rem", color: T.inkMuted }}>
-                Insights and guides for founders.
-              </Typography>
-            </Box>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Typography
+              component="h1"
+              sx={{
+                fontFamily: SANS,
+                fontSize: { xs: "2rem", md: "2.5rem" },
+                fontWeight: 800,
+                color: T.text,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.1,
+              }}
+            >
+              Blog
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: SANS,
+                fontSize: "0.9375rem",
+                color: T.muted,
+                mt: 0.75,
+              }}
+            >
+              Insights, guides, and ideas for founders.
+            </Typography>
 
             {/* Search */}
-            <Box sx={{
-              display: "flex", alignItems: "center", gap: 1,
-              border: `1px solid ${T.border}`, borderRadius: "9px",
-              px: 1.5, py: 1, background: T.bg,
-              transition: "border-color 0.15s, box-shadow 0.15s",
-              "&:focus-within": {
-                borderColor: T.blue,
-                boxShadow: `0 0 0 3px ${T.blueDim}`,
-              },
-            }}>
-              <SearchIcon sx={{ fontSize: "0.875rem", color: T.inkFaint }} />
-              <Box
-                component="input"
-                value={searchQuery}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleSearchChange(e.target.value)
-                }
-                placeholder="Search…"
-                sx={{
-                  border: "none", outline: "none", background: "transparent",
-                  fontFamily: SANS, fontSize: "0.875rem", color: T.ink,
-                  width: { xs: 130, sm: 200 },
-                  "&::placeholder": { color: T.inkFaint },
-                }}
-              />
-              {searchQuery && (
-                <Box
-                  component="button"
-                  onClick={() => handleSearchChange("")}
-                  sx={{
-                    background: "none", border: "none", cursor: "pointer",
-                    color: T.inkFaint, fontSize: "1.1rem", lineHeight: 1, p: 0,
-                    "&:hover": { color: T.ink },
-                  }}
-                >
-                  ×
-                </Box>
-              )}
-            </Box>
-          </Box>
+            <SearchInput value={localSearch} onChange={handleSearch} />
 
-          {/* Category tabs */}
-          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", pb: "1px" }}>
-            {[{ name: "All", slug: "" }, ...categories].map((cat: any) => {
-              const active = selectedCategory === (cat.slug ?? "");
-              return (
-                <Box
-                  key={cat.slug ?? "all"}
-                  component="button"
-                  onClick={() => handleCategoryChange(cat.id ?? null, cat.slug ?? "")}
-                  sx={{
-                    px: 1.875, py: "8px",
-                    borderRadius: "8px 8px 0 0",
-                    cursor: "pointer",
-                    fontFamily: SANS,
-                    fontSize: "0.8125rem",
-                    fontWeight: active ? 600 : 400,
-                    color: active ? T.blue : T.inkMuted,
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: active ? `2px solid ${T.blue}` : "2px solid transparent",
-                    transition: "color 0.15s, border-color 0.15s",
-                    "&:hover": { color: active ? T.blue : T.ink },
-                  }}
-                >
-                  {cat.name}
-                  {cat.postCount > 0 && (
-                    <Typography component="span" sx={{
-                      fontFamily: SANS, fontSize: "0.62rem",
-                      color: active ? T.blue : T.inkFaint,
-                      ml: 0.75, fontWeight: 500,
-                    }}>
-                      {cat.postCount}
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
+            {/* Category tabs */}
+            <CategoryTabs
+              categories={categories}
+              activeCategory={activeCategory}
+              onSelect={handleCategorySelect}
+            />
+          </motion.div>
         </Container>
       </Box>
 
-      {/* ── Content ── */}
-      <Container maxWidth="lg" sx={{ pt: 5, pb: 16 }}>
-        {isLoading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <FeaturedSkeleton />
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3,1fr)" }, gap: 2.5 }}>
-              {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
-            </Box>
-          </Box>
-        ) : posts.length === 0 ? (
-          <Box sx={{ py: 20, textAlign: "center" }}>
-            <Typography sx={{ fontFamily: SANS, fontWeight: 600, fontSize: "1.125rem", color: T.inkMuted, mb: 0.75 }}>
-              No articles found.
-            </Typography>
-            <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.inkFaint, mb: 3 }}>
-              Try a different search or browse all posts.
-            </Typography>
-            <Box
-              component="button"
-              onClick={() => handleSearchChange("")}
-              sx={{
-                fontFamily: SANS, fontSize: "0.875rem", fontWeight: 500,
-                color: T.blue, border: `1px solid rgba(37,99,235,0.25)`,
-                borderRadius: "8px", px: 2.5, py: 1, cursor: "pointer",
-                background: T.bluePale, transition: "all 0.15s",
-                "&:hover": { background: T.blueDim },
-              }}
+      {/* ── Content ─────────────────────────────────────────────── */}
+      <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
+        <AnimatePresence mode="wait">
+          {isPending ? (
+            // Loading skeleton
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
-              Clear search
-            </Box>
-          </Box>
-        ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {featured && <FeaturedCard post={featured} />}
-
-            {featured && rest.length > 0 && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Typography sx={{
-                  fontFamily: SANS, fontWeight: 600, fontSize: "0.875rem",
-                  color: T.inkMid, flexShrink: 0,
-                }}>
-                  {selectedCategory ? "More in this category" : "Latest articles"}
-                </Typography>
-                <Box sx={{ flex: 1, height: "1px", background: T.border }} />
-              </Box>
-            )}
-
-            {rest.length > 0 && (
-              <Box sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(3,1fr)" },
-                gap: 2.5,
-              }}>
-                {rest.map((post: any, i: number) => (
-                  <PostCard key={post.id} post={post} index={i} />
-                ))}
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {/* Pagination */}
-        {pagination && pagination.pages > 1 && (
-          <Box sx={{
-            display: "flex", justifyContent: "center", gap: 0.75,
-            mt: 10, pt: 5, borderTop: `1px solid ${T.border}`,
-          }}>
-            {Array.from({ length: pagination.pages }).map((_: any, i: number) => (
               <Box
-                key={i}
-                component="button"
-                onClick={() => goToPage(i + 1)}
                 sx={{
-                  width: 34, height: 34,
-                  border: `1px solid ${page === i + 1 ? T.blue : T.border}`,
-                  borderRadius: "7px",
-                  background: page === i + 1 ? T.blueDim : T.bg,
-                  cursor: "pointer", fontFamily: SANS, fontSize: "0.8rem",
-                  fontWeight: page === i + 1 ? 600 : 400,
-                  color: page === i + 1 ? T.blue : T.inkMuted,
-                  transition: "all 0.15s", outline: "none",
-                  "&:hover": { borderColor: T.blue, color: T.blue },
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    sm: "1fr 1fr",
+                    md: "repeat(3, 1fr)",
+                  },
+                  gap: 3,
                 }}
               >
-                {i + 1}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Box
+                    key={i}
+                    sx={{
+                      height: 280,
+                      borderRadius: "12px",
+                      background: T.bg,
+                      border: `1px solid ${T.border}`,
+                      overflow: "hidden",
+                      position: "relative",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        background: `linear-gradient(90deg, transparent 0%, rgba(37,99,235,0.04) 50%, transparent 100%)`,
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 1.5s linear infinite",
+                        "@keyframes shimmer": {
+                          "0%": { backgroundPosition: "-200% 0" },
+                          "100%": { backgroundPosition: "200% 0" },
+                        },
+                      }}
+                    />
+                  </Box>
+                ))}
               </Box>
-            ))}
-          </Box>
+            </motion.div>
+          ) : posts.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <EmptyState search={searchQuery} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="posts"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {/* Featured post */}
+                {featured && !activeCategory && !searchQuery && (
+                  <BlogCard post={featured} index={0} variant="featured" />
+                )}
+
+                {/* Grid */}
+                {(activeCategory || searchQuery ? posts : rest).length > 0 && (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "1fr 1fr",
+                        md: "repeat(3, 1fr)",
+                      },
+                      gap: { xs: 2.5, md: 3 },
+                    }}
+                  >
+                    {(activeCategory || searchQuery ? posts : rest).map(
+                      (post, i) => (
+                        <BlogCard
+                          key={post.id}
+                          post={post}
+                          index={i}
+                          variant="default"
+                        />
+                      ),
+                    )}
+                  </Box>
+                )}
+              </Box>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pagination */}
+        {pagination && (
+          <PaginationBar
+            pagination={pagination}
+            onPageChange={handlePageChange}
+          />
         )}
       </Container>
     </Box>

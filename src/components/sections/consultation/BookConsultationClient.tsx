@@ -4,11 +4,10 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { contactSchema } from "@/lib/schemas/contact.schema";
-import { useContact } from "@/lib/hooks/useContact";
 import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { ArrowForward as ArrowIcon } from "@mui/icons-material";
+import { submitContact } from "@/lib/api/contacts";
 
 /* ══ TOKENS ══════════════════ */
 const T = {
@@ -35,27 +34,76 @@ const T = {
 const SANS = `"DM Sans","Mona Sans",system-ui,sans-serif`;
 const CALENDLY_URL = process.env.NEXT_PUBLIC_CALENDLY_URL;
 
-/* ── Main Component ── */
+/* ── Zod schema ─────────────────────────────────────────────────────────────── */
+
+const schema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional(),
+  subject: z.string().min(2, "Subject is required"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+/* ── Main Component ─────────────────────────────────────────────────────────── */
+
 export function BookConsultationClient() {
   const [choice, setChoice] = useState<"message" | "call" | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
-  const contactMutation = useContact();
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
-  } = useForm({
-    resolver: zodResolver(contactSchema),
-    mode: "onBlur",
+    reset,
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
+    },
   });
 
-  const onSubmit = (data: z.infer<typeof contactSchema>) => {
-    contactMutation.mutate(data, { onSuccess: () => reset() });
+  const onSubmit = async (data: FormValues) => {
+    setIsPending(true);
+    setServerError(null);
+
+    try {
+      // Fold subject into message since backend doesn't have a subject field
+      await submitContact({
+        name: data.name,
+        email: data.email,
+        phone: data.phone || undefined,
+        message: data.subject
+          ? `Subject: ${data.subject}\n\n${data.message}`
+          : data.message,
+      });
+
+      setSubmitted(true);
+      reset();
+    } catch (error) {
+      setServerError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send. Please try again.",
+      );
+    } finally {
+      setIsPending(false);
+    }
   };
 
-  const isPending = contactMutation.isPending;
-  const isSuccess = contactMutation.isSuccess;
+  const handleBack = () => {
+    setChoice(null);
+    setSubmitted(false);
+    setServerError(null);
+    reset();
+  };
 
   return (
     <Box
@@ -154,6 +202,7 @@ export function BookConsultationClient() {
 
       {/* Conditional Forms */}
       <Box sx={{ maxWidth: 900, mx: "auto", mt: 5, px: 3 }}>
+        {/* ── Message form ─────────────────────────────────────── */}
         {choice === "message" && (
           <Box
             sx={{
@@ -170,38 +219,61 @@ export function BookConsultationClient() {
               Send a Message
             </Typography>
 
-            {isSuccess ? (
-              <Box sx={{ textAlign: "center", py: 6 }}>
-                <Box
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: "50%",
-                    background: T.accentPale,
-                    border: `1px solid rgba(37,57,87,0.22)`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.25rem",
-                    mx: "auto",
-                    mb: 1.5,
-                  }}
-                >
-                  💬
+            {/* Success state */}
+            {submitted ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Box sx={{ textAlign: "center", py: 6 }}>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: "50%",
+                      background: T.accentPale,
+                      border: `1px solid rgba(37,57,87,0.22)`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.25rem",
+                      mx: "auto",
+                      mb: 1.5,
+                    }}
+                  >
+                    💬
+                  </Box>
+                  <Typography sx={{ fontWeight: 700, color: T.ink }}>
+                    Message received!
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.875rem", color: T.inkMuted, mt: 0.5 }}
+                  >
+                    We'll be in touch within 24 hours.
+                  </Typography>
+                  <button
+                    onClick={handleBack}
+                    style={{
+                      marginTop: 20,
+                      color: T.accent,
+                      cursor: "pointer",
+                      background: "none",
+                      border: "none",
+                      fontFamily: SANS,
+                      fontSize: "0.875rem",
+                    }}
+                  >
+                    ← Send another message
+                  </button>
                 </Box>
-                <Typography sx={{ fontWeight: 700, color: T.ink }}>
-                  Message received!
-                </Typography>
-                <Typography
-                  sx={{ fontSize: "0.875rem", color: T.inkMuted, mt: 0.5 }}
-                >
-                  We'll be in touch within 24 hours.
-                </Typography>
-              </Box>
+              </motion.div>
             ) : (
+              /* Form */
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                noValidate
               >
                 <Field
                   label="Name"
@@ -241,7 +313,8 @@ export function BookConsultationClient() {
                   rows={4}
                 />
 
-                {contactMutation.isError && (
+                {/* Server error */}
+                {serverError && (
                   <Typography
                     sx={{
                       p: 1.5,
@@ -252,7 +325,7 @@ export function BookConsultationClient() {
                       color: "#DC2626",
                     }}
                   >
-                    Failed to send. Please try again.
+                    {serverError}
                   </Typography>
                 )}
 
@@ -270,21 +343,25 @@ export function BookConsultationClient() {
                     fontSize: "1rem",
                     cursor: isPending ? "not-allowed" : "pointer",
                     minHeight: 54,
+                    fontFamily: SANS,
+                    transition: "all 0.2s",
                   }}
                 >
-                  {isPending ? "Sending…" : "Send message →"}
+                  {isPending ? "Sending..." : "Send Message"}
                 </button>
               </form>
             )}
 
             <button
-              onClick={() => setChoice(null)}
+              onClick={handleBack}
               style={{
                 marginTop: 20,
                 color: T.accent,
                 cursor: "pointer",
                 background: "none",
                 border: "none",
+                fontFamily: SANS,
+                fontSize: "0.875rem",
               }}
             >
               ← Back
@@ -292,6 +369,7 @@ export function BookConsultationClient() {
           </Box>
         )}
 
+        {/* ── Calendly call ─────────────────────────────────────── */}
         {choice === "call" && (
           <Box
             sx={{
@@ -313,7 +391,6 @@ export function BookConsultationClient() {
               you'll get a confirmation email with the link.
             </Typography>
 
-            {/* Mini Calendly-like Details */}
             <Box
               sx={{
                 p: 3,
@@ -324,13 +401,19 @@ export function BookConsultationClient() {
                 textAlign: "left",
               }}
             >
-              <Typography sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}>
+              <Typography
+                sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}
+              >
                 30-minute focused strategy call
               </Typography>
-              <Typography sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}>
+              <Typography
+                sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}
+              >
                 Free, no obligations
               </Typography>
-              <Typography sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}>
+              <Typography
+                sx={{ fontSize: "0.875rem", mb: 1, color: T.inkMuted }}
+              >
                 Built around your business needs
               </Typography>
             </Box>
@@ -348,19 +431,23 @@ export function BookConsultationClient() {
                 fontWeight: 600,
                 textDecoration: "none",
                 minWidth: 180,
+                fontFamily: SANS,
               }}
             >
               Book a Call
             </a>
 
             <button
-              onClick={() => setChoice(null)}
+              onClick={handleBack}
               style={{
+                display: "block",
                 marginTop: 20,
                 color: T.accent,
                 cursor: "pointer",
                 background: "none",
                 border: "none",
+                fontFamily: SANS,
+                fontSize: "0.875rem",
               }}
             >
               ← Back
@@ -372,7 +459,8 @@ export function BookConsultationClient() {
   );
 }
 
-/* ── Choice Card ── */
+/* ── Choice Card ──────────────────────────────────────────────────────────── */
+
 interface ChoiceCardProps {
   title: string;
   subtitle: string;
@@ -476,7 +564,8 @@ const ChoiceCard = ({
   </motion.div>
 );
 
-/* ── Reusable Field ── */
+/* ── Reusable Field ───────────────────────────────────────────────────────── */
+
 interface FieldProps {
   label: string;
   name: string;
@@ -527,6 +616,8 @@ const Field = ({
           borderRadius: 10,
           padding: "11px 14px",
           resize: "vertical",
+          outline: "none",
+          boxSizing: "border-box",
         }}
       />
     ) : (
@@ -543,6 +634,8 @@ const Field = ({
           border: `1.5px solid ${error ? "#DC2626" : T.borderMid}`,
           borderRadius: 10,
           padding: "11px 14px",
+          outline: "none",
+          boxSizing: "border-box",
         }}
       />
     )}

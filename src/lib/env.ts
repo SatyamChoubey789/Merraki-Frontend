@@ -12,12 +12,6 @@ interface EnvVar {
 
 const ENV_VARS: EnvVar[] = [
   {
-    key: 'NEXT_PUBLIC_API_BASE_URL',
-    required: true,
-    description: 'Backend API base URL',
-    example: 'https://api.merrakisolutions.com/api/v1/public',
-  },
-  {
     key: 'NEXT_PUBLIC_RAZORPAY_KEY_ID',
     required: true,
     description: 'Razorpay publishable key',

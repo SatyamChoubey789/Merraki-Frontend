@@ -4,6 +4,7 @@ import {
   IBM_Plex_Sans,
   Caveat,
   Cormorant_Garamond,
+  Inter,
 } from "next/font/google";
 import { headers } from "next/headers";
 import { Providers } from "./providers";
@@ -11,6 +12,9 @@ import { PageWrapper } from "@/components/layout/PageWrapper/PageWrapper";
 import { generateOrganizationSchema } from "@/lib/utils/metadata";
 import { StructuredData } from "@/components/ui/StructuredData/StructuredData";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
+import { ClientShell } from "@/components/layout/ClientShell/ClientShell";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -106,7 +110,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${ibmPlexSans.variable} ${cormorant.variable}`}
+      className={`${dmSans.variable} ${ibmPlexSans.variable} ${cormorant.variable} font-sans ${inter.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -118,8 +122,12 @@ export default async function RootLayout({
             {children}
           </PageWrapper>
 
-          {/* Only render global widgets on non-PDF pages */}
-          {!isPdf && <WhatsAppWidget />}
+          {!isPdf && (
+            <>
+              <ClientShell />
+              <WhatsAppWidget />
+            </>
+          )}
         </Providers>
       </body>
     </html>

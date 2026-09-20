@@ -1,7 +1,6 @@
 "use client";
 
-import { useMotionValue, useScroll, useTransform } from "framer-motion";
-import { useEffect } from "react";
+import { useScroll, useTransform } from "framer-motion";
 
 export function useScrollProgress() {
   const { scrollYProgress } = useScroll();
