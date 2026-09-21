@@ -7,6 +7,7 @@ import {
   Inter,
 } from "next/font/google";
 import { headers } from "next/headers";
+import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "./providers";
 import { PageWrapper } from "@/components/layout/PageWrapper/PageWrapper";
 import { generateOrganizationSchema } from "@/lib/utils/metadata";
@@ -129,6 +130,7 @@ export default async function RootLayout({
             </>
           )}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
