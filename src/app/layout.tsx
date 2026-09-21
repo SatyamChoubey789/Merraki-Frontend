@@ -13,6 +13,8 @@ import { generateOrganizationSchema } from "@/lib/utils/metadata";
 import { StructuredData } from "@/components/ui/StructuredData/StructuredData";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
 import { ClientShell } from "@/components/layout/ClientShell/ClientShell";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -102,7 +104,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Detect PDF preview routes — hide all global chrome for Puppeteer captures
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") ?? "";
   const isPdf = pathname.startsWith("/pdf-preview");
@@ -121,6 +122,8 @@ export default async function RootLayout({
           <PageWrapper noHeader={isPdf} noFooter={isPdf}>
             {children}
           </PageWrapper>
+          <Analytics />
+          <SpeedInsights />
 
           {!isPdf && (
             <>
