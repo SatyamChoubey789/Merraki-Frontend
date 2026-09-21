@@ -1,18 +1,19 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import {
-  DM_Sans,
-  IBM_Plex_Sans,
   Caveat,
   Cormorant_Garamond,
+  DM_Sans,
+  IBM_Plex_Sans,
   Inter,
 } from "next/font/google";
 import { headers } from "next/headers";
-import { Providers } from "./providers";
+import { ClientShell } from "@/components/layout/ClientShell/ClientShell";
 import { PageWrapper } from "@/components/layout/PageWrapper/PageWrapper";
-import { generateOrganizationSchema } from "@/lib/utils/metadata";
 import { StructuredData } from "@/components/ui/StructuredData/StructuredData";
 import WhatsAppWidget from "@/components/ui/WhatsAppWidget";
-import { ClientShell } from "@/components/layout/ClientShell/ClientShell";
+import { generateOrganizationSchema } from "@/lib/utils/metadata";
+import { Providers } from "./providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -129,6 +130,7 @@ export default async function RootLayout({
             </>
           )}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
