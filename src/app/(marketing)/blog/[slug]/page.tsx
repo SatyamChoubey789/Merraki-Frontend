@@ -1,11 +1,12 @@
+// app/blog/[slug]/page.tsx
+
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/api/blog";
 import { BlogPostClient } from "@/components/sections/blog/BlogPostClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
-// Generate static params for published posts (optional but good for SEO)
 export async function generateStaticParams() {
   try {
     const { posts } = await getBlogPosts({ limit: 100 });
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getBlogPostBySlug(slug);
 
   if (!post) {
-    return { title: "Post Not Found — MerrakiSolutions" };
+    return { title: "Post Not Found MerrakiSolutions" };
   }
 
   return {

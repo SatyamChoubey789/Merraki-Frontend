@@ -3,7 +3,7 @@ import { getBlogPosts, getBlogCategories } from "@/lib/api/blog";
 import { BlogPageClient } from "@/components/sections/blog/BlogPageClient";
 
 export const metadata: Metadata = {
-  title: "Blog — MerrakiSolutions",
+  title: "Blogs MerrakiSolutions",
   description: "Insights and guides for founders.",
 };
 
