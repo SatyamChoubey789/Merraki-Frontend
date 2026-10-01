@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { ArrowBack as BackIcon, ArrowForward as NextIcon } from "@mui/icons-material";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,9 +35,10 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 type Engine = ReturnType<typeof useFounderTestEngine>;
 
-function OptionRow({ id, label, selected, index, type, onClick }: {
-  id: string; label: string; selected: boolean;
-  index: number; type: "single" | "multiple" | "scale"; onClick: () => void;
+// Backend questions are single-choice or a scale — there is no multi-select,
+// so the old checkbox branch is gone.
+function OptionRow({ label, selected, index, onClick }: {
+  label: string; selected: boolean; index: number; onClick: () => void;
 }) {
   return (
     <motion.div
@@ -54,21 +56,13 @@ function OptionRow({ id, label, selected, index, type, onClick }: {
         "&:hover": { borderColor: selected ? T.blueBdr : T.borderMd, background: selected ? `${T.blue}07` : T.bg },
       }}>
         <Box sx={{
-          width: 18, height: 18, flexShrink: 0,
-          borderRadius: type === "multiple" ? "5px" : "50%",
+          width: 18, height: 18, flexShrink: 0, borderRadius: "50%",
           border: `1.5px solid ${selected ? T.blue : T.border}`,
           background: selected ? T.blue : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "all 0.15s",
         }}>
-          {selected && type === "multiple" && (
-            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-              <path d="M1.5 4.5L3.5 6.5L7.5 2.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-          {selected && type === "single" && (
-            <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: T.white }} />
-          )}
+          {selected && <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: T.white }} />}
         </Box>
         <Typography sx={{
           fontFamily: SANS, fontSize: "0.875rem",
@@ -82,22 +76,22 @@ function OptionRow({ id, label, selected, index, type, onClick }: {
   );
 }
 
-function ScaleRow({ options, selectedId, onSelect }: {
-  options: { id: string; label: string; value: string }[];
-  selectedId: string; onSelect: (id: string) => void;
+function ScaleRow({ options, selected, onSelect }: {
+  options: { label: string; value: string }[];
+  selected: string | undefined; onSelect: (value: string) => void;
 }) {
-  const selIdx = options.findIndex(o => o.id === selectedId);
+  const selIdx = options.findIndex(o => o.value === selected);
   return (
     <Box>
       <Box sx={{ display: "flex", gap: 1, mb: 1.25 }}>
         {options.map((opt, i) => {
-          const isSel = selectedId === opt.id;
+          const isSel = selected === opt.value;
           const isPast = selIdx >= 0 && i <= selIdx;
           return (
-            <motion.div key={opt.id} style={{ flex: 1 }} whileTap={{ scale: 0.96 }}
+            <motion.div key={opt.value} style={{ flex: 1 }} whileTap={{ scale: 0.96 }}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 + i * 0.04, duration: 0.26, ease: EASE }}>
-              <Box onClick={() => onSelect(opt.id)} sx={{
+              <Box onClick={() => onSelect(opt.value)} sx={{
                 height: 44, borderRadius: "7px", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: `1px solid ${isSel ? T.blue : isPast ? T.blueBdr : T.border}`,
@@ -125,12 +119,25 @@ interface Props { engine: Engine; }
 
 export function TestQuestionScreen({ engine }: Props) {
   const { currentQuestion, currentQuestionIndex, totalQuestions, getCurrentAnswer, handleAnswer, handleNext, handlePrev, canProceed } = engine;
+
+  // The "select an answer" hint only appears after they try to continue
+  // without choosing — not the moment a fresh question loads.
+  const [showHint, setShowHint] = useState(false);
+  const qid = currentQuestion?.id;
+  useEffect(() => { setShowHint(false); }, [qid]);
+
   if (!currentQuestion) return null;
 
-  const selectedIds = getCurrentAnswer(currentQuestion.id);
+  const selected = getCurrentAnswer(currentQuestion.id);
   const isLast = currentQuestionIndex === totalQuestions - 1;
   const pct = Math.round((currentQuestionIndex / totalQuestions) * 100);
-  const blocked = !!(currentQuestion.isRequired && !canProceed());
+  const blocked = !canProceed();
+
+  const onNext = () => {
+    if (blocked) { setShowHint(true); return; }
+    setShowHint(false);
+    handleNext();
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", fontFamily: SANS }}>
@@ -211,11 +218,6 @@ export function TestQuestionScreen({ engine }: Props) {
                   <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.16em", color: T.inkFaint, textTransform: "uppercase" }}>
                     {currentQuestion.category}
                   </Typography>
-                  {currentQuestion.type === "multiple" && (
-                    <Typography sx={{ fontFamily: MONO, fontSize: "0.46rem", letterSpacing: "0.12em", color: T.blue, textTransform: "uppercase" }}>
-                      Select all that apply
-                    </Typography>
-                  )}
                 </Box>
 
                 <Box sx={{ p: { xs: 2.5, md: 3.5 } }}>
@@ -234,23 +236,30 @@ export function TestQuestionScreen({ engine }: Props) {
                   )}
 
                   {currentQuestion.type === "scale" ? (
-                    <ScaleRow options={currentQuestion.options} selectedId={selectedIds[0] ?? ""} onSelect={id => handleAnswer(currentQuestion.id, id, "scale")} />
+                    <ScaleRow
+                      options={currentQuestion.options}
+                      selected={selected}
+                      onSelect={(value) => handleAnswer(currentQuestion.id, value)}
+                    />
                   ) : (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0.875 }}>
                       {currentQuestion.options.map((opt, i) => (
-                        <OptionRow key={opt.id} id={opt.id} label={opt.label}
-                          selected={currentQuestion.type === "multiple" ? selectedIds.includes(opt.id) : selectedIds[0] === opt.id}
-                          index={i} type={currentQuestion.type as "single" | "multiple"}
-                          onClick={() => handleAnswer(currentQuestion.id, opt.id, currentQuestion.type as any)} />
+                        <OptionRow
+                          key={opt.value}
+                          label={opt.label}
+                          selected={selected === opt.value}
+                          index={i}
+                          onClick={() => handleAnswer(currentQuestion.id, opt.value)}
+                        />
                       ))}
                     </Box>
                   )}
                 </Box>
               </Box>
 
-              {/* Error */}
+              {/* Hint — only after a blocked "Next" attempt */}
               <AnimatePresence>
-                {blocked && (
+                {showHint && blocked && (
                   <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
                     <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.error, mb: 1.5 }}>
                       Please select an answer to continue.
@@ -267,13 +276,14 @@ export function TestQuestionScreen({ engine }: Props) {
                   <Typography sx={{ fontFamily: SANS, fontWeight: 500, fontSize: "0.875rem", color: T.inkMuted }}>Back</Typography>
                 </motion.button>
 
-                <motion.button onClick={handleNext} disabled={blocked}
+                {/* Not `disabled` — a disabled button can't be clicked, so the hint above could never show */}
+                <motion.button onClick={onNext} aria-disabled={blocked}
                   whileHover={blocked ? {} : { scale: 1.02 }} whileTap={blocked ? {} : { scale: 0.98 }}
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "11px 24px", borderRadius: "8px", border: "none",
                     background: blocked ? T.bg : T.btn,
-                    cursor: blocked ? "not-allowed" : "pointer", outline: "none",
+                    cursor: "pointer", outline: "none",
                     boxShadow: blocked ? "none" : T.btnShadow, transition: "all 0.15s",
                   }}>
                   <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "0.9rem", color: blocked ? T.inkFaint : T.white }}>

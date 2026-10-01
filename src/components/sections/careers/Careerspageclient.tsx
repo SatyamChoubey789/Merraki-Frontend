@@ -8,6 +8,7 @@ import {
   ArrowForward as ArrowIcon,
   OpenInNew as ExternalIcon,
 } from "@mui/icons-material";
+import type { JobListing } from "@/types/jobTypes";
 
 /* ══ TOKENS ══════════════════════════════════════════════ */
 const T = {
@@ -74,12 +75,25 @@ const PERKS = [
   "Merit-based growth",
 ];
 
-const OPEN_ROLES: {
-  title: string;
-  type: string;
-  location: string;
-  team: string;
-}[] = [];
+const FALLBACK_EMAIL = "info@merrakisolutions.com";
+
+// The backend already falls back to the company-wide apply link when a job has
+// none of its own, so applyUrl is only null when neither is configured.
+// In that case we land on a pre-filled mailto instead of a dead button.
+function getApplyHref(role: JobListing): { href: string; external: boolean } {
+  if (role.applyUrl) {
+    return {
+      href: role.applyUrl,
+      external: /^https?:\/\//i.test(role.applyUrl),
+    };
+  }
+  return {
+    href: `mailto:${FALLBACK_EMAIL}?subject=${encodeURIComponent(
+      `Application — ${role.title}`,
+    )}`,
+    external: false,
+  };
+}
 
 /* ══ COMPONENTS ══════════════════════════════════════════ */
 function ValueCard({
@@ -157,9 +171,11 @@ function RoleCard({
   role,
   index,
 }: {
-  role: (typeof OPEN_ROLES)[0];
+  role: JobListing;
   index: number;
 }) {
+  const apply = getApplyHref(role);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -226,6 +242,11 @@ function RoleCard({
           </Box>
         </Box>
         <Box
+          component="a"
+          href={apply.href}
+          target={apply.external ? "_blank" : undefined}
+          rel={apply.external ? "noopener noreferrer" : undefined}
+          aria-label={`Apply for ${role.title}`}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -236,6 +257,9 @@ function RoleCard({
             background: T.blueGrad,
             boxShadow: `0 4px 14px ${T.blueGlow}`,
             cursor: "pointer",
+            textDecoration: "none",
+            transition: "filter 0.18s",
+            "&:hover": { filter: "brightness(1.07)" },
           }}
         >
           <Typography
@@ -256,7 +280,7 @@ function RoleCard({
 }
 
 /* ══ PAGE ════════════════════════════════════════════════ */
-export default function CareersPageClient() {
+export default function CareersPageClient({ roles }: { roles: JobListing[] }) {
   const valRef = useRef<HTMLDivElement>(null);
   const roleRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -386,7 +410,7 @@ export default function CareersPageClient() {
                     >
                       See open roles
                     </Typography>
-                    <ArrowIcon sx={{ fontSize: "0.875rem", color: "#253957" }} />
+                    <ArrowIcon sx={{ fontSize: "0.875rem", color: "#fff" }} />
                   </Box>
                 </motion.div>
                 <motion.div
@@ -600,10 +624,10 @@ export default function CareersPageClient() {
             </Box>
           </motion.div>
 
-          {OPEN_ROLES.length > 0 ? (
+          {roles.length > 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-              {OPEN_ROLES.map((role, i) => (
-                <RoleCard key={role.title} role={role} index={i} />
+              {roles.map((role, i) => (
+                <RoleCard key={role.id} role={role} index={i} />
               ))}
             </Box>
           ) : (
