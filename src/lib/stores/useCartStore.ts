@@ -23,6 +23,7 @@ interface CartState {
     isOpen: boolean;
 
     addItem: (item: CartItem) => void;
+    syncItems: (items: CartItem[]) => void;
     removeItem: (id: string) => void;      // id is UUID string
     clearCart: () => void;
     isInCart: (id: string) => boolean;
@@ -44,6 +45,8 @@ export const useCartStore = create<CartState>()(
                 if (get().isInCart(item.id)) return;
                 set((s) => ({ items: [...s.items, item] }));
             },
+
+            syncItems: (items) => set({ items }),
 
             removeItem: (id) =>
                 set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
