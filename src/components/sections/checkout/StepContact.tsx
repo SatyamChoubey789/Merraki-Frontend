@@ -14,7 +14,12 @@ interface StepContactProps {
   disabled?: boolean;
 }
 
-export function StepContact({ register, errors, onNext, disabled }: StepContactProps) {
+export function StepContact({
+  register,
+  errors,
+  onNext,
+  disabled,
+}: StepContactProps) {
   return (
     <Box>
       <Grid container spacing={2}>
@@ -22,6 +27,7 @@ export function StepContact({ register, errors, onNext, disabled }: StepContactP
           <Field
             label="Full name"
             placeholder="Arjun Mehta"
+            autoComplete="name"
             error={errors.guestName?.message}
             disabled={disabled}
             {...register("guestName")}
@@ -33,7 +39,8 @@ export function StepContact({ register, errors, onNext, disabled }: StepContactP
             label="Email address"
             type="email"
             placeholder="arjun@company.com"
-            hint="Download link sent here"
+            autoComplete="email"
+            hint="Your receipt is sent here"
             error={errors.guestEmail?.message}
             disabled={disabled}
             {...register("guestEmail")}
@@ -42,7 +49,11 @@ export function StepContact({ register, errors, onNext, disabled }: StepContactP
       </Grid>
 
       <Box sx={{ mt: 3 }}>
-        <BtnNext onClick={onNext} label="Continue to address" />
+        <BtnNext
+          onClick={onNext}
+          label="Continue to address"
+          disabled={disabled}
+        />
       </Box>
     </Box>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Box, Typography } from "@mui/material";
 
 // ─── Brand tokens (inline so Field is self-contained) ─────────────────────────
@@ -30,23 +30,29 @@ interface FieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function Field({ label, error, hint, ...inputProps }: FieldProps) {
+export function Field({
+  label,
+  error,
+  hint,
+  id,
+  onFocus,
+  onBlur,
+  ...inputProps
+}: FieldProps) {
   const [focused, setFocused] = useState(false);
+  const autoId = useId();
+  const inputId = id ?? autoId;
+  const messageId = `${inputId}-msg`;
 
-  const borderColor = error
-    ? T.redBorder
-    : focused
-    ? T.borderFocus
-    : T.border;
-
-  const shadow =
-    focused && !error ? `0 0 0 3px ${T.primaryLight}` : "none";
+  const borderColor = error ? T.redBorder : focused ? T.borderFocus : T.border;
+  const shadow = focused && !error ? `0 0 0 3px ${T.primaryLight}` : "none";
 
   return (
     <Box>
-      {/* Label */}
+      {/* Label — now tied to the input, so clicking it focuses the field */}
       <Typography
         component="label"
+        htmlFor={inputId}
         sx={{
           display: "block",
           fontFamily: SANS,
@@ -60,7 +66,6 @@ export function Field({ label, error, hint, ...inputProps }: FieldProps) {
         {label}
       </Typography>
 
-      {/* Input wrapper */}
       <Box
         sx={{
           border: `1.5px solid ${borderColor}`,
@@ -71,8 +76,21 @@ export function Field({ label, error, hint, ...inputProps }: FieldProps) {
         }}
       >
         <input
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          // Spread FIRST, then our handlers. react-hook-form's register() returns
+          // its own onBlur; spreading it last replaced ours, so `focused` never
+          // went back to false and the focus ring stayed on. We now call both.
+          {...inputProps}
+          id={inputId}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error || hint ? messageId : undefined}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
           style={{
             display: "block",
             width: "100%",
@@ -86,13 +104,13 @@ export function Field({ label, error, hint, ...inputProps }: FieldProps) {
             borderRadius: "10px",
             boxSizing: "border-box",
           }}
-          {...inputProps}
         />
       </Box>
 
-      {/* Error / hint */}
       {(error || hint) && (
         <Typography
+          id={messageId}
+          role={error ? "alert" : undefined}
           sx={{
             fontFamily: SANS,
             fontSize: "0.72rem",

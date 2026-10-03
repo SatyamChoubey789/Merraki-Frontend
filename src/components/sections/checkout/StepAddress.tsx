@@ -7,7 +7,6 @@ import { CheckoutFormValues } from "@/components/sections/checkout/checkout.sche
 import { BtnNext, BtnBack } from "@/components/sections/checkout/buttons";
 import { Field } from "./Field";
 
-
 interface StepAddressProps {
   register: UseFormRegister<CheckoutFormValues>;
   errors: FieldErrors<CheckoutFormValues>;
@@ -16,7 +15,13 @@ interface StepAddressProps {
   disabled?: boolean;
 }
 
-export function StepAddress({ register, errors, onNext, onBack, disabled }: StepAddressProps) {
+export function StepAddress({
+  register,
+  errors,
+  onNext,
+  onBack,
+  disabled,
+}: StepAddressProps) {
   return (
     <Box>
       <Grid container spacing={2}>
@@ -24,6 +29,7 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="Address line 1"
             placeholder="123, MG Road"
+            autoComplete="address-line1"
             error={errors.billingAddress?.line1?.message}
             disabled={disabled}
             {...register("billingAddress.line1")}
@@ -34,6 +40,8 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="Address line 2 (optional)"
             placeholder="Apt / Floor / Suite"
+            autoComplete="address-line2"
+            error={errors.billingAddress?.line2?.message}
             disabled={disabled}
             {...register("billingAddress.line2")}
           />
@@ -43,6 +51,7 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="City"
             placeholder="Mumbai"
+            autoComplete="address-level2"
             error={errors.billingAddress?.city?.message}
             disabled={disabled}
             {...register("billingAddress.city")}
@@ -53,6 +62,7 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="State"
             placeholder="Maharashtra"
+            autoComplete="address-level1"
             error={errors.billingAddress?.state?.message}
             disabled={disabled}
             {...register("billingAddress.state")}
@@ -63,6 +73,7 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="PIN / ZIP code"
             placeholder="400001"
+            autoComplete="postal-code"
             error={errors.billingAddress?.zip?.message}
             disabled={disabled}
             {...register("billingAddress.zip")}
@@ -73,6 +84,7 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="Country"
             placeholder="India"
+            autoComplete="country-name"
             error={errors.billingAddress?.country?.message}
             disabled={disabled}
             {...register("billingAddress.country")}
@@ -83,6 +95,8 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
           <Field
             label="Company (optional)"
             placeholder="Acme Pvt. Ltd."
+            autoComplete="organization"
+            error={errors.billingAddress?.company?.message}
             disabled={disabled}
             {...register("billingAddress.company")}
           />
@@ -90,9 +104,9 @@ export function StepAddress({ register, errors, onNext, onBack, disabled }: Step
       </Grid>
 
       <Box sx={{ display: "flex", gap: 1.5, mt: 3 }}>
-        <BtnBack onClick={onBack} />
+        <BtnBack onClick={onBack} disabled={disabled} />
         <Box sx={{ flex: 1 }}>
-          <BtnNext onClick={onNext} label="Review order" />
+          <BtnNext onClick={onNext} label="Review order" disabled={disabled} />
         </Box>
       </Box>
     </Box>
