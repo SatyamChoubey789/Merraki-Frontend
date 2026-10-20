@@ -37,7 +37,6 @@ export const checkoutSchema = z.object({
     .email("Enter a valid email address")
     .max(254),
   billingAddress: billingAddressSchema,
-  paymentMethod: z.enum(["card", "upi"]),
 });
 
 export type CheckoutFormValues = z.infer<typeof checkoutSchema>;

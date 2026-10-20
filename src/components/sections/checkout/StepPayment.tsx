@@ -2,11 +2,7 @@
 
 import { Box, Typography } from "@mui/material";
 import { LockOutlined as LockIcon } from "@mui/icons-material";
-import {
-  UseFormRegister,
-  UseFormWatch,
-  UseFormSetValue,
-} from "react-hook-form";
+import { UseFormWatch } from "react-hook-form";
 import { CheckoutFormValues } from "@/components/sections/checkout/checkout.schema";
 import {
   T,
@@ -16,11 +12,10 @@ import {
 } from "@/components/sections/checkout/checkout.types";
 import { BtnBack, BtnPay } from "@/components/sections/checkout/buttons";
 import { useExchangeRate } from "@/lib/hooks/Useexchangerate";
+import { isIndia } from "@/lib/api/country";
 
 interface StepPaymentProps {
-  register: UseFormRegister<CheckoutFormValues>;
   watch: UseFormWatch<CheckoutFormValues>;
-  setValue: UseFormSetValue<CheckoutFormValues>;
   totalCents: number;
   onBack: () => void;
   onSubmit: () => void;
@@ -34,121 +29,116 @@ function formatINR(amount: number): string {
   })}`;
 }
 
-// Backend paymentMethod: "card" | "upi". UPI is always charged in INR. Cards
-// default to USD, but the backend can switch them to INR (CARD_CURRENCY env),
-// so the card label doesn't state a currency — the payment window shows it.
-const METHODS = [
-  {
-    value: "card" as const,
-    label: "Card",
-    sub: "Visa, Mastercard, Amex",
-    icon: "💳",
-  },
-  {
-    value: "upi" as const,
-    label: "UPI",
-    sub: "Google Pay, PhonePe, Paytm — paid in INR",
-    icon: "⚡",
-  },
-] as const;
+function Row({
+  label,
+  value,
+  mono,
+  strong,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  strong?: boolean;
+}) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        gap: 2,
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: SANS,
+          fontSize: "0.8125rem",
+          color: T.inkMuted,
+          flexShrink: 0,
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: mono ? MONO : SANS,
+          fontWeight: strong ? 800 : 600,
+          fontSize: strong ? "1.25rem" : "0.8125rem",
+          letterSpacing: strong ? "-0.02em" : 0,
+          color: T.ink,
+          textAlign: "right",
+          minWidth: 0,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+}
 
 export function StepPayment({
   watch,
-  setValue,
   totalCents,
   onBack,
   onSubmit,
   isProcessing,
 }: StepPaymentProps) {
-  const method = watch("paymentMethod");
-  const isUpi = method === "upi";
+  const email = watch("guestEmail");
+  const country = watch("billingAddress.country");
 
-  // The backend charges Math.round(totalCents × rate) paise using the same
-  // cached rate this endpoint returns, so this estimate is within a paisa or
-  // two of the real charge. "≈" because the rate can refresh in between.
-  const { rate, error: rateError } = useExchangeRate(isUpi);
+  // Currency follows the billing country. Indian buyers are charged in INR, so
+  // we show the rupee amount up front instead of springing it on them in the
+  // payment window. The backend uses the same cached rate, so this is within a
+  // paisa or two of the real charge ("≈" because the rate can refresh).
+  const inINR = isIndia(country);
+  const { rate, error: rateError } = useExchangeRate(inINR);
   const inr = rate ? formatINR((totalCents * rate) / 100) : null;
 
   return (
     <Box>
-      {/* Payment method picker */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25, mb: 3 }}>
-        {METHODS.map((m) => {
-          const selected = method === m.value;
-          return (
-            <Box
-              key={m.value}
-              onClick={() => setValue("paymentMethod", m.value)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                px: 2.5,
-                py: 2,
-                borderRadius: "12px",
-                border: `1.5px solid ${selected ? T.primary : T.border}`,
-                background: selected ? T.primaryLight : T.surface,
-                cursor: "pointer",
-                transition: "all 0.18s",
-                userSelect: "none",
-              }}
-            >
-              <Box
-                sx={{
-                  width: 18,
-                  height: 18,
-                  borderRadius: "50%",
-                  border: `2px solid ${selected ? T.primary : T.border}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  transition: "border-color 0.18s",
-                }}
-              >
-                {selected && (
-                  <Box
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: T.primary,
-                    }}
-                  />
-                )}
-              </Box>
-
-              <Typography sx={{ fontSize: "1rem", flexShrink: 0 }}>
-                {m.icon}
-              </Typography>
-
-              <Box>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontWeight: 600,
-                    fontSize: "0.875rem",
-                    color: T.ink,
-                  }}
-                >
-                  {m.label}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: SANS,
-                    fontSize: "0.72rem",
-                    color: T.inkMuted,
-                  }}
-                >
-                  {m.sub}
-                </Typography>
-              </Box>
-            </Box>
-          );
-        })}
+      {/* Recap */}
+      <Box
+        sx={{
+          border: `1px solid ${T.border}`,
+          borderRadius: "12px",
+          background: T.bg,
+          px: 2.5,
+          py: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.25,
+          mb: 2.5,
+        }}
+      >
+        <Row label="Amount due" value={formatUSD(totalCents)} mono strong />
+        {inINR && (
+          <Row
+            label="Charged in INR"
+            value={inr ? `≈ ${inr}` : rateError ? "Shown at payment" : "…"}
+            mono
+          />
+        )}
+        {email && <Row label="Receipt sent to" value={email} />}
       </Box>
 
-      {/* Security note */}
+      {inINR && rateError && !inr && (
+        <Typography
+          sx={{
+            fontFamily: SANS,
+            fontSize: "0.75rem",
+            color: T.red,
+            lineHeight: 1.6,
+            mb: 2,
+          }}
+        >
+          We couldn't load today's INR rate. The final amount will be shown in
+          the payment window.
+        </Typography>
+      )}
+
+      {/* How payment works */}
       <Box
         sx={{
           display: "flex",
@@ -157,7 +147,7 @@ export function StepPayment({
           px: 2,
           py: 1.75,
           borderRadius: "10px",
-          background: T.bg,
+          background: T.surface,
           border: `1px solid ${T.border}`,
           mb: 3,
         }}
@@ -178,72 +168,13 @@ export function StepPayment({
             lineHeight: 1.6,
           }}
         >
-          Payments powered by{" "}
+          You'll choose how to pay in the secure{" "}
           <Box component="span" sx={{ fontWeight: 600, color: T.inkMid }}>
             Razorpay
-          </Box>
-          . We never store card details. All transactions are 256-bit encrypted.
+          </Box>{" "}
+          window. We never store your card details, and every transaction is
+          encrypted.
         </Typography>
-      </Box>
-
-      {/* Total */}
-      <Box sx={{ mb: 2.5, px: 0.5 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography
-            sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.inkMuted }}
-          >
-            Amount due
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: MONO,
-              fontWeight: 800,
-              fontSize: "1.25rem",
-              color: T.ink,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {formatUSD(totalCents)}
-          </Typography>
-        </Box>
-
-        {isUpi && inr && (
-          <Typography
-            sx={{
-              mt: 0.75,
-              textAlign: "right",
-              fontFamily: SANS,
-              fontSize: "0.75rem",
-              color: T.inkMuted,
-              lineHeight: 1.5,
-            }}
-          >
-            ≈ {inr} — UPI is charged in INR at today's rate. The final amount is
-            shown in the payment window.
-          </Typography>
-        )}
-
-        {isUpi && rateError && !inr && (
-          <Typography
-            sx={{
-              mt: 0.75,
-              textAlign: "right",
-              fontFamily: SANS,
-              fontSize: "0.75rem",
-              color: T.red,
-              lineHeight: 1.5,
-            }}
-          >
-            We couldn't load today's INR rate, so UPI may be unavailable right
-            now. You can pay by card instead.
-          </Typography>
-        )}
       </Box>
 
       {/* Buttons */}
@@ -254,7 +185,7 @@ export function StepPayment({
             onClick={onSubmit}
             loading={isProcessing}
             label={
-              isUpi && inr ? `Pay ≈ ${inr}` : `Pay ${formatUSD(totalCents)}`
+              inINR && inr ? `Pay ≈ ${inr}` : `Pay ${formatUSD(totalCents)}`
             }
           />
         </Box>

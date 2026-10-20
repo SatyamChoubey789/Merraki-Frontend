@@ -167,13 +167,7 @@ function ValueCard({
   );
 }
 
-function RoleCard({
-  role,
-  index,
-}: {
-  role: JobListing;
-  index: number;
-}) {
+function RoleCard({ role, index }: { role: JobListing; index: number }) {
   const apply = getApplyHref(role);
 
   return (
@@ -684,7 +678,7 @@ export default function CareersPageClient({ roles }: { roles: JobListing[] }) {
                   >
                     <Box
                       component="a"
-                      href="mailto:info@merrakisolutions.com?subject=Speculative Application — Merraki"
+                      href="mailto:info@merrakisolutions.com?subject=Speculative%20Application%20%E2%80%94%20Merraki%20Careers"
                       sx={{
                         display: "inline-flex",
                         alignItems: "center",

@@ -13,6 +13,7 @@ import {
   type VerifyBody,
   type VerifyResult,
 } from "@/lib/api/checkout";
+import { isIndia } from "@/lib/api/country";
 
 // ─── Razorpay SDK types (minimal) ─────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ export function useCheckout() {
             zip: a.zip,
             company: a.company || undefined,
           },
-          paymentMethod: values.paymentMethod,
+          paymentMethod: isIndia(a.country) ? "upi" : "card",
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not start checkout. Please try again.");

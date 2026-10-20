@@ -154,13 +154,11 @@ export function CheckoutPageClient() {
     register,
     handleSubmit,
     watch,
-    setValue,
     trigger,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      paymentMethod: "card",
       billingAddress: { country: "India" },
     },
   });
@@ -313,9 +311,7 @@ export function CheckoutPageClient() {
                     )}
                     {step === 2 && (
                       <StepPayment
-                        register={register}
                         watch={watch}
-                        setValue={setValue}
                         totalCents={totalCents}
                         onBack={goBack}
                         onSubmit={onSubmit}
