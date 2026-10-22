@@ -1,152 +1,103 @@
-import { apiFetch, apiClient } from "@/lib/api/client";
+import { ApiRequestError } from "@/lib/api/checkout";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export type OrderStatus =
-  | "pending"
-  | "paid"
-  | "approved"
-  | "failed"
-  | "refunded"
-  | "cancelled"
-  | "rejected";
+// ─── Matched to backend: orders.service.ts → toPublicOrder() ─────────────────
+// Never includes r2 keys, payment ids, IPs or billing addresses.
+// `downloadToken` is only present when status is "paid".
 
-export interface OrderItem {
-  id: number;
-  template_name: string;
-  template_version: string;
-  file_format?: string;
-  file_size_mb?: number;
-  price_usd_cents: number;
-  quantity: number;
-}
+export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | (string & {});
 
-export interface Order {
-  id: string;
-  order_number: string;
+export interface TrackedOrder {
+  id: string; // UUID — also the buyer's proof of ownership
+  guestName: string;
+  guestEmail: string;
+  items: { templateId: string; title: string; priceUsd: string }[];
+  totalUsd: string; // "9.99"
+  currencyCharged: "USD" | "INR";
+  amountCharged: string; // decimal string in currencyCharged
+  exchangeRate: string | null;
   status: OrderStatus;
-  customer_name: string;
-  customer_email: string;
-  total_amount_usd_cents: number;
-  discount_amount_usd_cents: number;
-  downloads_enabled: boolean;
-  download_token?: string;
-  created_at: string;
-  updated_at: string;
-  admin_reviewed_at?: string;
-  items: OrderItem[];
+  downloadToken: string | null;
+  createdAt: string;
+  paidAt: string | null;
 }
 
-export interface DownloadFile {
-  name: string;
-  url: string;
-  expires_at: string;
+// GET /api/orders/download/:token — fresh presigned links, valid ~15 minutes
+export interface DownloadLinks {
+  orderId: string;
+  guestName: string;
+  items: { title: string; downloadUrl: string }[];
+  expiresIn: string | number; // backend sends "15 minutes"
 }
 
-interface TrackResponse {
-  success: true;
-  data: Order | Order[];
+// ─── Plain fetch so the status code and error message survive ────────────────
+
+async function request(path: string, init?: RequestInit): Promise<any> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, init);
+  } catch {
+    throw new ApiRequestError(
+      "Network error — please check your connection and try again.",
+      0,
+      "NETWORK",
+    );
+  }
+
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message =
+      res.status === 429
+        ? "Too many requests. Please wait a moment and try again."
+        : (body?.error?.message ?? body?.message ?? `Request failed (${res.status})`);
+    throw new ApiRequestError(message, res.status, body?.error?.code);
+  }
+  return body;
 }
 
-interface DownloadResponse {
-  success: true;
-  data: { files: DownloadFile[] };
+// ─── Endpoints ────────────────────────────────────────────────────────────────
+
+// GET /api/orders/track?order_id=<uuid> → { data: [order] } ([] when not found)
+export async function trackOrderById(orderId: string): Promise<TrackedOrder[]> {
+  const body = await request(`/orders/track?order_id=${encodeURIComponent(orderId)}`);
+  return body.data ?? [];
 }
 
-// ─── Validators ───────────────────────────────────────────────────────────────
-
-export function isEmail(val: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+// POST /api/orders/track/request → always 202, same message whether or not
+// orders exist (no email enumeration). The links arrive by email.
+export async function requestOrderLinks(email: string): Promise<string> {
+  const body = await request("/orders/track/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return body.message ?? "If orders exist for that email, we've sent you a secure link.";
 }
 
-export function isOrderNumber(val: string): boolean {
-  return /^MRK-/i.test(val.trim());
+export async function getDownloadLinks(token: string): Promise<DownloadLinks> {
+  const body = await request(`/orders/download/${encodeURIComponent(token)}`);
+  return body.data;
 }
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-export function centsToUSD(cents: number): string {
-  return `$${(cents / 100).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+export const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+export const isUuid = (v: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim());
+
+export function formatMoney(value: string, currency: "USD" | "INR"): string {
+  return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+    style: "currency",
+    currency,
+  }).format(Number(value));
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
+  return new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric",
+    month: "short",
     year: "numeric",
   });
-}
-
-// ─── API calls ────────────────────────────────────────────────────────────────
-
-/**
- * GET /orders/track?email= OR ?order_id=
- *
- * Client-side only (user-entered input, never cached).
- * Uses apiClient (axios) so the response interceptor normalizes errors.
- */
-export async function trackOrder(identifier: string): Promise<Order[]> {
-  const trimmed = identifier.trim();
-  const param = isEmail(trimmed) ? { email: trimmed } : { order_id: trimmed };
-
-  const res = await apiClient.get<TrackResponse>("/orders/track", {
-    params: param,
-  });
-
-  const data = res.data?.data;
-  return Array.isArray(data) ? data : data ? [data] : [];
-}
-
-/**
- * GET /orders/download/:token
- *
- * Client-side only — fresh signed R2 URLs on every click.
- * Uses apiClient (axios) so errors surface cleanly.
- */
-export async function getDownloadLinks(token: string): Promise<DownloadFile[]> {
-  const res = await apiClient.get<DownloadResponse>(`/orders/download/${token}`);
-  return res.data?.data?.files ?? [];
-}
-
-/**
- * Triggers browser download for each signed file URL.
- * 300 ms delay between files to avoid browser popup blocking.
- */
-export async function downloadOrderFiles(token: string): Promise<void> {
-  const files = await getDownloadLinks(token);
-
-  if (!files.length) throw new Error("No files found for this order.");
-
-  for (const file of files) {
-    await new Promise<void>((resolve) => {
-      const a = document.createElement("a");
-      a.href = file.url;
-      a.download = file.name;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(resolve, 300);
-    });
-  }
-}
-
-/**
- * Server Component helper — prefetch order by email for SSR/ISR.
- * Uses apiFetch with no cache (user-specific data).
- *
- * Usage in a Server Component:
- *   const orders = await prefetchOrdersByEmail(email);
- */
-export async function prefetchOrdersByEmail(email: string): Promise<Order[]> {
-  const data = await apiFetch<TrackResponse>("/orders/track", {
-    revalidate: false,
-    params: { email },
-  });
-  const result = data?.data;
-  return Array.isArray(result) ? result : result ? [result] : [];
 }

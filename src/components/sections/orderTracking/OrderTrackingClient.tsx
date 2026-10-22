@@ -1,248 +1,269 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Box, CircularProgress, Container, Typography } from "@mui/material";
+import { Download as DownloadIcon } from "@mui/icons-material";
 import {
-  Box,
-  Container,
-  Typography,
-  InputBase,
-  CircularProgress,
-  Skeleton,
-} from "@mui/material";
-import {
-  trackOrder,
-  downloadOrderFiles,
+  trackOrderById,
+  requestOrderLinks,
+  getDownloadLinks,
   isEmail,
-  isOrderNumber,
-  centsToUSD,
+  isUuid,
   formatDate,
-  type Order,
-  type OrderStatus,
+  formatMoney,
+  type TrackedOrder,
+  type DownloadLinks,
 } from "@/lib/api/ordertrack";
+import { describeExpiry } from "@/lib/api/checkout";
 
-// ─── Status config ────────────────────────────────────────────────────────────
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
 
-const STATUS: Record<
-  OrderStatus,
-  {
-    label: string;
-    step: number;
-    color: string;
-    bg: string;
-    border: string;
-    desc: string;
-  }
-> = {
+const T = {
+  bg: "#F5F7FB",
+  surface: "#FFFFFF",
+  ink: "#253957",
+  inkMid: "rgba(37,57,87,0.75)",
+  inkMuted: "rgba(37,57,87,0.55)",
+  inkFaint: "rgba(37,57,87,0.35)",
+  border: "rgba(37,57,87,0.10)",
+  borderMid: "rgba(37,57,87,0.16)",
+  primary: "#253957",
+  green: "#0D7A5F",
+  greenPale: "rgba(13,122,95,0.07)",
+  greenBorder: "rgba(13,122,95,0.22)",
+  amber: "#B45309",
+  amberPale: "rgba(180,83,9,0.07)",
+  amberBorder: "rgba(180,83,9,0.22)",
+  red: "#C0392B",
+  redPale: "rgba(192,57,43,0.06)",
+  redBorder: "rgba(192,57,43,0.22)",
+} as const;
+
+const SANS = `"DM Sans", system-ui, sans-serif`;
+const MONO = `"DM Mono", ui-monospace, monospace`;
+
+// ─── Status copy ──────────────────────────────────────────────────────────────
+// Backend statuses: pending | paid | failed | refunded. (The old admin-review
+// flow — approved / rejected / under review — no longer exists.)
+
+interface StatusCfg {
+  label: string;
+  color: string;
+  pale: string;
+  border: string;
+  desc: string;
+}
+
+const STATUS: Record<string, StatusCfg> = {
   pending: {
-    label: "Pending",
-    step: 1,
-    color: "#92400E",
-    bg: "#FFFBEB",
-    border: "#FDE68A",
-    desc: "We've received your order and are waiting for payment confirmation.",
+    label: "Awaiting payment",
+    color: T.amber,
+    pale: T.amberPale,
+    border: T.amberBorder,
+    desc: "We haven't received confirmation of your payment yet. If you've already paid, this page updates by itself — it can take a few minutes.",
   },
   paid: {
-    label: "Under review",
-    step: 2,
-    color: "#1E40AF",
-    bg: "#EFF6FF",
-    border: "#BFDBFE",
-    desc: "Payment confirmed. Our team is reviewing your order.",
-  },
-  approved: {
-    label: "Approved",
-    step: 3,
-    color: "#065F46",
-    bg: "#ECFDF5",
-    border: "#6EE7B7",
-    desc: "Your order is approved and ready to download.",
+    label: "Paid",
+    color: T.green,
+    pale: T.greenPale,
+    border: T.greenBorder,
+    desc: "Payment confirmed. Your files are ready to download below.",
   },
   failed: {
-    label: "Failed",
-    step: 0,
-    color: "#991B1B",
-    bg: "#FEF2F2",
-    border: "#FECACA",
-    desc: "Payment was unsuccessful. Please try placing a new order.",
+    label: "Not completed",
+    color: T.red,
+    pale: T.redPale,
+    border: T.redBorder,
+    desc: "This order wasn't completed. You can place a new order any time.",
   },
   refunded: {
     label: "Refunded",
-    step: 0,
-    color: "#475569",
-    bg: "#F8FAFC",
-    border: "#E2E8F0",
+    color: T.inkMid,
+    pale: "rgba(37,57,87,0.05)",
+    border: T.borderMid,
     desc: "This order has been refunded.",
-  },
-  cancelled: {
-    label: "Cancelled",
-    step: 0,
-    color: "#475569",
-    bg: "#F8FAFC",
-    border: "#E2E8F0",
-    desc: "This order was cancelled.",
-  },
-  rejected: {
-    label: "Rejected",
-    step: 0,
-    color: "#991B1B",
-    bg: "#FEF2F2",
-    border: "#FECACA",
-    desc: "This order was not approved. Contact support for details.",
   },
 };
 
-const STEPS = ["Order placed", "Under review", "Ready to download"];
+const FALLBACK_STATUS: StatusCfg = {
+  label: "Unknown",
+  color: T.inkMid,
+  pale: "rgba(37,57,87,0.05)",
+  border: T.borderMid,
+  desc: "We couldn't determine the status of this order. Please contact support.",
+};
 
-// ─── Step bar ─────────────────────────────────────────────────────────────────
+// ─── Downloads (fresh presigned links, valid ~15 minutes) ────────────────────
 
-function StepBar({ status }: { status: OrderStatus }) {
-  const cfg = STATUS[status];
-  const active = cfg.step;
-  if (active === 0) return null;
+function Downloads({ token }: { token: string }) {
+  const [links, setLinks] = useState<DownloadLinks | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setLinks(await getDownloadLinks(token));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't prepare your downloads.");
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (loading && !links) {
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 1 }}>
+        <CircularProgress size={16} sx={{ color: T.primary }} />
+        <Typography sx={{ fontFamily: SANS, fontSize: "0.8125rem", color: T.inkMuted }}>
+          Preparing your downloads…
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error && !links) {
+    return (
+      <Box>
+        <Typography sx={{ fontFamily: SANS, fontSize: "0.8125rem", color: T.red, mb: 1 }}>{error}</Typography>
+        <Box
+          component="button"
+          onClick={load}
+          sx={{
+            px: 2,
+            py: "8px",
+            borderRadius: "9px",
+            border: `1.5px solid ${T.borderMid}`,
+            background: "transparent",
+            color: T.ink,
+            fontFamily: SANS,
+            fontWeight: 600,
+            fontSize: "0.8125rem",
+            cursor: "pointer",
+          }}
+        >
+          Try again
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!links) return null;
 
   return (
-    <Box sx={{ display: "flex", alignItems: "flex-start", mb: 3 }}>
-      {STEPS.map((label, i) => {
-        const stepNum = i + 1;
-        const done = stepNum < active;
-        const current = stepNum === active;
-        const isLast = i === STEPS.length - 1;
-
-        return (
-          <Box
-            key={i}
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.25 }}>
+      {links.items.map((item) => (
+        <Box
+          key={item.downloadUrl}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            px: 2.5,
+            py: 1.75,
+            borderRadius: "12px",
+            border: `1px solid ${T.border}`,
+            background: T.bg,
+          }}
+        >
+          <Typography
             sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              flex: isLast ? "none" : 1,
+              fontFamily: SANS,
+              fontWeight: 600,
+              fontSize: "0.875rem",
+              color: T.ink,
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 0.75,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px solid",
-                  borderColor: done || current ? "#1E293B" : "#E2E8F0",
-                  bgcolor: done || current ? "#1E293B" : "#fff",
-                  flexShrink: 0,
-                }}
-              >
-                {done ? (
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M2 5l2 2 4-4"
-                      stroke="#fff"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  <Box
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      bgcolor: current ? "#fff" : "#CBD5E1",
-                    }}
-                  />
-                )}
-              </Box>
-              <Typography
-                sx={{
-                  fontSize: "0.625rem",
-                  fontWeight: done || current ? 600 : 400,
-                  color: done || current ? "#1E293B" : "#94A3B8",
-                  whiteSpace: "nowrap",
-                  lineHeight: 1,
-                }}
-              >
-                {label}
-              </Typography>
-            </Box>
-
-            {!isLast && (
-              <Box
-                sx={{
-                  flex: 1,
-                  height: "1px",
-                  bgcolor: done ? "#1E293B" : "#E2E8F0",
-                  mt: "11px",
-                  mx: 1,
-                  transition: "background-color 0.2s",
-                }}
-              />
-            )}
+            {item.title}
+          </Typography>
+          <Box
+            component="a"
+            href={item.downloadUrl}
+            rel="noopener noreferrer"
+            sx={{
+              flexShrink: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 0.75,
+              px: 1.75,
+              py: "8px",
+              borderRadius: "9px",
+              background: T.primary,
+              color: "#fff",
+              fontFamily: SANS,
+              fontWeight: 600,
+              fontSize: "0.8125rem",
+              textDecoration: "none",
+              transition: "filter 0.18s",
+              "&:hover": { filter: "brightness(1.08)" },
+            }}
+          >
+            <DownloadIcon sx={{ fontSize: "0.95rem" }} />
+            Download
           </Box>
-        );
-      })}
+        </Box>
+      ))}
+
+      <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.inkMuted, lineHeight: 1.6 }}>
+        These links expire in {describeExpiry(links.expiresIn)}.{" "}
+        <Box
+          component="button"
+          onClick={load}
+          disabled={loading}
+          sx={{
+            border: "none",
+            background: "transparent",
+            padding: 0,
+            fontFamily: SANS,
+            fontSize: "inherit",
+            fontWeight: 600,
+            color: T.ink,
+            textDecoration: "underline",
+            cursor: loading ? "wait" : "pointer",
+          }}
+        >
+          {loading ? "Refreshing…" : "Get fresh links"}
+        </Box>
+      </Typography>
     </Box>
   );
 }
 
 // ─── Order card ───────────────────────────────────────────────────────────────
 
-function OrderCard({ order }: { order: Order }) {
-  const cfg = STATUS[order.status];
-  const isApproved = order.status === "approved";
-  const canDownload =
-    isApproved && order.downloads_enabled && order.download_token;
-  const [downloading, setDownloading] = useState(false);
-  const [downloadErr, setDownloadErr] = useState<string | null>(null);
-
-  const handleDownload = useCallback(async () => {
-    if (!order.download_token) return;
-    setDownloading(true);
-    setDownloadErr(null);
-    try {
-      await downloadOrderFiles(order.download_token);
-    } catch (e) {
-      setDownloadErr(
-        e instanceof Error ? e.message : "Download failed. Try again.",
-      );
-    } finally {
-      setDownloading(false);
-    }
-  }, [order.download_token]);
+function OrderCard({ order }: { order: TrackedOrder }) {
+  const cfg = STATUS[order.status] ?? FALLBACK_STATUS;
+  const shortId = order.id.slice(0, 8).toUpperCase();
+  const showDownloads = order.status === "paid" && !!order.downloadToken;
 
   return (
     <Box
       sx={{
-        bgcolor: "#fff",
-        borderRadius: "12px",
-        border: "1px solid",
-        borderColor: isApproved ? "#6EE7B7" : "#E2E8F0",
+        background: T.surface,
+        borderRadius: "16px",
+        border: `1px solid ${showDownloads ? T.greenBorder : T.borderMid}`,
         overflow: "hidden",
-        boxShadow: isApproved
-          ? "0 2px 12px rgba(16,185,129,0.08)"
-          : "0 1px 4px rgba(0,0,0,0.04)",
         mb: 2,
       }}
     >
-      {/* Top accent bar */}
-      <Box
-        sx={{ height: "2px", bgcolor: isApproved ? "#10B981" : "#1E293B" }}
-      />
-
       {/* Header */}
       <Box
         sx={{
           px: { xs: 2.5, sm: 3 },
-          py: 1.75,
-          bgcolor: "#F8FAFC",
-          borderBottom: "1px solid #F1F5F9",
+          py: 2,
+          background: T.bg,
+          borderBottom: `1px solid ${T.border}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -251,38 +272,17 @@ function OrderCard({ order }: { order: Order }) {
         }}
       >
         <Box>
-          <Typography
-            sx={{
-              fontSize: "0.5625rem",
-              color: "#94A3B8",
-              fontWeight: 500,
-              mb: 0.25,
-              letterSpacing: "0.05em",
-            }}
-          >
+          <Typography sx={{ fontFamily: MONO, fontSize: "0.58rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase", mb: 0.25 }}>
             Order
           </Typography>
-          <Typography
-            sx={{
-              fontFamily: "monospace",
-              fontWeight: 700,
-              fontSize: "0.875rem",
-              color: "#1E293B",
-            }}
-          >
-            {order.order_number}
+          <Typography sx={{ fontFamily: MONO, fontWeight: 700, fontSize: "0.875rem", color: T.ink }}>
+            #{shortId}
           </Typography>
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Typography
-            sx={{
-              fontFamily: "monospace",
-              fontSize: "0.6875rem",
-              color: "#94A3B8",
-            }}
-          >
-            {formatDate(order.created_at)}
+          <Typography sx={{ fontFamily: MONO, fontSize: "0.7rem", color: T.inkMuted }}>
+            {formatDate(order.createdAt)}
           </Typography>
           <Box
             sx={{
@@ -292,623 +292,263 @@ function OrderCard({ order }: { order: Order }) {
               px: 1.25,
               py: 0.5,
               borderRadius: "100px",
-              bgcolor: cfg.bg,
-              border: "1px solid",
-              borderColor: cfg.border,
+              background: cfg.pale,
+              border: `1px solid ${cfg.border}`,
             }}
           >
-            <Box
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                bgcolor: cfg.color,
-                flexShrink: 0,
-              }}
-            />
-            <Typography
-              sx={{
-                fontSize: "0.5625rem",
-                fontWeight: 700,
-                color: cfg.color,
-                letterSpacing: "0.04em",
-              }}
-            >
+            <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: cfg.color }} />
+            <Typography sx={{ fontFamily: SANS, fontSize: "0.65rem", fontWeight: 700, color: cfg.color }}>
               {cfg.label}
             </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Body */}
       <Box sx={{ px: { xs: 2.5, sm: 3 }, py: 3 }}>
-        <StepBar status={order.status} />
-
         {/* Status message */}
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            borderRadius: "8px",
-            bgcolor: cfg.bg,
-            border: "1px solid",
-            borderColor: cfg.border,
-            mb: 3,
-          }}
-        >
-          <Typography sx={{ fontSize: "0.875rem", color: cfg.color }}>
+        <Box sx={{ px: 2, py: 1.5, borderRadius: "10px", background: cfg.pale, border: `1px solid ${cfg.border}`, mb: 3 }}>
+          <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: cfg.color, lineHeight: 1.6 }}>
             {cfg.desc}
           </Typography>
         </Box>
 
-        {/* Items */}
-        {order.items?.length > 0 && (
+        {/* Downloads */}
+        {showDownloads && order.downloadToken && (
           <Box sx={{ mb: 3 }}>
-            <Typography
-              sx={{
-                fontSize: "0.5625rem",
-                color: "#94A3B8",
-                fontWeight: 500,
-                mb: 1,
-                letterSpacing: "0.05em",
-              }}
-            >
-              Items
+            <Typography sx={{ fontFamily: MONO, fontSize: "0.58rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase", mb: 1.25 }}>
+              Your downloads
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {order.items.map((item) => (
-                <Box
-                  key={item.id}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    px: 2,
-                    py: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: "#F8FAFC",
-                    border: "1px solid #F1F5F9",
-                  }}
-                >
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontSize: "0.875rem",
-                        fontWeight: 500,
-                        color: "#1E293B",
-                      }}
-                    >
-                      {item.template_name}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: "monospace",
-                        fontSize: "0.5625rem",
-                        color: "#94A3B8",
-                        mt: 0.25,
-                      }}
-                    >
-                      {item.file_format
-                        ? item.file_format.toUpperCase()
-                        : `v${item.template_version}`}
-                      {item.file_size_mb != null &&
-                        ` · ${item.file_size_mb} MB`}
-                    </Typography>
-                  </Box>
-                  <Typography
-                    sx={{
-                      fontFamily: "monospace",
-                      fontWeight: 700,
-                      fontSize: "0.875rem",
-                      color: "#475569",
-                    }}
-                  >
-                    {centsToUSD(item.price_usd_cents)}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
+            <Downloads token={order.downloadToken} />
           </Box>
         )}
 
-        {/* Total + Download */}
-        <Box
-          sx={{
-            pt: 2.5,
-            borderTop: "1px solid #F1F5F9",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
-          }}
-        >
-          <Box>
-            {order.discount_amount_usd_cents > 0 && (
-              <Box sx={{ display: "flex", gap: 1.5, mb: 0.5 }}>
-                <Typography sx={{ fontSize: "0.8125rem", color: "#94A3B8" }}>
-                  Discount
-                </Typography>
-                <Typography sx={{ fontSize: "0.8125rem", color: "#64748B" }}>
-                  −{centsToUSD(order.discount_amount_usd_cents)}
-                </Typography>
-              </Box>
-            )}
-            <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-              <Typography sx={{ fontSize: "0.8125rem", color: "#94A3B8" }}>
-                Total
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: "monospace",
-                  fontWeight: 700,
-                  fontSize: "1.25rem",
-                  color: "#0F172A",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                {centsToUSD(order.total_amount_usd_cents)}
+        {/* Items */}
+        <Typography sx={{ fontFamily: MONO, fontSize: "0.58rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase", mb: 1 }}>
+          Items
+        </Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, mb: 2.5 }}>
+          {order.items.map((item) => (
+            <Box key={item.templateId} sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+              <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.ink }}>{item.title}</Typography>
+              <Typography sx={{ fontFamily: MONO, fontSize: "0.8125rem", color: T.inkMid, flexShrink: 0 }}>
+                {formatMoney(item.priceUsd, "USD")}
               </Typography>
             </Box>
-          </Box>
-
-          {canDownload ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: 0.75,
-              }}
-            >
-              <Box
-                component="button"
-                onClick={handleDownload}
-                disabled={downloading}
-                sx={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 1,
-                  px: 2.5,
-                  py: 1.25,
-                  borderRadius: "8px",
-                  border: "none",
-                  bgcolor: downloading ? "#F1F5F9" : "#1E293B",
-                  color: downloading ? "#94A3B8" : "#fff",
-                  cursor: downloading ? "not-allowed" : "pointer",
-                  fontSize: "0.875rem",
-                  fontWeight: 600,
-                  fontFamily: "inherit",
-                  transition: "background-color 0.15s",
-                  "&:hover": !downloading ? { bgcolor: "#334155" } : {},
-                  "&:active": !downloading ? { transform: "scale(0.98)" } : {},
-                }}
-              >
-                {downloading ? (
-                  <CircularProgress size={14} sx={{ color: "#94A3B8" }} />
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path
-                      d="M7 1v8M7 9L4.5 6.5M7 9l2.5-2.5M2 12h10"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-                {downloading ? "Opening…" : "Download files"}
-              </Box>
-              {downloadErr && (
-                <Typography sx={{ fontSize: "0.75rem", color: "#DC2626" }}>
-                  {downloadErr}
-                </Typography>
-              )}
-            </Box>
-          ) : isApproved && !order.downloads_enabled ? (
-            <Box
-              sx={{
-                px: 2,
-                py: 1,
-                borderRadius: "8px",
-                bgcolor: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-              }}
-            >
-              <Typography sx={{ fontSize: "0.75rem", color: "#94A3B8" }}>
-                Downloads temporarily unavailable
-              </Typography>
-            </Box>
-          ) : cfg.step > 0 ? (
-            <Box
-              sx={{
-                px: 2,
-                py: 1,
-                borderRadius: "8px",
-                bgcolor: "#F8FAFC",
-                border: "1px solid #E2E8F0",
-              }}
-            >
-              <Typography sx={{ fontSize: "0.75rem", color: "#94A3B8" }}>
-                Available once approved
-              </Typography>
-            </Box>
-          ) : null}
+          ))}
         </Box>
 
-        {/* Meta row */}
-        <Box
-          sx={{
-            mt: 2.5,
-            pt: 2.5,
-            borderTop: "1px solid #F1F5F9",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px 24px",
-          }}
-        >
+        {/* Total */}
+        <Box sx={{ pt: 2, borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 2, flexWrap: "wrap" }}>
+          <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "0.875rem", color: T.ink }}>Total</Typography>
+          <Box sx={{ textAlign: "right" }}>
+            <Typography sx={{ fontFamily: MONO, fontWeight: 800, fontSize: "1.125rem", color: T.ink, letterSpacing: "-0.02em" }}>
+              {formatMoney(order.totalUsd, "USD")}
+            </Typography>
+            {order.currencyCharged === "INR" && (
+              <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.inkMuted }}>
+                Charged {formatMoney(order.amountCharged, "INR")}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+
+        {/* Meta */}
+        <Box sx={{ mt: 2.5, pt: 2.5, borderTop: `1px solid ${T.border}`, display: "flex", flexWrap: "wrap", gap: "12px 28px" }}>
           {[
-            { label: "Customer", val: order.customer_name },
-            { label: "Email", val: order.customer_email },
-            ...(order.status === "approved" && order.admin_reviewed_at
-              ? [
-                  {
-                    label: "Approved",
-                    val: formatDate(order.admin_reviewed_at),
-                    highlight: true,
-                  },
-                ]
-              : []),
-          ]
-            .filter((f) => f.val)
-            .map((f) => (
-              <Box key={f.label}>
-                <Typography
-                  sx={{
-                    fontSize: "0.5625rem",
-                    color: "#94A3B8",
-                    fontWeight: 500,
-                    mb: 0.25,
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  {f.label}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    color: (f as { highlight?: boolean }).highlight
-                      ? "#065F46"
-                      : "#475569",
-                  }}
-                >
-                  {f.val}
-                </Typography>
-              </Box>
-            ))}
+            { label: "Customer", val: order.guestName },
+            { label: "Email", val: order.guestEmail },
+            ...(order.paidAt ? [{ label: "Paid", val: formatDate(order.paidAt) }] : []),
+          ].map((f) => (
+            <Box key={f.label}>
+              <Typography sx={{ fontFamily: MONO, fontSize: "0.58rem", letterSpacing: "0.1em", color: T.inkFaint, textTransform: "uppercase", mb: 0.25 }}>
+                {f.label}
+              </Typography>
+              <Typography sx={{ fontFamily: SANS, fontSize: "0.8125rem", fontWeight: 500, color: T.inkMid }}>{f.val}</Typography>
+            </Box>
+          ))}
         </Box>
       </Box>
     </Box>
   );
 }
 
-// ─── Search input ─────────────────────────────────────────────────────────────
+// ─── Search ───────────────────────────────────────────────────────────────────
 
-function SearchInput({
-  onSearch,
-  loading,
-}: {
-  onSearch: (val: string) => void;
-  loading: boolean;
-}) {
+function SearchBar({ onSearch, loading }: { onSearch: (v: string) => void; loading: boolean }) {
   const [val, setVal] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = val.trim();
-    if (!trimmed) {
-      setErr("Enter your email or order number.");
-      return;
-    }
-    if (!isEmail(trimmed) && !isOrderNumber(trimmed)) {
-      setErr("Enter a valid email or an order number like MRK-XXXXXX.");
-      return;
-    }
-    setErr(null);
-    onSearch(trimmed);
-  };
-
-  const icon = isEmail(val) ? (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect
-        x="2"
-        y="4"
-        width="12"
-        height="9"
-        rx="1.5"
-        stroke="#94A3B8"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M2 6l6 4 6-4"
-        stroke="#94A3B8"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  ) : isOrderNumber(val) ? (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path
-        d="M2 2h5.5l6.5 6.5-5.5 5.5L2 7.5V2z"
-        stroke="#94A3B8"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <circle cx="5" cy="5" r="1" fill="#94A3B8" />
-    </svg>
-  ) : (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <circle cx="6.5" cy="6.5" r="4" stroke="#CBD5E1" strokeWidth="1.5" />
-      <path
-        d="M10 10l3.5 3.5"
-        stroke="#CBD5E1"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  const disabled = loading || !val.trim();
 
   return (
-    <Box component="form" onSubmit={handleSubmit}>
-      <Box
-        sx={{
-          display: "flex",
-          gap: 1.5,
-          flexWrap: { xs: "wrap", sm: "nowrap" },
-        }}
-      >
+    <Box
+      component="form"
+      onSubmit={(e: React.FormEvent) => {
+        e.preventDefault();
+        if (!disabled) onSearch(val);
+      }}
+    >
+      <Box sx={{ display: "flex", gap: 1.5, flexWrap: { xs: "wrap", sm: "nowrap" } }}>
         <Box
           sx={{
             flex: 1,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.25,
-            px: 2,
-            py: 1.25,
-            bgcolor: "#fff",
-            border: "1.5px solid",
-            borderColor: err ? "#FCA5A5" : "#E2E8F0",
+            minWidth: 0,
+            border: `1.5px solid ${T.border}`,
             borderRadius: "10px",
-            transition: "border-color 0.15s, box-shadow 0.15s",
-            "&:focus-within": {
-              borderColor: "#94A3B8",
-              boxShadow: "0 0 0 3px rgba(148,163,184,0.15)",
-            },
+            background: T.surface,
+            transition: "border-color 0.18s, box-shadow 0.18s",
+            "&:focus-within": { borderColor: "rgba(37,57,87,0.40)", boxShadow: "0 0 0 3px rgba(37,57,87,0.06)" },
           }}
         >
-          <Box sx={{ flexShrink: 0, display: "flex" }}>{icon}</Box>
-          <InputBase
-            inputRef={inputRef}
+          <input
             value={val}
-            onChange={(e) => {
-              setVal(e.target.value);
-              if (err) setErr(null);
-            }}
-            placeholder="Email or order number (MRK-XXXXXX)"
+            onChange={(e) => setVal(e.target.value)}
+            placeholder="Your email or full order ID"
+            aria-label="Email or order ID"
+            autoComplete="email"
             disabled={loading}
-            sx={{
-              flex: 1,
-              fontSize: "0.9375rem",
-              color: "#0F172A",
-              "& input::placeholder": { color: "#CBD5E1" },
+            style={{
+              display: "block",
+              width: "100%",
+              padding: "12px 14px",
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontFamily: SANS,
+              fontSize: "0.9rem",
+              color: T.ink,
+              boxSizing: "border-box",
             }}
           />
         </Box>
-
         <Box
           component="button"
           type="submit"
-          disabled={loading || !val.trim()}
+          disabled={disabled}
           sx={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 1,
             px: 3,
-            py: 1.25,
+            py: "12px",
             borderRadius: "10px",
             border: "none",
-            bgcolor: loading || !val.trim() ? "#F1F5F9" : "#1E293B",
-            color: loading || !val.trim() ? "#94A3B8" : "#fff",
-            cursor: loading || !val.trim() ? "not-allowed" : "pointer",
-            fontSize: "0.875rem",
+            background: disabled ? T.bg : T.primary,
+            color: disabled ? T.inkFaint : "#fff",
+            fontFamily: SANS,
             fontWeight: 600,
-            fontFamily: "inherit",
+            fontSize: "0.875rem",
             whiteSpace: "nowrap",
-            flexShrink: 0,
-            transition: "background-color 0.15s",
-            "&:hover": !loading && val.trim() ? { bgcolor: "#334155" } : {},
+            cursor: disabled ? "not-allowed" : "pointer",
+            outline: disabled ? `1px solid ${T.border}` : "none",
+            transition: "filter 0.18s",
+            "&:hover:not(:disabled)": { filter: "brightness(1.08)" },
           }}
         >
-          {loading && <CircularProgress size={14} sx={{ color: "#94A3B8" }} />}
-          {loading ? "Searching…" : "Track order"}
+          {loading ? "Searching…" : "Find order"}
         </Box>
       </Box>
-
-      <Typography
-        sx={{
-          fontSize: "0.75rem",
-          color: err ? "#DC2626" : "#94A3B8",
-          mt: 1,
-          ml: 0.5,
-        }}
-      >
-        {err ??
-          "Enter your email to see all orders, or an order number like MRK-ABC123"}
+      <Typography sx={{ fontFamily: SANS, fontSize: "0.75rem", color: T.inkMuted, mt: 1, lineHeight: 1.5 }}>
+        Enter the email you used at checkout and we'll send you a secure link, or paste your full order ID.
       </Typography>
     </Box>
   );
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
-function OrderSkeleton() {
-  return (
-    <Box
-      sx={{
-        bgcolor: "#fff",
-        borderRadius: "12px",
-        border: "1px solid #E2E8F0",
-        overflow: "hidden",
-        mb: 2,
-      }}
-    >
-      <Skeleton variant="rectangular" height={2} sx={{ bgcolor: "#E2E8F0" }} />
-      <Box
-        sx={{
-          px: 3,
-          py: 2,
-          bgcolor: "#F8FAFC",
-          borderBottom: "1px solid #F1F5F9",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Box>
-          <Skeleton width={40} height={10} sx={{ mb: 0.5 }} />
-          <Skeleton width={100} height={18} />
-        </Box>
-        <Skeleton width={80} height={24} sx={{ borderRadius: "100px" }} />
-      </Box>
-      <Box sx={{ px: 3, py: 3 }}>
-        <Skeleton
-          width="100%"
-          height={32}
-          sx={{ borderRadius: "8px", mb: 2 }}
-        />
-        <Skeleton
-          width="100%"
-          height={64}
-          sx={{ borderRadius: "8px", mb: 2 }}
-        />
-        <Skeleton width={120} height={20} />
-      </Box>
-    </Box>
-  );
-}
+function OrderTrackingInner() {
+  const params = useSearchParams();
+  const initialId = params.get("order_id"); // set by the "Download your files" button in the receipt email
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyState() {
-  return (
-    <Box
-      sx={{
-        textAlign: "center",
-        py: 10,
-        bgcolor: "#fff",
-        borderRadius: "12px",
-        border: "1px solid #E2E8F0",
-      }}
-    >
-      <Box
-        sx={{
-          width: 44,
-          height: 44,
-          borderRadius: "50%",
-          bgcolor: "#F1F5F9",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          mx: "auto",
-          mb: 2,
-        }}
-      >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="7" stroke="#94A3B8" strokeWidth="1.5" />
-          <path
-            d="M10 7v4m0 2.5v.25"
-            stroke="#94A3B8"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      </Box>
-      <Typography
-        sx={{
-          fontWeight: 600,
-          fontSize: "0.9375rem",
-          color: "#1E293B",
-          mb: 0.75,
-        }}
-      >
-        No orders found
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: "0.875rem",
-          color: "#94A3B8",
-          maxWidth: 280,
-          mx: "auto",
-          lineHeight: 1.65,
-        }}
-      >
-        Double-check your email or order number. Orders use the format
-        MRK-XXXXXX.
-      </Typography>
-    </Box>
-  );
-}
-
-// ─── Main export ──────────────────────────────────────────────────────────────
-
-export function OrderTrackingClient() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<TrackedOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const started = useRef(false);
 
-  const handleSearch = useCallback(async (identifier: string) => {
-    setLoading(true);
-    setError(null);
-    setSearched(false);
-    setOrders([]);
-
+  const lookupById = useCallback(async (id: string, silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+      setNotice(null);
+    }
     try {
-      const result = await trackOrder(identifier);
-      setOrders(result);
+      setOrders(await trackOrderById(id));
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Something went wrong. Please try again.",
-      );
+      if (!silent) setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
-      setSearched(true);
+      if (!silent) {
+        setLoading(false);
+        setSearched(true);
+      }
     }
   }, []);
 
+  // Opened from the email link → load that order straight away
+  useEffect(() => {
+    if (!initialId || started.current) return;
+    started.current = true;
+    if (isUuid(initialId)) {
+      void lookupById(initialId);
+    } else {
+      setError("That order link looks incomplete. Use the button in your receipt email, or request a new link below.");
+      setSearched(true);
+    }
+  }, [initialId, lookupById]);
+
+  // While a single order is still pending, re-check every 8s (≈5 min max).
+  // The webhook can mark it paid at any moment.
+  const pendingId = orders.length === 1 && orders[0].status === "pending" ? orders[0].id : null;
+  useEffect(() => {
+    if (!pendingId) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (tries > 40) {
+        clearInterval(timer);
+        return;
+      }
+      void lookupById(pendingId, true);
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [pendingId, lookupById]);
+
+  const handleSearch = async (raw: string) => {
+    const value = raw.trim();
+    setError(null);
+    setNotice(null);
+
+    if (isEmail(value)) {
+      // The backend never returns orders for an email — it emails the owner a link.
+      setLoading(true);
+      try {
+        setNotice(await requestOrderLinks(value));
+        setOrders([]);
+        setSearched(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (isUuid(value)) {
+      await lookupById(value);
+      return;
+    }
+
+    setError("Enter the email you used at checkout, or your full order ID.");
+  };
+
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#F8FAFC",
-        pt: { xs: 12, md: 16 },
-        pb: 16,
-      }}
-    >
+    <Box sx={{ minHeight: "100vh", background: T.bg, pt: { xs: 12, md: 16 }, pb: 16 }}>
       <Container maxWidth="sm">
-        {/* Header */}
-        <Box sx={{ mb: 6 }}>
+        <Box sx={{ mb: 5 }}>
           <Typography
-            variant="h1"
+            component="h1"
             sx={{
+              fontFamily: SANS,
               fontWeight: 800,
               fontSize: { xs: "1.875rem", md: "2.5rem" },
-              color: "#0F172A",
+              color: T.ink,
               letterSpacing: "-0.03em",
               lineHeight: 1.1,
               mb: 1,
@@ -916,112 +556,62 @@ export function OrderTrackingClient() {
           >
             Track your order
           </Typography>
-          <Typography
-            sx={{ fontSize: "0.9375rem", color: "#64748B", lineHeight: 1.7 }}
-          >
-            Check your order status and download your templates once approved.
+          <Typography sx={{ fontFamily: SANS, fontSize: "0.9375rem", color: T.inkMuted, lineHeight: 1.7 }}>
+            Check your order status and download your files.
           </Typography>
         </Box>
 
-        {/* Search */}
-        <Box sx={{ mb: 5 }}>
-          <SearchInput onSearch={handleSearch} loading={loading} />
+        <Box sx={{ mb: 4 }}>
+          <SearchBar onSearch={handleSearch} loading={loading} />
         </Box>
 
-        {/* Error banner */}
         {error && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 1.5,
-              px: 2.5,
-              py: 2,
-              borderRadius: "10px",
-              bgcolor: "#FEF2F2",
-              border: "1px solid #FECACA",
-              mb: 3,
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              style={{ marginTop: 2, flexShrink: 0 }}
-            >
-              <circle cx="8" cy="8" r="6" stroke="#F87171" strokeWidth="1.5" />
-              <path
-                d="M8 5v4m0 2v.25"
-                stroke="#F87171"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-            <Typography sx={{ fontSize: "0.875rem", color: "#DC2626" }}>
-              {error}
+          <Box role="alert" sx={{ px: 2.5, py: 2, borderRadius: "10px", background: T.redPale, border: `1px solid ${T.redBorder}`, mb: 3 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.red, lineHeight: 1.6 }}>{error}</Typography>
+          </Box>
+        )}
+
+        {notice && (
+          <Box role="status" sx={{ px: 2.5, py: 2, borderRadius: "10px", background: T.greenPale, border: `1px solid ${T.greenBorder}`, mb: 3 }}>
+            <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.green, lineHeight: 1.6 }}>{notice}</Typography>
+          </Box>
+        )}
+
+        {loading && (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+            <CircularProgress size={28} sx={{ color: T.primary }} />
+          </Box>
+        )}
+
+        {!loading && searched && !error && !notice && orders.length === 0 && (
+          <Box sx={{ textAlign: "center", py: 8, background: T.surface, borderRadius: "16px", border: `1px solid ${T.borderMid}` }}>
+            <Typography sx={{ fontFamily: SANS, fontWeight: 700, fontSize: "0.9375rem", color: T.ink, mb: 0.75 }}>
+              No order found
+            </Typography>
+            <Typography sx={{ fontFamily: SANS, fontSize: "0.875rem", color: T.inkMuted, maxWidth: 300, mx: "auto", lineHeight: 1.65 }}>
+              Check the order ID, or enter your email and we'll send you a secure link to your orders.
             </Typography>
           </Box>
         )}
 
-        {/* Skeleton */}
-        {loading && (
-          <>
-            <OrderSkeleton />
-            <OrderSkeleton />
-          </>
-        )}
+        {!loading && orders.map((order) => <OrderCard key={order.id} order={order} />)}
 
-        {/* Empty state */}
-        {!loading && searched && !error && orders.length === 0 && (
-          <EmptyState />
-        )}
-
-        {/* Results */}
-        {!loading && orders.length > 0 && (
-          <>
-            <Typography
-              sx={{
-                fontSize: "0.75rem",
-                color: "#94A3B8",
-                fontWeight: 500,
-                mb: 2,
-              }}
-            >
-              {orders.length} order{orders.length > 1 ? "s" : ""} found
-            </Typography>
-
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
-
-            <Box
-              sx={{
-                mt: 1,
-                pt: 3,
-                borderTop: "1px solid #E2E8F0",
-                textAlign: "center",
-              }}
-            >
-              <Typography sx={{ fontSize: "0.8125rem", color: "#94A3B8" }}>
-                Need help?{" "}
-                <Box
-                  component="a"
-                  href="mailto:info@merrakisolutions.com"
-                  sx={{
-                    color: "#475569",
-                    fontWeight: 500,
-                    textDecoration: "none",
-                    "&:hover": { textDecoration: "underline" },
-                  }}
-                >
-                  Contact support
-                </Box>
-              </Typography>
-            </Box>
-          </>
-        )}
+        <Typography sx={{ fontFamily: SANS, fontSize: "0.8125rem", color: T.inkFaint, textAlign: "center", mt: 4 }}>
+          Need help?{" "}
+          <Box component="a" href="mailto:info@merrakisolutions.com" sx={{ color: T.inkMid, fontWeight: 500, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>
+            Contact support
+          </Box>
+        </Typography>
       </Container>
     </Box>
+  );
+}
+
+// useSearchParams() must sit inside Suspense or `next build` fails on statically rendered pages.
+export function OrderTrackingClient() {
+  return (
+    <Suspense fallback={null}>
+      <OrderTrackingInner />
+    </Suspense>
   );
 }
