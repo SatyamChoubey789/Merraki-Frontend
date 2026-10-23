@@ -100,7 +100,7 @@ export type VerifyResult =
         downloadToken: string;
         guestName: string;
         items: DownloadItem[];
-        expiresIn: number | string; // assumed seconds when numeric
+        expiresIn: number | string; // backend sends the string "15 minutes"
     }
     | { status: "processing"; orderId: string };
 
@@ -145,8 +145,20 @@ export function readDownloads(orderId: string): StoredDownloads | null {
     }
 }
 
+// The backend sends expiresIn as text ("15 minutes"), not a number of seconds.
+// Parse either form; if it can't be understood, assume the 15-minute default
+// the presigned links are actually issued with.
+function expirySeconds(expiresIn: number | string): number {
+    if (typeof expiresIn === "number") return expiresIn;
+    const m = /(\d+)\s*(hour|minute|min|second|sec)/i.exec(expiresIn);
+    if (!m) return 900;
+    const n = Number(m[1]);
+    const unit = m[2].toLowerCase();
+    return unit.startsWith("h") ? n * 3600 : unit.startsWith("m") ? n * 60 : n;
+}
+
 export function isDownloadExpired(d: StoredDownloads): boolean {
-    return typeof d.expiresIn === "number" && Date.now() > d.issuedAt + d.expiresIn * 1000;
+    return Date.now() > d.issuedAt + expirySeconds(d.expiresIn) * 1000;
 }
 
 export function describeExpiry(expiresIn: number | string): string {

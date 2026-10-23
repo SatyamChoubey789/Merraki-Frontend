@@ -429,6 +429,25 @@ function SuccessInner() {
           >
             Browse more templates
           </Box>
+
+          {orderId && (
+            <Box
+              component={Link}
+              href={`/order-tracking?order_id=${orderId}`}
+              sx={{
+                display: "block",
+                textAlign: "center",
+                mt: 1.5,
+                fontFamily: SANS,
+                fontSize: "0.8125rem",
+                color: T.inkMuted,
+                textDecoration: "none",
+                "&:hover": { color: T.ink },
+              }}
+            >
+              Track this order →
+            </Box>
+          )}
         </motion.div>
       </Container>
     </Box>
